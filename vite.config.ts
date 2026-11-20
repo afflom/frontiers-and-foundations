@@ -5,13 +5,17 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
+  const rawBase = process.env.VITE_BASE_PATH || '/';
+  const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
+
   return {
+    base,
     plugins: [
       react(),
       tailwindcss(),
       // Copies src/assets into dist/ so root-relative URLs like
       // "/src/assets/images/..." (e.g. generate_image output) still resolve
-      // in production builds. Do not remove.
+      // in production builds, and writes GitHub Pages static artifacts.
       {
         name: 'copy-unbundled-src-assets',
         apply: 'build',
@@ -24,6 +28,14 @@ export default defineConfig(() => {
           const distAssets = path.resolve(distDir, 'src/assets');
           if (fs.existsSync(distDir) && fs.existsSync(srcAssets)) {
             fs.cpSync(srcAssets, distAssets, {recursive: true, force: true});
+          }
+          if (fs.existsSync(distDir)) {
+            fs.writeFileSync(path.join(distDir, '.nojekyll'), '');
+            const indexPath = path.join(distDir, 'index.html');
+            const fallbackPath = path.join(distDir, '404.html');
+            if (fs.existsSync(indexPath)) {
+              fs.copyFileSync(indexPath, fallbackPath);
+            }
           }
         },
       },

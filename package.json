@@ -7,9 +7,11 @@
     "dev": "tsx server.ts",
     "start": "node server.ts",
     "build": "vite build",
+    "build:pages": "VITE_STATIC_PAGES=true vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "tsx --test src/utils/publicUrl.test.ts src/verdant/verdantCollision.test.ts src/verdant/verdantIntegration.test.ts src/game/rpgLogic.test.ts src/game/multiplayerLogic.test.ts"
   },
   "dependencies": {
     "@google/genai": "^3.6.1",

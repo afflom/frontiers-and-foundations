@@ -9,6 +9,7 @@ import {
   type MusicalMeterId,
   type RealmSoundtrackSpec,
 } from './verdantScoreSchema';
+import { resolvePublicUrl } from '../utils/publicUrl';
 
 export interface SpatialAudioMetrics {
   pan: number;
@@ -196,7 +197,7 @@ export class VerdantSpatialAudio {
       // Load real Verdant Engine AudioWorklet (`verdant-modal-processor`)
       if (this.ctx.audioWorklet) {
         try {
-          await this.ctx.audioWorklet.addModule('/verdant/audio-worklet.mjs');
+          await this.ctx.audioWorklet.addModule(resolvePublicUrl('/verdant/audio-worklet.mjs'));
           this.modalNode = new AudioWorkletNode(this.ctx, 'verdant-modal-processor', {
             numberOfInputs: 0,
             numberOfOutputs: 1,

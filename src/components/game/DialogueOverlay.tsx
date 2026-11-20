@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BANNED_FANTASY_TROPES, type DialogueChoice, type GameNpc } from '../../game/worldData';
+import { isStaticPagesHost, resolvePublicUrl } from '../../utils/publicUrl';
 
 interface DialogueOverlayProps {
   npc: GameNpc;
@@ -46,6 +47,17 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
     setThinking(true);
 
     try {
+      if (isStaticPagesHost()) {
+        setHistory((prev) => [
+          ...prev,
+          {
+            speaker: 'npc',
+            text: `${npc.name} considers your words thoughtfully. "${npc.beliefs[0] || npc.cognitiveDrive}"`,
+            thought: npc.cognitiveDrive,
+          },
+        ]);
+        return;
+      }
       const res = await fetch('/api/verdant/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -109,7 +121,7 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
           {/* NPC Portrait & Identity Column */}
           <div className="bg-[#0f131a] border-b md:border-b-0 md:border-r border-white/10 p-4 flex md:flex-col items-center md:items-start gap-4">
             <img
-              src={npc.portraitUrl}
+              src={resolvePublicUrl(npc.portraitUrl)}
               alt={npc.name}
               className="w-20 h-20 md:w-full md:h-44 object-cover rounded-sm border border-[#d4a253]/40 shrink-0"
             />

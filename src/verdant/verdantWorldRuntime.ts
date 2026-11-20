@@ -23,6 +23,7 @@ import {
   type DynamicParticle,
   type SlashEffect,
 } from './verdantDynamicGeometry';
+import { resolvePublicUrl } from '../utils/publicUrl';
 import {
   CANONICAL_REALM_SPECS,
   getRealmRegionAt,
@@ -343,12 +344,13 @@ export class VerdantFrontiersRuntime {
     const blankOk = (ex.verdant_wasm_studio_load_blank_stage() >>> 0) > 0;
 
     // Fetch compiled Realm GLB (with fallback to legacy frontiers-world.glb for vaelmor)
-    let glbResp = await fetch(realm.glbUrl);
+    const realmGlbUrl = resolvePublicUrl(realm.glbUrl);
+    let glbResp = await fetch(realmGlbUrl);
     if (!glbResp.ok && realm.slug === 'vaelmor') {
-      glbResp = await fetch('/verdant/frontiers-world.glb');
+      glbResp = await fetch(resolvePublicUrl('/verdant/frontiers-world.glb'));
     }
     if (!glbResp.ok) {
-      throw new Error(`Failed to fetch realm GLB ${realm.glbUrl} (${glbResp.status})`);
+      throw new Error(`Failed to fetch realm GLB ${realmGlbUrl} (${glbResp.status})`);
     }
     const glbBuf = await glbResp.arrayBuffer();
     if (this.disposed) {
@@ -409,7 +411,7 @@ export class VerdantFrontiersRuntime {
         this.renderer.setTex(2, skyImg);
       }
     };
-    skyImg.src = realm.skyUrl;
+    skyImg.src = resolvePublicUrl(realm.skyUrl);
 
     // Register Realm Project Model using exact Verdant camelCase schema
     const enc = new TextEncoder();
@@ -446,7 +448,7 @@ export class VerdantFrontiersRuntime {
   private async bootVerdantEngine(): Promise<void> {
     try {
       // 1. Load real Verdant HD WebGL2 CSM/GGX/ACES Renderer module
-      const modUrl = '/verdant/scene-hd-renderer.mjs';
+      const modUrl = resolvePublicUrl('/verdant/scene-hd-renderer.mjs');
       const mod = (await import(/* @vite-ignore */ modUrl)) as VerdantRendererModule;
       if (this.disposed) return;
       this.rendererMod = mod;
@@ -460,8 +462,8 @@ export class VerdantFrontiersRuntime {
 
       // 2. Parallel-fetch real verdant-uorc.wasm, Prism world manifest, and browser Prism identity
       const [wasmResp, manifestResp, prismIdentity] = await Promise.all([
-        fetch('/verdant/verdant-uorc.wasm'),
-        fetch('/verdant/prism-world-manifest.json').catch(() => null),
+        fetch(resolvePublicUrl('/verdant/verdant-uorc.wasm')),
+        fetch(resolvePublicUrl('/verdant/prism-world-manifest.json')).catch(() => null),
         createPrism({ deviceClass: 'browser', protection: 'software' }).catch(() => null),
       ]);
       if (this.disposed) return;

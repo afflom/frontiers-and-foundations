@@ -33,8 +33,10 @@ import {
 import { VerdantSpatialAudio, type VerdantAudioState } from './verdant/verdantAudioEngine';
 import {
   getPlaylistForRealm,
+  synthesizeScoreFromBrief,
   type RealmSoundtrackSpec,
 } from './verdant/verdantScoreSchema';
+import { isStaticPagesHost } from './utils/publicUrl';
 import {
   applyGearUpgrade,
   computeCombatStats,
@@ -265,6 +267,7 @@ export default function App() {
 
   // Fetch compiled & dynamically generated Federated Realms from Verdant MCP Host
   useEffect(() => {
+    if (isStaticPagesHost()) return;
     let cancelled = false;
     fetch('/api/verdant/realms')
       .then((r) => (r.ok ? r.json() : null))
@@ -1103,27 +1106,43 @@ export default function App() {
   const handleComposeScore = useCallback(async () => {
     setComposingScore(true);
     try {
-      const res = await fetch('/api/verdant/scores/compose', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      let nextScore: RealmSoundtrackSpec | null = null;
+      if (!isStaticPagesHost()) {
+        try {
+          const res = await fetch('/api/verdant/scores/compose', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              realmSlug: activeRealm.slug,
+              realmName: activeRealm.name,
+              theme: activeRealm.theme,
+              isDungeon: Boolean(activeRealm.isDungeon),
+              brief: `${activeRealm.name} ${activeRealm.summary} variation ${Date.now() % 97}`,
+            }),
+          });
+          const json = await res.json();
+          if (res.ok && json.ok && json.soundtrack) {
+            nextScore = json.soundtrack as RealmSoundtrackSpec;
+          }
+        } catch {
+          nextScore = null;
+        }
+      }
+      if (!nextScore) {
+        nextScore = synthesizeScoreFromBrief({
           realmSlug: activeRealm.slug,
           realmName: activeRealm.name,
           theme: activeRealm.theme,
           isDungeon: Boolean(activeRealm.isDungeon),
-          brief: `${activeRealm.name} ${activeRealm.summary} variation ${Date.now() % 97}`,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.ok || !json.soundtrack) {
-        throw new Error(json.error || 'Unable to compose fresh orchestral score right now.');
+          seed: (Date.now() % 100000) + Math.floor(Math.random() * 997),
+        });
       }
-      const nextScore = json.soundtrack;
       setRealms((prev) =>
-        prev.map((r) => (r.slug === activeRealm.slug ? { ...r, soundtrack: nextScore } : r)),
+        prev.map((r) => (r.slug === activeRealm.slug ? { ...r, soundtrack: nextScore! } : r)),
       );
       audioRef.current?.setSoundtrack(nextScore);
-      showToast(`Composed "${nextScore.title}" (${nextScore.mode}, ${nextScore.bpm} BPM)`);
+      if (audioRef.current) setAudioState(audioRef.current.getAudioState());
+      showToast(`Composed "${nextScore.title}" (${nextScore.meter} · ${nextScore.mode}, ${nextScore.bpm} BPM)`);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Unable to compose orchestral score.');
     } finally {

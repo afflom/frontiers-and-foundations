@@ -4,6 +4,7 @@ import type {
   RemotePlayerState,
   WorldChatMessage,
 } from './multiplayerTypes';
+import { isStaticPagesHost } from '../utils/publicUrl';
 
 export interface RealmSocketHandlers {
   onConnected: (connected: boolean) => void;
@@ -47,6 +48,10 @@ export class VaelmorRealmClient {
 
   private connect(): void {
     if (this.disposed) return;
+    if (isStaticPagesHost()) {
+      this.handlers.onConnected(false);
+      return;
+    }
     try {
       const ws = new WebSocket(this.getWsUrl());
       this.ws = ws;

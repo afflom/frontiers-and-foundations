@@ -1,3 +1,5 @@
+import { resolvePublicUrl } from '../utils/publicUrl';
+
 export type StudioTab = 'world' | 'lore' | 'arsenal' | 'audio' | 'stitch';
 
 export type AtmospherePreset = 'golden-meridian' | 'stormfront-coast' | 'ember-dusk' | 'high-dawn';
@@ -153,10 +155,10 @@ export interface GameModelState {
   engineAdapter: EngineAdapterConfig;
 }
 
-export const WORLD_PANORAMA_IMG = '/src/assets/images/ff_world_panorama_1795129454132.jpg';
-export const NPC_ORENNA_IMG = '/src/assets/images/ff_npc_orenna_1795129454002.jpg';
-export const NPC_KAELEN_IMG = '/src/assets/images/ff_npc_kaelen_1795129454573.jpg';
-export const RELIC_LODESTONE_IMG = '/src/assets/images/ff_relic_lodestone_1795129453816.jpg';
+export const WORLD_PANORAMA_IMG = resolvePublicUrl('/src/assets/images/ff_world_panorama_1795129454132.jpg');
+export const NPC_ORENNA_IMG = resolvePublicUrl('/src/assets/images/ff_npc_orenna_1795129454002.jpg');
+export const NPC_KAELEN_IMG = resolvePublicUrl('/src/assets/images/ff_npc_kaelen_1795129454573.jpg');
+export const RELIC_LODESTONE_IMG = resolvePublicUrl('/src/assets/images/ff_relic_lodestone_1795129453816.jpg');
 
 export const DIRECTOR_SHOTS: DirectorShot[] = [
   {

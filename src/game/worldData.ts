@@ -1,3 +1,5 @@
+import { resolvePublicUrl } from '../utils/publicUrl';
+
 export type GamePhase = 'title' | 'playing' | 'paused' | 'victory' | 'gameover';
 
 export type GearSlotId = 'hookblade' | 'bellhammer' | 'lantern' | 'compass';
@@ -137,12 +139,12 @@ export interface GuildCharter {
   expeditionGoal: string;
 }
 
-export const WORLD_PANORAMA_URL = '/src/assets/images/ff_world_panorama_1795129454132.jpg';
-export const RELIC_ART_URL = '/src/assets/images/ff_relic_lodestone_1795129453816.jpg';
-export const PORTRAIT_ORENNA = '/src/assets/images/ff_npc_orenna_1795129454002.jpg';
-export const PORTRAIT_KAELEN = '/src/assets/images/ff_npc_kaelen_1795129454573.jpg';
-export const PORTRAIT_TARSIK = '/src/assets/images/ff_npc_tarsik_1795130893764.jpg';
-export const PORTRAIT_SERAIA = '/src/assets/images/ff_npc_seraia_1795130893399.jpg';
+export const WORLD_PANORAMA_URL = resolvePublicUrl('/src/assets/images/ff_world_panorama_1795129454132.jpg');
+export const RELIC_ART_URL = resolvePublicUrl('/src/assets/images/ff_relic_lodestone_1795129453816.jpg');
+export const PORTRAIT_ORENNA = resolvePublicUrl('/src/assets/images/ff_npc_orenna_1795129454002.jpg');
+export const PORTRAIT_KAELEN = resolvePublicUrl('/src/assets/images/ff_npc_kaelen_1795129454573.jpg');
+export const PORTRAIT_TARSIK = resolvePublicUrl('/src/assets/images/ff_npc_tarsik_1795130893764.jpg');
+export const PORTRAIT_SERAIA = resolvePublicUrl('/src/assets/images/ff_npc_seraia_1795130893399.jpg');
 
 export const WORLD_REGIONS: WorldRegion[] = [
   {
