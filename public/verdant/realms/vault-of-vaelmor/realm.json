@@ -736,13 +736,13 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:6d9db82084173597c5dd3544f7d8beec08fa689ec0a46c21758270dd80b25ba4",
+    "worldGlbKappa": "sha256:390989e2e06df5baec622996e35e267147dd4de9035c9dbdd390d3ce434e0d22",
     "vdntKappa": "sha256:9118a2903abfedcafbdd3e041860e95f4467d7b734c9f65d438b40ccfb9a280a",
     "skyKappa": "sha256:fc7ac5ac1ff5a0cbc25724fe0f347e7bf1cae61b758323d1faac761a1cd9af36",
-    "triangles": 16562,
-    "vertices": 25709,
-    "glbBytes": 1840760,
-    "atlasTileCount": 4,
+    "triangles": 16626,
+    "vertices": 25813,
+    "glbBytes": 1843568,
+    "atlasTileCount": 3,
     "importedCatalogModelsCount": 12,
     "importedCatalogAssets": [
       "gothic_statue",
@@ -753,7 +753,7 @@
       "old_military_crate",
       "boulder_01"
     ],
-    "projectModelsRegistered": 9,
+    "projectModelsRegistered": 10,
     "cognitiveKnowledgeIngested": 4,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

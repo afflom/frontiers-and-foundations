@@ -62,6 +62,14 @@ import {
   shortestAngleDelta,
   stepVelocityMovement,
 } from './verdantControls';
+import {
+  synthesizeRealmEcosystem,
+  type SynthesizedEcosystemPlan,
+} from './verdantEcosystemCatalog';
+import {
+  synthesizeDungeonEcosystem,
+  type SynthesizedDungeonPlan,
+} from './verdantDungeonCatalog';
 
 export interface VerdantWorldStatus {
   wasmActive: boolean;
@@ -167,8 +175,23 @@ export class VerdantFrontiersRuntime {
     idx: Uint32Array;
   } | null = null;
 
-  // Active Federated Meridian Realm
+  // Active Federated Meridian Realm, Synthesized Overworld Ecosystem & Dungeon Plan
   private activeRealm: FrontiersRealmSpec = CANONICAL_REALM_SPECS[0];
+  private ecosystemPlan: SynthesizedEcosystemPlan = synthesizeRealmEcosystem(CANONICAL_REALM_SPECS[0]);
+  private dungeonPlan: SynthesizedDungeonPlan | null = null;
+  private thermalVentCooldown = 0;
+
+  private get activePhenomenon() {
+    return this.dungeonPlan ? this.dungeonPlan.phenomenon : this.ecosystemPlan.phenomenon;
+  }
+
+  private get activeFaunaKit() {
+    return this.dungeonPlan ? this.dungeonPlan.faunaKit : this.ecosystemPlan.faunaKit;
+  }
+
+  private get activeThermalVents() {
+    return this.dungeonPlan ? this.dungeonPlan.thermalVents : this.ecosystemPlan.thermalVents;
+  }
 
   // Verdant + Prism live custody status
   private status: VerdantWorldStatus = {
@@ -690,6 +713,9 @@ export class VerdantFrontiersRuntime {
     spawnOverride?: { x: number; z: number; yaw?: number },
   ): Promise<void> {
     this.activeRealm = realm;
+    this.ecosystemPlan = synthesizeRealmEcosystem(realm);
+    this.dungeonPlan = realm.isDungeon ? synthesizeDungeonEcosystem(realm) : null;
+    this.thermalVentCooldown = 0;
     this.npcs = nextNpcs;
     this.enemies = nextEnemies;
     this.interactables = nextInteractables;
@@ -1011,7 +1037,8 @@ export class VerdantFrontiersRuntime {
     this.dodgeDirZ = dz;
     const isSwim = this.waterPosture === 'swimming';
     const isWade = this.waterPosture === 'wading';
-    const surgeSpeed = isSwim ? 9.6 : isWade ? 10.2 : 12.5;
+    const phen = this.activePhenomenon;
+    const surgeSpeed = (isSwim ? 9.6 * phen.swimSpeedMult : isWade ? 10.2 : 12.5) * phen.dodgeDistMult;
     this.playerVx = dx * surgeSpeed;
     this.playerVz = dz * surgeSpeed;
     this.actionCount += 1;
@@ -1045,6 +1072,31 @@ export class VerdantFrontiersRuntime {
       activeCell: this.activeRealm.cell,
       isProceduralCell: Boolean(this.activeRealm.isProceduralCell),
       isDungeon: Boolean(this.activeRealm.isDungeon),
+      ecosystem: {
+        layoutId: this.ecosystemPlan.layoutId,
+        layoutTitle: this.ecosystemPlan.layoutTitle,
+        floraKit: this.ecosystemPlan.floraKit,
+        floraTitle: this.ecosystemPlan.floraTitle,
+        faunaKit: this.activeFaunaKit,
+        faunaTitle: this.ecosystemPlan.faunaTitle,
+        phenomenonId: this.activePhenomenon.id,
+        phenomenonTitle: this.activePhenomenon.title,
+        structureCount: this.dungeonPlan ? this.dungeonPlan.structures.length : this.ecosystemPlan.structures.length,
+        floraCount: this.dungeonPlan ? 0 : this.ecosystemPlan.floraInstances.length,
+        thermalVentCount: this.activeThermalVents.length,
+      },
+      dungeonArchitecture: this.dungeonPlan
+        ? {
+            style: this.dungeonPlan.style,
+            styleTitle: this.dungeonPlan.styleTitle,
+            chasmVisual: this.dungeonPlan.chasmVisual,
+            faunaKit: this.dungeonPlan.faunaKit,
+            phenomenonId: this.dungeonPlan.phenomenon.id,
+            phenomenonTitle: this.dungeonPlan.phenomenon.title,
+            structureCount: this.dungeonPlan.structures.length,
+            thermalVentCount: this.dungeonPlan.thermalVents.length,
+          }
+        : null,
       worldTriangles: this.status.worldTriangles,
       adjacentCells: this.activeRealm.isDungeon
         ? []
@@ -1119,7 +1171,7 @@ export class VerdantFrontiersRuntime {
     }
 
     this.stamina = Math.max(0, this.stamina - gear.staminaCost);
-    this.cooldowns[gear.id] = gear.cooldownSec;
+    this.cooldowns[gear.id] = gear.cooldownSec * this.activePhenomenon.cooldownMult;
     this.actionCount += 1;
     this.lastActionGear = gear.id;
     this.callbacks.onPlayerAction?.(gear.id);
@@ -1260,7 +1312,9 @@ export class VerdantFrontiersRuntime {
 
     const effectiveGear = {
       ...gear,
-      damage: Math.round(gear.damage * (1 + this.damageBonusPct / 100)),
+      damage: Math.round(
+        gear.damage * (1 + this.damageBonusPct / 100) * this.activePhenomenon.strikeDamageMult,
+      ),
     };
     const res = resolvePlayerAttack(
       this.playerX,
@@ -1443,16 +1497,17 @@ export class VerdantFrontiersRuntime {
       this.targetCamDist = Math.min(13.5, this.targetCamDist + 1.1);
     } else if (code === 'Space') {
       e.preventDefault();
+      const jumpMult = this.activePhenomenon.jumpBoostMult;
       if (this.waterPosture === 'swimming') {
         // Surface breach leap to vault smoothly onto riverbanks or piers!
-        this.playerVy = 6.4;
+        this.playerVy = 6.4 * jumpMult;
         this.coyoteTimer = 0;
         const wY = this.activeRealm.terrainProfile.waterLevel;
         this.spawnParticles(this.playerX, wY + 0.2, this.playerZ, 12, 0x8be2f2, 4.2);
         this.onFootstep?.('water');
         this.callbacks.onAudioEvent({ kind: 'jump' });
       } else if (this.coyoteTimer > 0) {
-        this.playerVy = this.waterPosture === 'wading' ? 6.4 : 7.6;
+        this.playerVy = (this.waterPosture === 'wading' ? 6.4 : 7.6) * jumpMult;
         this.coyoteTimer = 0;
         this.callbacks.onAudioEvent({ kind: 'jump' });
       }
@@ -1601,6 +1656,11 @@ export class VerdantFrontiersRuntime {
       nearbyEnemies,
       defeatedCount: this.defeatedCount,
       waterPosture: this.waterPosture,
+      ecosystemBadge: {
+        title: this.activePhenomenon.title,
+        summary: this.activePhenomenon.effectSummary,
+        layoutTitle: this.dungeonPlan ? this.dungeonPlan.styleTitle : this.ecosystemPlan.layoutTitle,
+      },
     });
   }
 
@@ -1633,12 +1693,20 @@ export class VerdantFrontiersRuntime {
       this.onFootstep?.('water');
     }
 
-    // Cooldowns & stamina regeneration (modulated gently when wading/swimming)
+    // Cooldowns, stamina regeneration, and live Ecosystem/Dungeon Phenomenon buffs (spores, updrafts, aurora)
+    const phen = this.activePhenomenon;
     for (const k of ['hookblade', 'bellhammer', 'lantern', 'compass'] as GearSlotId[]) {
       if (this.cooldowns[k] > 0) this.cooldowns[k] = Math.max(0, this.cooldowns[k] - dt);
     }
-    const regenRate = 24 * (1 + this.staminaRegenBonusPct / 100) * waterState.staminaRegenMultiplier;
+    const regenRate =
+      24 * (1 + this.staminaRegenBonusPct / 100) * waterState.staminaRegenMultiplier * phen.staminaRegenMult;
     this.stamina = Math.min(this.maxStamina, this.stamina + regenRate * dt);
+    if (phen.passiveHpPerSec > 0 && this.hp > 0 && this.hp < this.maxHp && this.phase === 'playing') {
+      this.hp = Math.min(this.maxHp, this.hp + phen.passiveHpPerSec * dt);
+    }
+    if (this.thermalVentCooldown > 0) {
+      this.thermalVentCooldown = Math.max(0, this.thermalVentCooldown - dt);
+    }
 
     // Step particles & slash rings
     for (const p of this.particles) {
@@ -1716,9 +1784,11 @@ export class VerdantFrontiersRuntime {
     const prevZ = this.playerZ;
     let candX = prevX;
     let candZ = prevZ;
+    const ecoSpeedMult =
+      waterState.posture === 'swimming' ? phen.swimSpeedMult : phen.landSpeedMult;
     if (this.dodgeTimer > 0) {
       this.dodgeTimer = Math.max(0, this.dodgeTimer - dt);
-      const dodgeSpeed = 14.2 * waterState.dodgeScale;
+      const dodgeSpeed = 14.2 * waterState.dodgeScale * phen.dodgeDistMult;
       this.playerVx = this.dodgeDirX * dodgeSpeed;
       this.playerVz = this.dodgeDirZ * dodgeSpeed;
       candX = prevX + this.playerVx * dt;
@@ -1732,7 +1802,7 @@ export class VerdantFrontiersRuntime {
         vx: this.playerVx,
         vz: this.playerVz,
         playerYaw: this.playerYaw,
-        maxSpeed: 8.6 * waterState.speedMultiplier,
+        maxSpeed: 8.6 * waterState.speedMultiplier * ecoSpeedMult,
         accelRate: 16.5 * waterState.turnResponsiveness,
         decelRate: waterState.posture === 'swimming' ? 6.5 : 14.5,
         turnRate: 14.0 * waterState.turnResponsiveness,
@@ -1857,6 +1927,26 @@ export class VerdantFrontiersRuntime {
       this.coyoteTimer = grounded ? 0.12 : Math.max(0, this.coyoteTimer - dt);
     }
 
+    // Active Thermal Vent Updraft Launch in volcanic/caldera overworlds & geothermal 3D dungeons!
+    const vents = this.activeThermalVents;
+    if (
+      this.thermalVentCooldown <= 0 &&
+      vents.length > 0 &&
+      grounded
+    ) {
+      for (const [vx, vz] of vents) {
+        if (Math.hypot(this.playerX - vx, this.playerZ - vz) < 1.95) {
+          this.playerVy = 11.4 * phen.jumpBoostMult;
+          this.coyoteTimer = 0;
+          this.thermalVentCooldown = 1.6;
+          this.spawnParticles(vx, this.playerY + 0.5, vz, 20, 0xf2762e, 6.2);
+          this.callbacks.onAudioEvent({ kind: 'jump' });
+          this.callbacks.onCombatCallout?.('Thermal Updraft!', 'gold');
+          break;
+        }
+      }
+    }
+
     // Environmental footstep & aquatic swimming/wading foley + water splash droplets
     if (grounded && this.playerSpeed > 1.1 && this.dodgeTimer <= 0) {
       this.footstepTimer += dt;
@@ -1881,7 +1971,7 @@ export class VerdantFrontiersRuntime {
       this.footstepTimer = Math.min(this.footstepTimer, 0.22);
     }
 
-    // Step hostile frontier creatures & projectiles
+    // Step hostile frontier creatures & projectiles with bespoke ecosystem fauna AI personalities
     const ev = stepEnemies(
       this.enemies,
       this.playerX,
@@ -1889,6 +1979,7 @@ export class VerdantFrontiersRuntime {
       this.dodgeTimer > 0,
       dt,
       this.completedQuestsCount,
+      this.activeFaunaKit,
     );
     if (ev.telegraphStartedIds.length > 0) {
       this.callbacks.onAudioEvent({ kind: 'telegraph' });
@@ -2114,9 +2205,7 @@ export class VerdantFrontiersRuntime {
       playerWaterPosture: this.waterPosture,
       gorgeZ: this.activeRealm.terrainProfile.gorgeZ,
       gorgeWaveAmp: this.activeRealm.terrainProfile.gorgeWaveAmp,
-      showMagmaSeams:
-        this.activeRealm.theme === 'citadel-highlands' ||
-        this.activeRealm.theme === 'obsidian-crucible',
+      showMagmaSeams: this.activeRealm.slug === 'vaelmor',
       showCoastalInlet:
         !this.activeRealm.isDungeon &&
         (this.activeRealm.theme === 'citadel-highlands' ||
@@ -2124,6 +2213,10 @@ export class VerdantFrontiersRuntime {
           this.activeRealm.theme === 'sunken-aqueducts'),
       isDungeon: Boolean(this.activeRealm.isDungeon),
       dungeonStyle: this.activeRealm.dungeonStyle,
+      faunaKit: this.activeFaunaKit,
+      thermalVents: this.activeThermalVents,
+      ambientParticleKind: this.activePhenomenon.ambientParticleKind,
+      ambientRgb: this.activePhenomenon.ambientRgb,
     });
 
     this.renderer.uploadSplitBuffers(

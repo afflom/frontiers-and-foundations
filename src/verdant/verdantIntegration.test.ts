@@ -19,7 +19,7 @@ import { VERDANT_MCP_TOOLS, VerdantMcpHost } from './verdantMcpHost';
 import { INITIAL_INTERACTABLES, INITIAL_NPCS } from '../game/worldData';
 import { createInitialEnemies } from '../game/rpgLogic';
 
-describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 20 MCP Tools + Procedural Universe & Characters + Orchestral Score + Prism + Stitch', () => {
+describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 23 MCP Tools + Bespoke Ecosystems & Dungeons + Procedural Universe & Characters + Orchestral Score + Prism + Stitch', () => {
   it('boots blank stage, imports vast 224m Frontiers & Foundations PBR GLB, verifies Stitch 2-of-3 recovery, and seals Prism identity', async () => {
     const verdantDir = join(process.cwd(), 'public', 'verdant');
     const wasmBytes = readFileSync(join(verdantDir, 'verdant-uorc.wasm'));
@@ -116,10 +116,21 @@ describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 20 MCP Tool
         `${expectedSlug} realm.json must exist on disk`,
       );
     }
+
+    // Verify the 6 compiled 3D dungeons are architecturally bespoke (distinct triangle counts, never 6 identical clones!)
+    const dungeonTris = new Set(
+      expectedDungeons.map(
+        (slug) => manifest.federatedRealms.find((r: { slug: string }) => r.slug === slug)?.custody?.triangles,
+      ),
+    );
+    assert.ok(
+      dungeonTris.size >= 5,
+      `Expected >= 5 distinct compiled 3D dungeon triangle counts across 6 dungeons, got ${dungeonTris.size}`,
+    );
   });
 
-  it('exposes all 20 real verdant-uorc.wasm-backed MCP tools including procedural UniverseCell & character synthesis, HD character rigs, score, questline, NPC cast, relic arsenal, and Stitch tools', async () => {
-    assert.equal(VERDANT_MCP_TOOLS.length, 20, 'Expected 20 Verdant MCP tools');
+  it('exposes all 23 real verdant-uorc.wasm-backed MCP tools including extensible ecosystem & dungeon catalogs, procedural UniverseCell & character synthesis, HD character rigs, score, questline, NPC cast, relic arsenal, and Stitch tools', async () => {
+    assert.equal(VERDANT_MCP_TOOLS.length, 23, 'Expected 23 Verdant MCP tools');
 
     const mcp = new VerdantMcpHost(process.cwd());
     await mcp.ensureReady();
@@ -273,6 +284,78 @@ describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 20 MCP Tool
     assert.equal(synthChar.appearance.portraitArchetype, 'synthesized');
     assert.ok(synthChar.npc.choices.length >= 3);
     assert.ok(synthChar.projectModel);
+
+    // Verify live Verdant Catalog extension & bespoke Ecosystem synthesis via Verdant MCP
+    const extRes = (await mcp.handleToolCall(
+      'verdant_catalog_extend',
+      {
+        id: 'arch-integration-wind-monastery',
+        category: 'layout',
+        title: 'Aeolian Wind-Monastery',
+        summary: 'Cliffside resonant bells and stepped viaduct arches.',
+        tags: ['aeolian', 'monastery'],
+      },
+      null,
+    )) as {
+      extension: { id: string; category: string };
+      totalCatalogExtensions: number;
+      catalogKappa: string;
+      projectModel: unknown;
+    };
+    assert.equal(extRes.extension.id, 'arch-integration-wind-monastery');
+    assert.ok(extRes.totalCatalogExtensions >= 26);
+    assert.match(extRes.catalogKappa, /^sha256:[0-9a-f]{64}$/);
+    assert.ok(extRes.projectModel);
+
+    const oakhavenEco = (await mcp.handleToolCall(
+      'verdant_synthesize_ecosystem',
+      { realmSlug: 'oakhaven' },
+      null,
+    )) as {
+      ecosystem: { layoutId: string; floraKit: string; faunaKit: string; phenomenon: { id: string }; structureCount: number };
+      ecosystemKappa: string;
+    };
+    const cinderfallEco = (await mcp.handleToolCall(
+      'verdant_synthesize_ecosystem',
+      { realmSlug: 'cinderfall' },
+      null,
+    )) as {
+      ecosystem: { layoutId: string; floraKit: string; faunaKit: string; phenomenon: { id: string }; thermalVentCount: number };
+      ecosystemKappa: string;
+    };
+    assert.notEqual(oakhavenEco.ecosystem.layoutId, cinderfallEco.ecosystem.layoutId);
+    assert.notEqual(oakhavenEco.ecosystem.floraKit, cinderfallEco.ecosystem.floraKit);
+    assert.notEqual(oakhavenEco.ecosystem.faunaKit, cinderfallEco.ecosystem.faunaKit);
+    assert.notEqual(oakhavenEco.ecosystem.phenomenon.id, cinderfallEco.ecosystem.phenomenon.id);
+    assert.ok(cinderfallEco.ecosystem.thermalVentCount >= 4);
+    assert.match(oakhavenEco.ecosystemKappa, /^sha256:[0-9a-f]{64}$/);
+
+    // Verify bespoke 3D Dungeon Architecture synthesis via Verdant MCP tool #23
+    const grottoDg = (await mcp.handleToolCall(
+      'verdant_synthesize_dungeon_architecture',
+      { dungeonSlug: 'glasswater-abyssal-grotto' },
+      null,
+    )) as {
+      dungeonArchitecture: { style: string; faunaKit: string; chasmVisual: string; structureCount: number };
+      dungeonKappa: string;
+      projectModel: unknown;
+    };
+    const magmaDg = (await mcp.handleToolCall(
+      'verdant_synthesize_dungeon_architecture',
+      { dungeonSlug: 'cinderfall-magma-delve' },
+      null,
+    )) as {
+      dungeonArchitecture: { style: string; faunaKit: string; chasmVisual: string; thermalVentCount: number };
+      dungeonKappa: string;
+      projectModel: unknown;
+    };
+    assert.equal(grottoDg.dungeonArchitecture.style, 'abyssal-grotto');
+    assert.equal(magmaDg.dungeonArchitecture.style, 'geothermal-depths');
+    assert.notEqual(grottoDg.dungeonArchitecture.faunaKit, magmaDg.dungeonArchitecture.faunaKit);
+    assert.notEqual(grottoDg.dungeonArchitecture.chasmVisual, magmaDg.dungeonArchitecture.chasmVisual);
+    assert.ok(magmaDg.dungeonArchitecture.thermalVentCount >= 5);
+    assert.match(grottoDg.dungeonKappa, /^sha256:[0-9a-f]{64}$/);
+    assert.ok(grottoDg.projectModel);
   });
 
   it('produces distinct orchestral soundtracks across themes and dungeons without monotonous drones', () => {

@@ -212,11 +212,25 @@ export function computeDifficultyMultiplier(completedQuests: number): {
   };
 }
 
+export interface FaunaCombatProfile {
+  speedMult: number;
+  damageMult: number;
+  telegraphMult: number;
+  regenPerSec: number;
+}
+
+export const FAUNA_COMBAT_PROFILES: Record<string, FaunaCombatProfile> = {
+  'highland-ironclad': { speedMult: 1.0, damageMult: 1.0, telegraphMult: 1.0, regenPerSec: 0 },
+  'verdant-mycelial': { speedMult: 0.92, damageMult: 0.94, telegraphMult: 1.08, regenPerSec: 1.4 },
+  'pyroclastic-forge': { speedMult: 1.12, damageMult: 1.16, telegraphMult: 0.9, regenPerSec: 0 },
+  'pelagic-abyssal': { speedMult: 1.18, damageMult: 0.96, telegraphMult: 0.94, regenPerSec: 0.4 },
+  'dune-sandstrider': { speedMult: 1.22, damageMult: 1.04, telegraphMult: 0.88, regenPerSec: 0 },
+  'glacial-frostborn': { speedMult: 0.95, damageMult: 1.14, telegraphMult: 1.12, regenPerSec: 0 },
+};
+
 /**
- * Steps all 3 distinct enemy behavior policies with attack token pooling and telegraphed strikes.
- * - Stalker: Orbits/flanks at medium range, then lunges after a crouch telegraph.
- * - Shardcaster: Maintains ranged standoff distance (backing away if too close) and fires crystal bolts.
- * - Colossus: Slow relentless advance into a line-of-sight heavy ground-ring slam.
+ * Steps all 3 distinct enemy behavior policies with attack token pooling, telegraphed strikes,
+ * and bespoke ecosystem fauna combat profiles!
  */
 export function stepEnemies(
   enemies: EnemyEntity[],
@@ -225,6 +239,7 @@ export function stepEnemies(
   playerInvuln: boolean,
   dt: number,
   completedQuests = 0,
+  faunaKit = 'highland-ironclad',
 ): EnemyStepEvents {
   const events: EnemyStepEvents = {
     playerDamaged: 0,
@@ -234,6 +249,7 @@ export function stepEnemies(
   };
 
   const diff = computeDifficultyMultiplier(completedQuests);
+  const fProf = FAUNA_COMBAT_PROFILES[faunaKit] ?? FAUNA_COMBAT_PROFILES['highland-ironclad'];
   let activeTokens = enemies.filter((e) => e.hasAttackToken && e.state !== 'ko').length;
 
   for (const e of enemies) {
@@ -245,6 +261,11 @@ export function stepEnemies(
       e.koTimer = Math.max(0, e.koTimer - dt);
       e.hasAttackToken = false;
       continue;
+    }
+
+    // Mycelial/aquatic fauna gently regenerate vitality if left unpressured
+    if (fProf.regenPerSec > 0 && e.hp > 0 && e.hp < e.maxHp && e.hitFlashTimer <= 0) {
+      e.hp = Math.min(e.maxHp, e.hp + fProf.regenPerSec * dt);
     }
 
     // Apply decaying knockback velocity
@@ -275,12 +296,12 @@ export function stepEnemies(
     }
 
     e.yaw = Math.atan2(dirX, dirZ);
-    const moveSpd = e.moveSpeed * diff.speedScale;
+    const moveSpd = e.moveSpeed * diff.speedScale * fProf.speedMult;
 
     if (e.state === 'idle') {
       if (dist <= e.aggroRadius) {
         e.state = e.archetype === 'stalker' ? 'orbit' : 'approach';
-        e.stateTimer = 0.7;
+        e.stateTimer = 0.7 * fProf.telegraphMult;
       }
       continue;
     }

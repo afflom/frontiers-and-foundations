@@ -1000,12 +1000,12 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:11a4ec5d93133afc22e89fc8e0ca987b5c4819f373b9ffb87c2278d1e94e1b18",
+    "worldGlbKappa": "sha256:5b8dc7dd0655969879623415b6caa9f6d43026d01c266db40f2b6762e2080a42",
     "vdntKappa": "sha256:df283020479d187b8961c9aaa535b4a8332b987d5ded484ae77a2b7f2e4730ff",
     "skyKappa": "sha256:2e88d477f0c18f7ee923fdda872e0d4a42aa27b54cdd3588fd5358f0b3bf2690",
-    "triangles": 29215,
-    "vertices": 51268,
-    "glbBytes": 2824640,
+    "triangles": 36810,
+    "vertices": 69051,
+    "glbBytes": 3560956,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 13,
     "importedCatalogAssets": [
@@ -1018,7 +1018,7 @@
       "WoodenTable_02",
       "Lantern_01"
     ],
-    "projectModelsRegistered": 10,
+    "projectModelsRegistered": 11,
     "cognitiveKnowledgeIngested": 11,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

@@ -824,13 +824,13 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:d11f3c8be77fd30d24907883a49d41d2b51169cd1d6f3a888677ae7b0c420e70",
+    "worldGlbKappa": "sha256:d078f594a93f72d6a9fe2401a7c20f678f55e5ff7318c78f3231c5cd9afb17ab",
     "vdntKappa": "sha256:a394e95595b7ba11d7629d538680aa8bd0529703826da2cdabe9e772fc7a6e56",
     "skyKappa": "sha256:e3e66cf54f9b64916fe6d2f870e79b0ed6a3038f58880736bb79784cb023348e",
-    "triangles": 27292,
-    "vertices": 48812,
-    "glbBytes": 2808152,
-    "atlasTileCount": 4,
+    "triangles": 26104,
+    "vertices": 46976,
+    "glbBytes": 2747420,
+    "atlasTileCount": 3,
     "importedCatalogModelsCount": 11,
     "importedCatalogAssets": [
       "gothic_statue",
@@ -842,7 +842,7 @@
       "Barrel_01",
       "antique_estoc"
     ],
-    "projectModelsRegistered": 10,
+    "projectModelsRegistered": 11,
     "cognitiveKnowledgeIngested": 10,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

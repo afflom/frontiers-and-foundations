@@ -109,6 +109,8 @@ const DUNGEON_STYLE_OPTIONS: Array<{ id: DungeonArchitecturalStyle; label: strin
   { id: 'catacomb-vault', label: 'Catacomb Vault' },
   { id: 'geothermal-depths', label: 'Geothermal Depths' },
   { id: 'sunken-cistern', label: 'Sunken Cistern' },
+  { id: 'abyssal-grotto', label: 'Abyssal Grotto' },
+  { id: 'echo-tomb', label: 'Echo Tomb' },
   { id: 'glacial-crypt', label: 'Glacial Crypt' },
 ];
 
@@ -116,6 +118,8 @@ const DUNGEON_STYLE_LABELS: Record<DungeonArchitecturalStyle, string> = {
   'catacomb-vault': 'Catacomb Vault',
   'geothermal-depths': 'Geothermal Depths',
   'sunken-cistern': 'Sunken Cistern',
+  'abyssal-grotto': 'Abyssal Grotto',
+  'echo-tomb': 'Echo Tomb',
   'glacial-crypt': 'Glacial Crypt',
 };
 

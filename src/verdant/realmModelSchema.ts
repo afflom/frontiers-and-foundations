@@ -23,6 +23,8 @@ export type DungeonArchitecturalStyle =
   | 'catacomb-vault'
   | 'geothermal-depths'
   | 'sunken-cistern'
+  | 'abyssal-grotto'
+  | 'echo-tomb'
   | 'glacial-crypt';
 
 export interface DungeonEntranceSpec {
@@ -1361,6 +1363,8 @@ export function synthesizeProceduralDungeonSpec(params: {
     'catacomb-vault': 'citadel-highlands',
     'geothermal-depths': 'obsidian-crucible',
     'sunken-cistern': 'sunken-aqueducts',
+    'abyssal-grotto': 'pelagic-spires',
+    'echo-tomb': 'amber-steppe',
     'glacial-crypt': 'glacial-spire',
   };
   const theme = themeByStyle[style];
@@ -1400,6 +1404,22 @@ export function synthesizeProceduralDungeonSpec(params: {
       statueTint: [0.38, 0.52, 0.46],
       lampTint: [0.36, 0.88, 0.68],
     },
+    'abyssal-grotto': {
+      skyAssetId: 'blue_lagoon_night',
+      materials: { terrain: 'coast_sand_rocks_02', masonry: 'stone_wall', road: 'cobblestone_02', timber: 'weathered_brown_planks' },
+      skyFallbackRgb: [0.05, 0.14, 0.20],
+      fogRgb: [0.08, 0.20, 0.28],
+      statueTint: [0.32, 0.62, 0.68],
+      lampTint: [0.28, 0.94, 0.96],
+    },
+    'echo-tomb': {
+      skyAssetId: 'dikhololo_night',
+      materials: { terrain: 'red_sand', masonry: 'red_brick', road: 'cobblestone_04', timber: 'brown_planks_05' },
+      skyFallbackRgb: [0.18, 0.12, 0.07],
+      fogRgb: [0.26, 0.18, 0.10],
+      statueTint: [0.76, 0.58, 0.34],
+      lampTint: [0.98, 0.80, 0.28],
+    },
     'glacial-crypt': {
       skyAssetId: 'blaubeuren_night',
       materials: { terrain: 'asphalt_snow', masonry: 'castle_wall_slates', road: 'snow_02', timber: 'dark_wooden_planks' },
@@ -1417,9 +1437,13 @@ export function synthesizeProceduralDungeonSpec(params: {
       ? 'Magma-Heart Foundry Warden'
       : style === 'sunken-cistern'
         ? 'Abyssal Sluice Leviathan-Golem'
-        : style === 'glacial-crypt'
-          ? 'Frostglass Choir Archon'
-          : 'The Meridian Vault Colossus');
+        : style === 'abyssal-grotto'
+          ? 'Abyssal Shoal Leviathan'
+          : style === 'echo-tomb'
+            ? 'Grand Wind-Harp Automaton'
+            : style === 'glacial-crypt'
+              ? 'Frostglass Choir Archon'
+              : 'The Meridian Vault Colossus');
   const questId = `quest-delve-${slug}`;
   const bossHp = 195 + tier * 35;
 
@@ -1589,7 +1613,7 @@ export const CANONICAL_DUNGEON_SPECS: FrontiersRealmSpec[] = [
     slug: 'glasswater-abyssal-grotto',
     parentRealmSlug: 'glasswater',
     parentRealmName: 'Glasswater',
-    style: 'sunken-cistern',
+    style: 'abyssal-grotto',
     tier: 2,
     bossName: 'Abyssal Shoal Sentinel',
     questTitle: 'Bearings of the Drowned Grotto',
@@ -1600,7 +1624,7 @@ export const CANONICAL_DUNGEON_SPECS: FrontiersRealmSpec[] = [
     slug: 'karveth-echo-tomb',
     parentRealmSlug: 'kar-veth',
     parentRealmName: 'Kar-Veth',
-    style: 'catacomb-vault',
+    style: 'echo-tomb',
     tier: 3,
     bossName: 'Grand Wind-Harp Automaton',
     questTitle: 'Silence in the Resonance Hall',

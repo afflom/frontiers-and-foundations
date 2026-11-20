@@ -42,6 +42,11 @@ export interface HudSnapshot {
   nearbyEnemies: Array<{ id: string; name: string; hp: number; maxHp: number; archetype: EnemyArchetype }>;
   defeatedCount: number;
   waterPosture?: 'dry' | 'wading' | 'swimming';
+  ecosystemBadge?: {
+    title: string;
+    summary: string;
+    layoutTitle: string;
+  };
 }
 
 export interface EngineCallbacks {

@@ -34,6 +34,13 @@ import {
   synthesizeUniverseCell,
 } from './verdantUniverseGenerator';
 import { buildProceduralCellGlb } from './verdantProceduralGlb';
+import {
+  listVerdantCatalogExtensions,
+  registerVerdantCatalogExtension,
+  synthesizeRealmEcosystem,
+  type VerdantCatalogExtensionEntry,
+} from './verdantEcosystemCatalog';
+import { synthesizeDungeonEcosystem } from './verdantDungeonCatalog';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WasmExports = Record<string, any> & { memory: WebAssembly.Memory };
@@ -166,7 +173,7 @@ export const VERDANT_MCP_TOOLS = [
         parentRealmSlug: { type: 'string', description: 'Slug of the parent overworld realm (default: vaelmor).' },
         style: {
           type: 'string',
-          enum: ['catacomb-vault', 'geothermal-depths', 'sunken-cistern', 'glacial-crypt'],
+          enum: ['catacomb-vault', 'geothermal-depths', 'sunken-cistern', 'abyssal-grotto', 'echo-tomb', 'glacial-crypt'],
         },
         tier: { type: 'integer', description: 'Difficulty tier 1-5.' },
         brief: { type: 'string', description: 'Optional architectural or boss concept.' },
@@ -351,6 +358,65 @@ export const VERDANT_MCP_TOOLS = [
       },
     },
   },
+  {
+    name: 'verdant_catalog_extend',
+    description:
+      'Extend the live Verdant Catalog with a new bespoke architectural kit, botanical flora kit, fauna morphology kit, gameplay phenomenon, or Poly Haven prop-kit mapping, and register it natively inside verdant-uorc.wasm.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Unique catalog extension ID (e.g. kit-skybridge-monastery).' },
+        category: {
+          type: 'string',
+          enum: ['layout', 'flora', 'fauna', 'phenomenon', 'prop-kit'],
+        },
+        title: { type: 'string', description: 'Human-readable title of the bespoke catalog kit.' },
+        summary: { type: 'string', description: 'Design and ecological behavior summary.' },
+        polyHavenAssets: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Optional external CC0 Poly Haven asset IDs associated with this kit.',
+        },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+      required: ['id', 'category', 'title'],
+    },
+  },
+  {
+    name: 'verdant_synthesize_ecosystem',
+    description:
+      'Procedurally synthesize a complete bespoke Ecosystem Blueprint (architectural layout primitives, ecological flora clusters, fauna morphology family, live gameplay phenomenon, thermal vents, and atmospheric ambience) for any canonical Realm or boundless UniverseCell (cx, cz), and seal it inside verdant-uorc.wasm.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        realmSlug: { type: 'string', description: 'Canonical realm slug (e.g. oakhaven, cinderfall, glasswater, kar-veth, borealis).' },
+        cx: { type: 'integer', description: 'Optional UniverseCell X coordinate when synthesizing a procedural cell.' },
+        cz: { type: 'integer', description: 'Optional UniverseCell Z coordinate when synthesizing a procedural cell.' },
+      },
+    },
+  },
+  {
+    name: 'verdant_synthesize_dungeon_architecture',
+    description:
+      'Procedurally synthesize a bespoke 3D Dungeon Delve architecture (vaulted chambers, chasm bridge style, sanctum centerpiece, chasm visual, fauna family, active thermal vents, and live phenomenon) from the extensible Verdant Dungeon Catalog, and register it as a DungeonBlueprint Project Model inside verdant-uorc.wasm.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        dungeonSlug: {
+          type: 'string',
+          description: 'Canonical dungeon slug (e.g. vault-of-vaelmor, oakhaven-cistern-labyrinth, cinderfall-magma-delve, glasswater-abyssal-grotto, karveth-echo-tomb, borealis-frostglass-crypt).',
+        },
+        style: {
+          type: 'string',
+          enum: ['catacomb-vault', 'sunken-cistern', 'geothermal-depths', 'abyssal-grotto', 'echo-tomb', 'glacial-crypt'],
+          description: 'Optional architectural style override.',
+        },
+      },
+    },
+  },
 ];
 
 export class VerdantMcpHost {
@@ -425,6 +491,14 @@ export class VerdantMcpHost {
         adapterKind: 'khronos-index',
         endpointUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/model-index.json',
         targetParts: ['hero-props', 'character-rigs'],
+      },
+      {
+        streamId: 'verdant-ecosystem-catalog',
+        label: 'Verdant Extensible Ecosystem & Procedural Synthesis Catalog',
+        authority: 'Frontiers and Foundations Procedural Catalog',
+        adapterKind: 'verdant-catalog',
+        endpointUrl: 'urn:verdant:catalog:ecosystems',
+        targetParts: ['stage-environment', 'hero-props', 'character-rigs'],
       },
     ]) {
       this.stageIo(this.enc.encode(JSON.stringify(stream)));
@@ -1144,8 +1218,8 @@ Pick a mode from: dorian, lydian, phrygian-dominant, mixolydian, aeolian, harmon
       'citadel-highlands': 'catacomb-vault',
       'sunken-aqueducts': 'sunken-cistern',
       'obsidian-crucible': 'geothermal-depths',
-      'pelagic-spires': 'sunken-cistern',
-      'amber-steppe': 'catacomb-vault',
+      'pelagic-spires': 'abyssal-grotto',
+      'amber-steppe': 'echo-tomb',
       'glacial-spire': 'glacial-crypt',
     };
     const dungeonRes = await this.generateNewDungeon({
@@ -1666,6 +1740,219 @@ Pick a mode from: dorian, lydian, phrygian-dominant, mixolydian, aeolian, harmon
           engine: 'verdant-uorc.wasm',
           npc: synth.npc,
           appearance: synth.appearance,
+          projectModel,
+        };
+      }
+
+      case 'verdant_catalog_extend': {
+        const id = String(args.id ?? '').trim();
+        const title = String(args.title ?? '').trim();
+        const validCategories: Array<VerdantCatalogExtensionEntry['category']> = [
+          'layout',
+          'flora',
+          'fauna',
+          'phenomenon',
+          'prop-kit',
+        ];
+        const rawCategory = args.category === 'architecture' ? 'layout' : args.category;
+        const category: VerdantCatalogExtensionEntry['category'] = validCategories.includes(
+          rawCategory as VerdantCatalogExtensionEntry['category'],
+        )
+          ? (rawCategory as VerdantCatalogExtensionEntry['category'])
+          : 'layout';
+        if (!id || !title) {
+          throw new Error('verdant_catalog_extend requires id and title');
+        }
+        const entry = registerVerdantCatalogExtension({
+          id,
+          category,
+          title,
+          description:
+            typeof args.summary === 'string' && args.summary.trim()
+              ? args.summary.trim()
+              : `Custom Verdant ${category} extension "${title}"`,
+          themeAffinity: ['citadel-highlands', 'amber-steppe'],
+          sourceStream: 'verdant-ecosystem-catalog',
+          tags: Array.isArray(args.tags) ? args.tags.map(String) : [category, 'custom-extension'],
+        });
+        this.stageIo(
+          this.enc.encode(
+            JSON.stringify({
+              modelId: `verdant:catalog:${entry.id}`,
+              title: entry.title,
+              schemaType: 'CatalogExtension',
+              mediaType: 'application/vnd.verdant.catalog-kit+json',
+              targetSlot: entry.category === 'fauna' ? 'character-rigs' : 'stage-environment',
+              sourceStream: 'verdant-ecosystem-catalog',
+              sourceUri: `urn:verdant:catalog:${entry.category}:${entry.id}`,
+              licenseSpdx: 'CC0-1.0',
+              tags: ['catalog-extension', entry.category, ...entry.tags],
+              propertiesJson: JSON.stringify(entry),
+              commitNote: `Extended Verdant Catalog with ${entry.category} kit "${entry.title}"`,
+            }),
+          ),
+        );
+        this.wasm.verdant_wasm_import_project_model_io();
+        const projectModel = this.readAuxJson();
+        const catalogKappa = await kappa({
+          extensionId: entry.id,
+          category: entry.category,
+          totalCatalogSize: listVerdantCatalogExtensions().length,
+        });
+        return {
+          engine: 'verdant-uorc.wasm',
+          extension: entry,
+          totalCatalogExtensions: listVerdantCatalogExtensions().length,
+          catalogKappa,
+          projectModel,
+        };
+      }
+
+      case 'verdant_synthesize_ecosystem': {
+        const slug = typeof args.realmSlug === 'string' && args.realmSlug.trim() ? args.realmSlug.trim() : '';
+        const targetSpec = slug
+          ? this.realms.get(slug) ??
+            ALL_CANONICAL_WORLDS.find((w) => w.slug === slug) ??
+            synthesizeUniverseCell(Number(args.cx ?? 0), Number(args.cz ?? 0))
+          : synthesizeUniverseCell(Math.trunc(Number(args.cx ?? 2)), Math.trunc(Number(args.cz ?? -1)));
+        const plan = synthesizeRealmEcosystem(targetSpec);
+        this.stageIo(
+          this.enc.encode(
+            JSON.stringify({
+              modelId: `frontiers:ecosystem:${targetSpec.slug}`,
+              title: `${targetSpec.name} — ${plan.layoutTitle}`,
+              schemaType: 'EcosystemBlueprint',
+              mediaType: 'application/vnd.verdant.ecosystem+json',
+              targetSlot: 'stage-environment',
+              sourceStream: 'verdant-ecosystem-catalog',
+              sourceUri: `urn:frontiers:ecosystem:${targetSpec.slug}`,
+              licenseSpdx: 'CC0-1.0',
+              tags: [
+                'ecosystem-blueprint',
+                plan.layoutId,
+                plan.floraKit,
+                plan.faunaKit,
+                plan.phenomenon.id,
+                targetSpec.slug,
+              ],
+              propertiesJson: JSON.stringify({
+                layoutId: plan.layoutId,
+                floraKit: plan.floraKit,
+                faunaKit: plan.faunaKit,
+                phenomenon: plan.phenomenon,
+                structureCount: plan.structures.length,
+                floraCount: plan.floraInstances.length,
+                thermalVentCount: plan.thermalVents.length,
+              }),
+              commitNote: `Synthesized bespoke EcosystemBlueprint for ${targetSpec.name}`,
+            }),
+          ),
+        );
+        this.wasm.verdant_wasm_import_project_model_io();
+        const projectModel = this.readAuxJson();
+        const ecosystemKappa = await kappa({
+          slug: targetSpec.slug,
+          layoutId: plan.layoutId,
+          floraKit: plan.floraKit,
+          faunaKit: plan.faunaKit,
+          phenomenon: plan.phenomenon.id,
+          structureCount: plan.structures.length,
+          floraCount: plan.floraInstances.length,
+        });
+        return {
+          engine: 'verdant-uorc.wasm',
+          realmSlug: targetSpec.slug,
+          realmName: targetSpec.name,
+          cell: targetSpec.cell,
+          ecosystem: {
+            layoutId: plan.layoutId,
+            layoutTitle: plan.layoutTitle,
+            floraKit: plan.floraKit,
+            floraTitle: plan.floraTitle,
+            faunaKit: plan.faunaKit,
+            faunaTitle: plan.faunaTitle,
+            phenomenon: plan.phenomenon,
+            ambientParticleKind: plan.phenomenon.ambientParticleKind,
+            structureCount: plan.structures.length,
+            floraCount: plan.floraInstances.length,
+            plazaZoneCount: plan.plazaZones.length,
+            thermalVentCount: plan.thermalVents.length,
+            catalogExtensionIds: plan.catalogExtensionIds,
+          },
+          ecosystemKappa,
+          projectModel,
+        };
+      }
+
+      case 'verdant_synthesize_dungeon_architecture': {
+        const slug = String(args.dungeonSlug || '').trim();
+        const styleOverride = args.style ? (String(args.style) as DungeonArchitecturalStyle) : undefined;
+        const baseSpec =
+          (slug ? CANONICAL_DUNGEON_SPECS.find((d) => d.slug === slug) : undefined) ??
+          (styleOverride ? CANONICAL_DUNGEON_SPECS.find((d) => d.dungeonStyle === styleOverride) : undefined) ??
+          CANONICAL_DUNGEON_SPECS[0];
+        const targetSpec: FrontiersRealmSpec = styleOverride
+          ? { ...baseSpec, dungeonStyle: styleOverride }
+          : baseSpec;
+        const dgPlan = synthesizeDungeonEcosystem(targetSpec);
+        this.stageIo(
+          this.enc.encode(
+            JSON.stringify({
+              modelId: `frontiers:dungeon-blueprint:${targetSpec.slug}`,
+              title: `${targetSpec.name} — ${dgPlan.styleTitle}`,
+              schemaType: 'DungeonBlueprint',
+              mediaType: 'application/vnd.verdant.dungeon+json',
+              targetSlot: 'stage-environment',
+              sourceStream: 'verdant-ecosystem-catalog',
+              sourceUri: `urn:frontiers:dungeon-blueprint:${targetSpec.slug}`,
+              licenseSpdx: 'CC0-1.0',
+              tags: [
+                'dungeon-blueprint',
+                dgPlan.style,
+                dgPlan.faunaKit,
+                dgPlan.chasmVisual,
+                dgPlan.phenomenon.id,
+                targetSpec.slug,
+              ],
+              propertiesJson: JSON.stringify({
+                style: dgPlan.style,
+                styleTitle: dgPlan.styleTitle,
+                faunaKit: dgPlan.faunaKit,
+                chasmVisual: dgPlan.chasmVisual,
+                phenomenon: dgPlan.phenomenon.id,
+                structureCount: dgPlan.structures.length,
+                thermalVentCount: dgPlan.thermalVents.length,
+              }),
+              commitNote: `Synthesized bespoke DungeonBlueprint "${dgPlan.styleTitle}" for ${targetSpec.name}`,
+            }),
+          ),
+        );
+        this.wasm.verdant_wasm_import_project_model_io();
+        const projectModel = this.readAuxJson();
+        const dungeonKappa = await kappa({
+          slug: targetSpec.slug,
+          style: dgPlan.style,
+          faunaKit: dgPlan.faunaKit,
+          chasmVisual: dgPlan.chasmVisual,
+          phenomenon: dgPlan.phenomenon.id,
+          structureCount: dgPlan.structures.length,
+          thermalVentCount: dgPlan.thermalVents.length,
+        });
+        return {
+          engine: 'verdant-uorc.wasm',
+          dungeonSlug: targetSpec.slug,
+          dungeonName: targetSpec.name,
+          dungeonArchitecture: {
+            style: dgPlan.style,
+            styleTitle: dgPlan.styleTitle,
+            faunaKit: dgPlan.faunaKit,
+            chasmVisual: dgPlan.chasmVisual,
+            phenomenon: dgPlan.phenomenon,
+            structureCount: dgPlan.structures.length,
+            thermalVentCount: dgPlan.thermalVents.length,
+            catalogExtensionIds: dgPlan.catalogExtensionIds,
+          },
+          dungeonKappa,
           projectModel,
         };
       }

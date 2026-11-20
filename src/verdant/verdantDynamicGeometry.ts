@@ -9,6 +9,7 @@ import {
   type VerdantCharacterAppearance,
 } from './verdantCharacterCompiler';
 import type { WaterPosture, WaterQuadTile } from './verdantEnvironmentPhysics';
+import type { AmbientParticleKind, FaunaKitId } from './verdantEcosystemCatalog';
 
 export interface DynamicParticle {
   active: boolean;
@@ -71,6 +72,10 @@ export interface DynamicSceneInput {
   showCoastalInlet?: boolean;
   isDungeon?: boolean;
   dungeonStyle?: string;
+  faunaKit?: FaunaKitId;
+  thermalVents?: Array<[number, number]>;
+  ambientParticleKind?: AmbientParticleKind;
+  ambientRgb?: [number, number, number];
 }
 
 export interface DynamicBuffers {
@@ -958,20 +963,27 @@ export class VerdantDynamicBatcher {
     const hAt = input.heightAt ?? surfaceHeightAt;
     const waterY = input.waterLevel ?? -1.75;
 
-    // 1. Animated Reflective Water / Dungeon Abyss Chasm (v_m = 1.0 or 3.0)
+    // 1. Animated Reflective Water / 6 Bespoke Dungeon Abyss Chasms (v_m = 1.0 or 3.0)
     if (input.isDungeon) {
       const style = input.dungeonStyle ?? 'catacomb-vault';
       const isMagma = style === 'geothermal-depths';
       const isGlacial = style === 'glacial-crypt';
-      const chasmMat = isMagma || isGlacial ? 3 : 1;
+      const isAbyssal = style === 'abyssal-grotto';
+      const isEcho = style === 'echo-tomb';
+      const isCistern = style === 'sunken-cistern';
+      const chasmMat = isMagma || isGlacial || isEcho ? 3 : 1;
       const pulse = 0.86 + Math.sin(t * 2.2) * 0.14;
       const [cr, cg, cb]: [number, number, number] = isMagma
         ? [0.96 * pulse, 0.34 * pulse, 0.08]
         : isGlacial
-          ? [0.22 * pulse, 0.72 * pulse, 0.96]
-          : style === 'sunken-cistern'
-            ? [0.1, 0.42, 0.48]
-            : [0.12, 0.24, 0.42];
+          ? [0.24 * pulse, 0.78 * pulse, 0.98]
+          : isAbyssal
+            ? [0.10, 0.56 * pulse, 0.64 * pulse]
+            : isEcho
+              ? [0.76 * pulse, 0.54 * pulse, 0.22]
+              : isCistern
+                ? [0.12, 0.48 * pulse, 0.38]
+                : [0.12, 0.24, 0.42];
       for (let gx = -21; gx < 21; gx += 7) {
         this.addQuad(
           [gx, waterY, 4.2],
@@ -983,6 +995,14 @@ export class VerdantDynamicBatcher {
           cb,
           chasmMat,
         );
+      }
+      // Subtle animated chasm surface accent wisps/rings for visual depth
+      for (let ci = 0; ci < 6; ci++) {
+        const cx = -16 + ci * 6.4;
+        const cz = 11.0 + Math.sin(t * 0.9 + ci * 1.4) * 3.8;
+        if (Math.abs(cx) < 3.6) continue;
+        const rPulse = 0.85 + ((t * 0.6 + ci * 0.29) % 1) * 1.1;
+        this.addRing(cx, waterY + 0.08, cz, Math.max(0.2, rPulse - 0.18), rPulse, 14, Math.min(1, cr * 1.25), Math.min(1, cg * 1.25), Math.min(1, cb * 1.25), 3);
       }
     } else if (input.waterTiles && input.waterTiles.length > 0) {
       // Terrain-clipped unified hydrology: water ONLY renders inside submerged riverbeds,
@@ -1041,8 +1061,19 @@ export class VerdantDynamicBatcher {
       }
     }
 
-    // 2. Geothermal Magma Fissure Seams
-    if (input.showMagmaSeams !== false) {
+    // 2. Ecosystem & Dungeon Active Thermal Vents / Geothermal Magma Fissure Seams
+    if (input.thermalVents && input.thermalVents.length > 0) {
+      for (let vi = 0; vi < input.thermalVents.length; vi++) {
+        const [vx, vz] = input.thermalVents[vi];
+        const vy = hAt(vx, vz) + 0.08;
+        const pulse = 0.8 + Math.sin(t * 3.1 + vi * 1.4) * 0.2;
+        this.addRing(vx, vy + 0.04, vz, 0.9, 1.55, 16, 0.98 * pulse, 0.36 * pulse, 0.08, 3);
+        this.addSmoothCylinder(vx, vy - 0.1, vz, 0.95, 0.72, 0.22, 10, 0.14, 0.12, 0.13, 0);
+        // Rising ember plume core above active thermal vent
+        const plumeH = 1.4 + ((t * 1.8 + vi * 0.37) % 1) * 1.6;
+        this.addOctahedron(vx, vy + plumeH, vz, 0.28, 0.55, t * 2.4 + vi, 0.98 * pulse, 0.52 * pulse, 0.12, 3);
+      }
+    } else if (input.showMagmaSeams !== false && !input.isDungeon) {
       const magmaSpots: Array<[number, number, number]> = [
         [-30, -10, 3.6],
         [-26, -13, 2.8],
@@ -1101,7 +1132,21 @@ export class VerdantDynamicBatcher {
       this.addOctahedron(nx, bobY, nz, 0.22, 0.34, t * 1.5, 0.96, 0.78, 0.32, 3);
     }
 
-    // 5. High-Definition Sculpted Hostile Frontier Creatures
+    // 5. High-Definition Bespoke Ecosystem Fauna (6 Distinct Morphology Families)
+    const faunaKit: FaunaKitId = input.faunaKit ?? 'highland-ironclad';
+    const faunaPalette: Record<
+      FaunaKitId,
+      { body: [number, number, number]; accent: [number, number, number]; glow: [number, number, number]; mat: number }
+    > = {
+      'highland-ironclad': { body: [0.24, 0.27, 0.33], accent: [0.68, 0.54, 0.28], glow: [0.96, 0.56, 0.2], mat: 4 },
+      'verdant-mycelial': { body: [0.22, 0.36, 0.24], accent: [0.46, 0.32, 0.22], glow: [0.32, 0.96, 0.58], mat: 4 },
+      'pyroclastic-forge': { body: [0.16, 0.14, 0.16], accent: [0.48, 0.26, 0.18], glow: [0.98, 0.42, 0.1], mat: 2 },
+      'pelagic-abyssal': { body: [0.16, 0.34, 0.42], accent: [0.76, 0.52, 0.42], glow: [0.26, 0.94, 0.92], mat: 4 },
+      'dune-sandstrider': { body: [0.62, 0.46, 0.28], accent: [0.76, 0.6, 0.34], glow: [0.98, 0.78, 0.24], mat: 4 },
+      'glacial-frostborn': { body: [0.56, 0.74, 0.88], accent: [0.78, 0.88, 0.96], glow: [0.44, 0.92, 0.98], mat: 2 },
+    };
+    const fp = faunaPalette[faunaKit];
+
     for (const e of input.enemies) {
       if (e.state === 'ko' && e.koTimer <= 0) continue;
       const ey = hAt(e.x, e.z);
@@ -1109,39 +1154,131 @@ export class VerdantDynamicBatcher {
       const tele = e.state === 'telegraph';
       const koScale = e.state === 'ko' ? Math.max(0.15, e.koTimer / 0.45) : 1.0;
       const sy = Math.sin(e.yaw), cy = Math.cos(e.yaw);
+      const bR = flash ? 0.98 : tele ? 0.94 : fp.body[0];
+      const bG = flash ? 0.96 : tele ? 0.46 : fp.body[1];
+      const bB = flash ? 0.92 : tele ? 0.22 : fp.body[2];
+      const gR = tele ? 0.98 : fp.glow[0];
+      const gG = tele ? 0.48 : fp.glow[1];
+      const gB = tele ? 0.16 : fp.glow[2];
+      const mat = flash ? 3 : fp.mat;
 
       if (e.archetype === 'stalker') {
-        const bodyR = flash ? 0.98 : tele ? 0.92 : 0.24;
-        const bodyG = flash ? 0.96 : tele ? 0.42 : 0.27;
-        const bodyB = flash ? 0.9 : tele ? 0.16 : 0.33;
-        const crouch = tele ? -0.16 : Math.sin(t * 9 + e.x) * 0.05;
-        const mat = flash ? 3 : 4;
-        // Sculpted muscular hound torso + tapered haunches
-        this.addSmoothSphere(e.x, ey + (0.72 + crouch) * koScale, e.z, 0.38 * koScale, 0.32 * koScale, 0.72 * koScale, bodyR, bodyG, bodyB, mat, e.yaw, 10, 5);
-        // Sculpted snarling head + glowing amber predator eyes
-        const hx = e.x + sy * 0.76 * koScale;
-        const hz = e.z + cy * 0.76 * koScale;
-        this.addSmoothSphere(hx, ey + (0.86 + crouch) * koScale, hz, 0.24 * koScale, 0.22 * koScale, 0.32 * koScale, bodyR * 0.9, bodyG * 0.9, bodyB * 0.95, mat, e.yaw, 10, 5);
-        for (const side of [-0.11, 0.11]) {
-          this.addSmoothSphere(hx + side * cy * koScale + sy * 0.2 * koScale, ey + (0.91 + crouch) * koScale, hz - side * sy * koScale + cy * 0.2 * koScale, 0.04 * koScale, 0.03 * koScale, 0.04 * koScale, 0.98, 0.64, 0.16, 3, e.yaw, 6, 4);
-        }
-        // Glowing dorsal crystalline ridge plates
-        this.addOctahedron(e.x, ey + (1.16 + crouch) * koScale, e.z, 0.22 * koScale, 0.42 * koScale, e.yaw, 0.96, 0.56, 0.2, 3);
-        this.addOctahedron(e.x - sy * 0.4 * koScale, ey + (1.02 + crouch) * koScale, e.z - cy * 0.4 * koScale, 0.16 * koScale, 0.3 * koScale, e.yaw, 0.95, 0.48, 0.18, 3);
-        // Articulated smooth legs
-        for (const [lx, lz] of [[-0.28, 0.44], [0.28, 0.44], [-0.28, -0.44], [0.28, -0.44]]) {
-          this.addSmoothCylinder(e.x + lx * cy + lz * sy, ey, e.z - lx * sy + lz * cy, 0.08 * koScale, 0.11 * koScale, 0.64 * koScale, 8, 0.18, 0.19, 0.23, 4, e.yaw);
+        const crouch = tele ? -0.15 : Math.sin(t * 8.5 + e.x) * 0.05;
+        if (faunaKit === 'verdant-mycelial') {
+          // Spore-Stag Quadruped with bioluminescent branching antlers & fungal back-cap
+          this.addSmoothSphere(e.x, ey + (0.86 + crouch) * koScale, e.z, 0.36 * koScale, 0.34 * koScale, 0.68 * koScale, bR, bG, bB, mat, e.yaw, 10, 5);
+          this.addSmoothCylinder(e.x, ey + (1.12 + crouch) * koScale, e.z, 0.56 * koScale, 0.24 * koScale, 0.24 * koScale, 10, gR * 0.72, gG * 0.86, gB * 0.65, 3, e.yaw);
+          const hx = e.x + sy * 0.72 * koScale;
+          const hz = e.z + cy * 0.72 * koScale;
+          this.addSmoothSphere(hx, ey + (1.18 + crouch) * koScale, hz, 0.22 * koScale, 0.22 * koScale, 0.3 * koScale, bR, bG, bB, mat, e.yaw, 8, 4);
+          // Glowing antlers
+          for (const side of [-1, 1]) {
+            this.addBox(hx + side * 0.26 * cy * koScale, ey + (1.58 + crouch) * koScale, hz - side * 0.26 * sy * koScale, 0.08 * koScale, 0.62 * koScale, 0.08 * koScale, e.yaw + side * 0.35, gR, gG, gB, 3);
+            this.addBox(hx + side * 0.42 * cy * koScale, ey + (1.76 + crouch) * koScale, hz - side * 0.42 * sy * koScale, 0.07 * koScale, 0.34 * koScale, 0.07 * koScale, e.yaw + side * 0.7, gR, gG, gB, 3);
+          }
+          for (const [lx, lz] of [[-0.24, 0.44], [0.24, 0.44], [-0.24, -0.44], [0.24, -0.44]]) {
+            this.addSmoothCylinder(e.x + lx * cy + lz * sy, ey, e.z - lx * sy + lz * cy, 0.07 * koScale, 0.09 * koScale, 0.78 * koScale, 8, fp.accent[0], fp.accent[1], fp.accent[2], 4, e.yaw);
+          }
+        } else if (faunaKit === 'pyroclastic-forge') {
+          // Magma-Armored Salamander Drake with broad anvil head & blazing furnace tail
+          this.addSmoothSphere(e.x, ey + (0.58 + crouch) * koScale, e.z, 0.5 * koScale, 0.28 * koScale, 0.82 * koScale, bR, bG, bB, mat, e.yaw, 10, 5);
+          this.addBox(e.x, ey + (0.86 + crouch) * koScale, e.z, 0.56 * koScale, 0.14 * koScale, 1.05 * koScale, e.yaw, gR, gG, gB, 3);
+          const hx = e.x + sy * 0.88 * koScale;
+          const hz = e.z + cy * 0.88 * koScale;
+          this.addBox(hx, ey + (0.68 + crouch) * koScale, hz, 0.46 * koScale, 0.28 * koScale, 0.44 * koScale, e.yaw, bR, bG, bB, 2);
+          this.addOctahedron(e.x - sy * 0.92 * koScale, ey + (0.64 + crouch) * koScale, e.z - cy * 0.92 * koScale, 0.26 * koScale, 0.48 * koScale, t * 3, gR, gG, gB, 3);
+          for (const [lx, lz] of [[-0.42, 0.44], [0.42, 0.44], [-0.42, -0.44], [0.42, -0.44]]) {
+            this.addSmoothCylinder(e.x + lx * cy + lz * sy, ey, e.z - lx * sy + lz * cy, 0.11 * koScale, 0.14 * koScale, 0.52 * koScale, 8, 0.22, 0.16, 0.14, 2, e.yaw);
+          }
+        } else if (faunaKit === 'pelagic-abyssal') {
+          // Coral-Armored Tide-Crab with twin pincer claws & bioluminescent shell
+          this.addSmoothSphere(e.x, ey + (0.66 + crouch) * koScale, e.z, 0.68 * koScale, 0.34 * koScale, 0.54 * koScale, bR, bG, bB, mat, e.yaw, 10, 5);
+          this.addRing(e.x, ey + (0.86 + crouch) * koScale, e.z, 0.32 * koScale, 0.52 * koScale, 12, gR, gG, gB, 3);
+          for (const side of [-1, 1]) {
+            const cx = e.x + side * 0.62 * cy * koScale + sy * 0.56 * koScale;
+            const cz = e.z - side * 0.62 * sy * koScale + cy * 0.56 * koScale;
+            this.addSmoothSphere(cx, ey + (0.66 + crouch) * koScale, cz, 0.24 * koScale, 0.18 * koScale, 0.34 * koScale, fp.accent[0], fp.accent[1], fp.accent[2], 4, e.yaw, 8, 4);
+            this.addSmoothCylinder(e.x + side * 0.56 * cy * koScale, ey, e.z - side * 0.56 * sy * koScale, 0.06 * koScale, 0.08 * koScale, 0.58 * koScale, 6, bR, bG, bB, 4, e.yaw);
+          }
+        } else if (faunaKit === 'dune-sandstrider') {
+          // Chitinous Desert Scorpion with arched venomous stinger tail
+          this.addSmoothSphere(e.x, ey + (0.56 + crouch) * koScale, e.z, 0.44 * koScale, 0.24 * koScale, 0.78 * koScale, bR, bG, bB, mat, e.yaw, 10, 5);
+          // Curved stinger tail rising over back
+          for (let seg = 0; seg < 4; seg++) {
+            const tx = e.x - sy * (0.68 - seg * 0.22) * koScale;
+            const tz = e.z - cy * (0.68 - seg * 0.22) * koScale;
+            const ty = ey + (0.72 + seg * 0.34 + crouch) * koScale;
+            this.addSmoothSphere(tx, ty, tz, (0.18 - seg * 0.025) * koScale, 0.16 * koScale, 0.18 * koScale, seg === 3 ? gR : fp.accent[0], seg === 3 ? gG : fp.accent[1], seg === 3 ? gB : fp.accent[2], seg === 3 ? 3 : 4, e.yaw, 8, 4);
+          }
+          for (const [lx, lz] of [[-0.38, 0.38], [0.38, 0.38], [-0.44, 0], [0.44, 0], [-0.36, -0.38], [0.36, -0.38]]) {
+            this.addSmoothCylinder(e.x + lx * cy + lz * sy, ey, e.z - lx * sy + lz * cy, 0.06 * koScale, 0.08 * koScale, 0.48 * koScale, 6, fp.accent[0], fp.accent[1], fp.accent[2], 4, e.yaw);
+          }
+        } else if (faunaKit === 'glacial-frostborn') {
+          // Crystalline Frost-Wolf with faceted ice-shard mane & aurora eyes
+          this.addSmoothSphere(e.x, ey + (0.78 + crouch) * koScale, e.z, 0.36 * koScale, 0.32 * koScale, 0.76 * koScale, bR, bG, bB, mat, e.yaw, 10, 5);
+          this.addOctahedron(e.x + sy * 0.34 * koScale, ey + (1.16 + crouch) * koScale, e.z + cy * 0.34 * koScale, 0.38 * koScale, 0.48 * koScale, e.yaw, gR, gG, gB, 3);
+          this.addOctahedron(e.x - sy * 0.36 * koScale, ey + (1.08 + crouch) * koScale, e.z - cy * 0.36 * koScale, 0.26 * koScale, 0.4 * koScale, e.yaw + 0.5, fp.accent[0], fp.accent[1], fp.accent[2], 2);
+          const hx = e.x + sy * 0.82 * koScale;
+          const hz = e.z + cy * 0.82 * koScale;
+          this.addSmoothSphere(hx, ey + (0.94 + crouch) * koScale, hz, 0.22 * koScale, 0.22 * koScale, 0.34 * koScale, fp.accent[0], fp.accent[1], fp.accent[2], 2, e.yaw, 8, 4);
+          for (const [lx, lz] of [[-0.26, 0.46], [0.26, 0.46], [-0.26, -0.46], [0.26, -0.46]]) {
+            this.addSmoothCylinder(e.x + lx * cy + lz * sy, ey, e.z - lx * sy + lz * cy, 0.08 * koScale, 0.1 * koScale, 0.68 * koScale, 8, fp.accent[0], fp.accent[1], fp.accent[2], 2, e.yaw);
+          }
+        } else {
+          // Highland Ironclad Slate Hound
+          this.addSmoothSphere(e.x, ey + (0.72 + crouch) * koScale, e.z, 0.38 * koScale, 0.32 * koScale, 0.72 * koScale, bR, bG, bB, mat, e.yaw, 10, 5);
+          const hx = e.x + sy * 0.76 * koScale;
+          const hz = e.z + cy * 0.76 * koScale;
+          this.addSmoothSphere(hx, ey + (0.86 + crouch) * koScale, hz, 0.24 * koScale, 0.22 * koScale, 0.32 * koScale, bR * 0.9, bG * 0.9, bB * 0.95, mat, e.yaw, 10, 5);
+          for (const side of [-0.11, 0.11]) {
+            this.addSmoothSphere(hx + side * cy * koScale + sy * 0.2 * koScale, ey + (0.91 + crouch) * koScale, hz - side * sy * koScale + cy * 0.2 * koScale, 0.04 * koScale, 0.03 * koScale, 0.04 * koScale, gR, gG, gB, 3, e.yaw, 6, 4);
+          }
+          this.addOctahedron(e.x, ey + (1.16 + crouch) * koScale, e.z, 0.22 * koScale, 0.42 * koScale, e.yaw, gR, gG, gB, 3);
+          this.addOctahedron(e.x - sy * 0.4 * koScale, ey + (1.02 + crouch) * koScale, e.z - cy * 0.4 * koScale, 0.16 * koScale, 0.3 * koScale, e.yaw, gR, gG * 0.85, gB, 3);
+          for (const [lx, lz] of [[-0.28, 0.44], [0.28, 0.44], [-0.28, -0.44], [0.28, -0.44]]) {
+            this.addSmoothCylinder(e.x + lx * cy + lz * sy, ey, e.z - lx * sy + lz * cy, 0.08 * koScale, 0.11 * koScale, 0.64 * koScale, 8, 0.18, 0.19, 0.23, 4, e.yaw);
+          }
         }
         if (tele) {
           this.addRing(e.x, ey + 0.12, e.z, 1.2, 1.65, 16, 0.96, 0.42, 0.14, 3);
         }
       } else if (e.archetype === 'shardcaster') {
-        const hover = ey + 1.45 + Math.sin(t * 3.1 + e.z) * 0.22;
-        // Sculpted levitating arcane robe + metallic chest core + hooded cowl
-        this.addSmoothCylinder(e.x, hover - 0.8 * koScale, e.z, 0.18 * koScale, 0.42 * koScale, 1.18 * koScale, 12, flash ? 0.98 : 0.22, flash ? 0.96 : 0.32, flash ? 0.92 : 0.46, flash ? 3 : 4, e.yaw);
-        this.addSmoothSphere(e.x, hover + 0.55 * koScale, e.z, 0.26 * koScale, 0.28 * koScale, 0.28 * koScale, flash ? 0.98 : 0.18, flash ? 0.96 : 0.26, flash ? 0.9 : 0.38, flash ? 3 : 4, e.yaw, 10, 5);
-        this.addOctahedron(e.x, hover + 0.05 * koScale, e.z, 0.26 * koScale, 0.42 * koScale, t * 2, 0.38, 0.92, 0.94, 3);
-        this.addRing(e.x, hover - 0.1, e.z, 0.72 * koScale, 0.86 * koScale, 16, tele ? 0.98 : 0.34, tele ? 0.52 : 0.86, tele ? 0.2 : 0.92, 3);
+        const hover = ey + 1.48 + Math.sin(t * 3.1 + e.z) * 0.24;
+        if (faunaKit === 'verdant-mycelial') {
+          // Floating Bioluminescent Spore-Jellyfish with trailing tendrils
+          this.addSmoothSphere(e.x, hover + 0.36 * koScale, e.z, 0.72 * koScale, 0.38 * koScale, 0.72 * koScale, gR * 0.85, gG, gB * 0.8, 3, e.yaw, 12, 6);
+          for (let ti = 0; ti < 5; ti++) {
+            const ang = t * 1.1 + (ti * Math.PI * 2) / 5;
+            this.addSmoothCylinder(e.x + Math.cos(ang) * 0.36 * koScale, hover - 0.62 * koScale, e.z + Math.sin(ang) * 0.36 * koScale, 0.05 * koScale, 0.07 * koScale, 0.95 * koScale, 6, bR, bG + 0.2, bB, 4, e.yaw);
+          }
+          this.addRing(e.x, hover + 0.08 * koScale, e.z, 0.74 * koScale, 0.92 * koScale, 16, gR, gG, gB, 3);
+        } else if (faunaKit === 'pyroclastic-forge') {
+          // Levitating Molten Crucible Censer with orbiting slag chains
+          this.addSmoothCylinder(e.x, hover - 0.36 * koScale, e.z, 0.54 * koScale, 0.36 * koScale, 0.72 * koScale, 10, bR, bG, bB, 2, t * 0.8);
+          this.addOctahedron(e.x, hover + 0.24 * koScale, e.z, 0.46 * koScale, 0.62 * koScale, -t * 2.1, gR, gG, gB, 3);
+          this.addRing(e.x, hover + 0.02 * koScale, e.z, 0.82 * koScale, 1.0 * koScale, 16, gR, gG, gB, 3);
+        } else if (faunaKit === 'pelagic-abyssal') {
+          // Levitating Abyssal Manta Ray with sweeping bioluminescent wingtips
+          this.addSmoothSphere(e.x, hover + 0.1 * koScale, e.z, 1.18 * koScale, 0.16 * koScale, 0.72 * koScale, bR, bG, bB, mat, e.yaw, 12, 5);
+          this.addOctahedron(e.x, hover + 0.28 * koScale, e.z, 0.3 * koScale, 0.22 * koScale, e.yaw, gR, gG, gB, 3);
+          this.addSmoothCylinder(e.x - sy * 0.8 * koScale, hover, e.z - cy * 0.8 * koScale, 0.05 * koScale, 0.1 * koScale, 0.85 * koScale, 6, gR, gG, gB, 3, e.yaw);
+        } else if (faunaKit === 'dune-sandstrider') {
+          // Swirling Sun-Djinn Brass Astrolabe Spirit with twin gyroscopic rings
+          this.addOctahedron(e.x, hover + 0.12 * koScale, e.z, 0.38 * koScale, 0.78 * koScale, t * 2.6, gR, gG, gB, 3);
+          this.addRing(e.x, hover + 0.12 * koScale, e.z, 0.76 * koScale, 0.94 * koScale, 18, fp.accent[0], fp.accent[1], fp.accent[2], 2);
+          this.addRing(e.x, hover - 0.34 * koScale, e.z, 0.46 * koScale, 0.64 * koScale, 14, gR, gG, gB, 3);
+        } else if (faunaKit === 'glacial-frostborn') {
+          // Aurora Prism Wraith — tall floating diamond crystal spire with halo shards
+          this.addOctahedron(e.x, hover + 0.15 * koScale, e.z, 0.44 * koScale, 1.18 * koScale, t * 1.4, gR, gG, gB, 3);
+          this.addRing(e.x, hover + 0.55 * koScale, e.z, 0.7 * koScale, 0.86 * koScale, 16, fp.accent[0], fp.accent[1], fp.accent[2], 3);
+        } else {
+          // Highland Arcane Shardcaster
+          this.addSmoothCylinder(e.x, hover - 0.8 * koScale, e.z, 0.18 * koScale, 0.42 * koScale, 1.18 * koScale, 12, bR, bG, bB, flash ? 3 : 4, e.yaw);
+          this.addSmoothSphere(e.x, hover + 0.55 * koScale, e.z, 0.26 * koScale, 0.28 * koScale, 0.28 * koScale, bR * 0.85, bG * 0.85, bB * 0.9, flash ? 3 : 4, e.yaw, 10, 5);
+          this.addOctahedron(e.x, hover + 0.05 * koScale, e.z, 0.26 * koScale, 0.42 * koScale, t * 2, gR, gG, gB, 3);
+          this.addRing(e.x, hover - 0.1, e.z, 0.72 * koScale, 0.86 * koScale, 16, gR, gG, gB, 3);
+        }
+        // Orbiting harmonic shards for all caster families
         for (let s = 0; s < 3; s++) {
           const ang = t * 2.4 + (s * Math.PI * 2) / 3;
           this.addOctahedron(
@@ -1151,36 +1288,58 @@ export class VerdantDynamicBatcher {
             0.2 * koScale,
             0.44 * koScale,
             -ang,
-            tele ? 0.98 : 0.36,
-            tele ? 0.54 : 0.92,
-            tele ? 0.22 : 0.86,
+            gR,
+            gG,
+            gB,
             3,
           );
         }
       } else {
-        // Massive Sculpted Basalt Tide-Colossus Warden Boss
+        // Massive Bespoke Ecosystem Apex Warden Colossus
         const s = 1.65 * koScale;
         const lift = tele ? 0.38 : 0;
-        const bMat = flash ? 3 : 0;
-        // Sculpted columnar stone legs
+        const bMat = flash ? 3 : fp.mat === 2 ? 2 : 0;
+        // Legs
         for (const side of [-0.46, 0.46]) {
-          this.addSmoothCylinder(e.x + side * s * cy, ey, e.z - side * s * sy, 0.34 * s, 0.4 * s, 0.92 * s, 10, 0.24, 0.25, 0.28, bMat, e.yaw);
+          this.addSmoothCylinder(e.x + side * s * cy, ey, e.z - side * s * sy, 0.34 * s, 0.4 * s, 0.92 * s, 10, bR, bG, bB, bMat, e.yaw);
         }
-        // Tapered monolith torso + glowing magma core
-        this.addSmoothCylinder(e.x, ey + 0.72 * s, e.z, 0.62 * s, 0.86 * s, 1.18 * s, 12, flash ? 0.98 : 0.22, flash ? 0.95 : 0.23, flash ? 0.88 : 0.27, bMat, e.yaw, 0, 0, 0.78);
-        this.addOctahedron(e.x, ey + 1.22 * s, e.z, 0.58 * s, 0.62 * s, t, 0.98, 0.44, 0.14, 3);
-        // Sculpted bronze shoulder pauldrons & slamming rune-inscribed gauntlets
+        // Biome-specific torso + crown
+        this.addSmoothCylinder(e.x, ey + 0.72 * s, e.z, 0.62 * s, 0.86 * s, 1.18 * s, 12, bR, bG, bB, bMat, e.yaw, 0, 0, 0.78);
+        this.addOctahedron(e.x, ey + 1.22 * s, e.z, 0.58 * s, 0.62 * s, t, gR, gG, gB, 3);
+        if (faunaKit === 'verdant-mycelial') {
+          // Giant Treant Canopy-Crown
+          this.addSmoothSphere(e.x, ey + 2.38 * s, e.z, 1.15 * s, 0.58 * s, 1.05 * s, 0.18, 0.48, 0.24, 4, e.yaw, 10, 5);
+        } else if (faunaKit === 'pyroclastic-forge') {
+          // Twin Forge Smokestack Shoulders
+          for (const side of [-0.66, 0.66]) {
+            this.addSmoothCylinder(e.x + side * s * cy, ey + 1.85 * s, e.z - side * s * sy, 0.24 * s, 0.18 * s, 0.95 * s, 8, 0.14, 0.12, 0.14, 2, e.yaw);
+            this.addOctahedron(e.x + side * s * cy, ey + 2.95 * s, e.z - side * s * sy, 0.24 * s, 0.42 * s, t * 2, gR, gG, gB, 3);
+          }
+        } else if (faunaKit === 'pelagic-abyssal') {
+          // Coral Reef Spire Crest
+          this.addOctahedron(e.x, ey + 2.55 * s, e.z, 0.52 * s, 0.86 * s, e.yaw, fp.accent[0], fp.accent[1], fp.accent[2], 3);
+        } else if (faunaKit === 'dune-sandstrider') {
+          // Golden Sun-Disk Halo behind sandstone colossus
+          this.addRing(e.x, ey + 2.15 * s, e.z, 0.76 * s, 1.05 * s, 18, gR, gG, gB, 3);
+        } else if (faunaKit === 'glacial-frostborn') {
+          // Crown of Ice Obelisks
+          for (let ci = 0; ci < 5; ci++) {
+            const ang = (ci * Math.PI * 2) / 5;
+            this.addOctahedron(e.x + Math.cos(ang) * 0.52 * s, ey + 2.35 * s, e.z + Math.sin(ang) * 0.52 * s, 0.18 * s, 0.62 * s, ang, gR, gG, gB, 3);
+          }
+        }
+        // Sculpted shoulder pauldrons & slamming gauntlets
         for (const side of [-1, 1]) {
           const sx = e.x + side * 1.02 * s * cy;
           const sz = e.z - side * 1.02 * s * sy;
-          this.addSmoothSphere(sx, ey + 1.72 * s, sz, 0.46 * s, 0.34 * s, 0.46 * s, 0.42, 0.36, 0.28, 2, e.yaw, 10, 5);
+          this.addSmoothSphere(sx, ey + 1.72 * s, sz, 0.46 * s, 0.34 * s, 0.46 * s, fp.accent[0], fp.accent[1], fp.accent[2], 2, e.yaw, 10, 5);
           const fx = e.x + side * 1.08 * s * cy + 0.32 * s * sy;
           const fz = e.z - side * 1.08 * s * sy + 0.32 * s * cy;
-          this.addSmoothCylinder(fx, ey + (0.68 + lift) * s, fz, 0.34 * s, 0.28 * s, 0.95 * s, 10, 0.32, 0.28, 0.26, 2, e.yaw);
+          this.addSmoothCylinder(fx, ey + (0.68 + lift) * s, fz, 0.34 * s, 0.28 * s, 0.95 * s, 10, fp.accent[0] * 0.82, fp.accent[1] * 0.82, fp.accent[2] * 0.82, 2, e.yaw);
         }
-        // Crowned Warden head + glowing visor slit
-        this.addSmoothSphere(e.x, ey + 2.06 * s, e.z, 0.38 * s, 0.36 * s, 0.38 * s, 0.28, 0.29, 0.33, bMat, e.yaw, 10, 5);
-        this.addBox(e.x + sy * 0.34 * s, ey + 2.08 * s, e.z + cy * 0.34 * s, 0.42 * s, 0.09 * s, 0.1 * s, e.yaw, 0.98, 0.52, 0.16, 3);
+        // Warden head + glowing visor slit
+        this.addSmoothSphere(e.x, ey + 2.06 * s, e.z, 0.38 * s, 0.36 * s, 0.38 * s, bR, bG, bB, bMat, e.yaw, 10, 5);
+        this.addBox(e.x + sy * 0.34 * s, ey + 2.08 * s, e.z + cy * 0.34 * s, 0.42 * s, 0.09 * s, 0.1 * s, e.yaw, gR, gG, gB, 3);
         if (tele) {
           this.addRing(e.x, ey + 0.15, e.z, 3.6, 4.35, 24, 0.98, 0.34, 0.12, 3);
         }
@@ -1194,20 +1353,25 @@ export class VerdantDynamicBatcher {
       const isHighlight = item.id === input.highlightInteractableId;
       const activeCol: [number, number, number] = item.activated ? [0.96, 0.78, 0.3] : [0.34, 0.88, 0.82];
 
+      const ecoTint = input.ambientRgb ?? [0.95, 0.78, 0.32];
+      const beaconCol: [number, number, number] = item.activated
+        ? [ecoTint[0], ecoTint[1], ecoTint[2]]
+        : [activeCol[0] * 0.65 + ecoTint[0] * 0.35, activeCol[1] * 0.65 + ecoTint[1] * 0.35, activeCol[2] * 0.65 + ecoTint[2] * 0.35];
+
       if (item.kind === 'waystone-beacon') {
         this.addSmoothCylinder(ix, iy, iz, 0.78, 0.66, 1.1, 8, 0.45, 0.42, 0.38, 0);
         this.addSmoothCylinder(ix, iy + 1.08, iz, 0.82, 0.82, 0.18, 8, 0.84, 0.66, 0.3, 2);
         const cy = iy + 2.55 + Math.sin(t * 2.2 + ix) * 0.22;
-        this.addOctahedron(ix, cy, iz, 0.65, 1.15, t * 0.9, activeCol[0], activeCol[1], activeCol[2], 3);
-        this.addRing(ix, iy + 0.14, iz, 1.5, isHighlight ? 2.1 : 1.85, 18, activeCol[0], activeCol[1], activeCol[2], 3);
+        this.addOctahedron(ix, cy, iz, 0.65, 1.15, t * 0.9, beaconCol[0], beaconCol[1], beaconCol[2], 3);
+        this.addRing(ix, iy + 0.14, iz, 1.5, isHighlight ? 2.1 : 1.85, 18, beaconCol[0], beaconCol[1], beaconCol[2], 3);
       } else if (item.kind === 'forge-bell') {
         const swing = item.activated ? Math.sin(t * 5.0) * 0.22 : Math.sin(t * 1.1) * 0.04;
         this.addBox(ix, iy + 4.4, iz, 2.2, 0.35, 0.35, 0, 0.55, 0.38, 0.22, 0);
         this.addSmoothCylinder(ix, iy + 2.15, iz, 0.92, 0.54, 1.68, 14, 0.88, 0.66, 0.28, 2, swing);
-        this.addRing(ix, iy + 0.14, iz, 1.8, 2.2, 18, activeCol[0], activeCol[1], activeCol[2], 3);
+        this.addRing(ix, iy + 0.14, iz, 1.8, 2.2, 18, beaconCol[0], beaconCol[1], beaconCol[2], 3);
       } else if (item.kind === 'resonance-pier') {
         this.addSmoothCylinder(ix, iy, iz, 1.15, 1.05, 0.24, 12, 0.88, 0.68, 0.32, 2);
-        this.addRing(ix, iy + 0.26, iz, 0.85, 1.25, 16, activeCol[0], activeCol[1], activeCol[2], 3);
+        this.addRing(ix, iy + 0.26, iz, 0.85, 1.25, 16, beaconCol[0], beaconCol[1], beaconCol[2], 3);
       } else if (item.kind === 'silicate-relic' && !item.activated) {
         const pulse = 0.85 + Math.sin(t * 3.4 + ix) * 0.15;
         this.addOctahedron(ix, iy + 0.55, iz, 0.55, 0.65, t * 0.8, 0.32 * pulse, 0.92 * pulse, 0.72 * pulse, 3);
@@ -1270,7 +1434,9 @@ export class VerdantDynamicBatcher {
         pulsing ? 0.65 : 0,
         t,
       );
-      this.addOctahedron(rp.x, ry + 2.45 + Math.sin(t * 3 + rp.x) * 0.1, rp.z, 0.18, 0.26, t * 2, 0.42, 0.92, 0.8, 3);
+      if (Math.hypot(rp.x - input.playerX, rp.z - input.playerZ) > 2.5) {
+        this.addOctahedron(rp.x, ry + 2.42 + Math.sin(t * 3 + rp.x) * 0.08, rp.z, 0.10, 0.15, t * 2, 0.42, 0.92, 0.8, 3);
+      }
     }
 
     // 9. Projectiles & Combat Slashes / Shockwave Rings
@@ -1327,11 +1493,102 @@ export class VerdantDynamicBatcher {
       }
     }
 
-    // 11. Active Particles
+    // 11. Active Particles + Bespoke Ecosystem Floating Atmospheric Ambience
     for (const p of input.particles) {
       if (!p.active) continue;
       const s = p.scale * (p.life / Math.max(0.01, p.maxLife));
       this.addOctahedron(p.x, p.y, p.z, s, s, t * 5 + p.x, p.r, p.g, p.b, p.matCode);
+    }
+
+    if (input.ambientParticleKind) {
+      const [ar, ag, ab] = input.ambientRgb ?? [0.95, 0.82, 0.46];
+      const kind = input.ambientParticleKind;
+      const count = input.isDungeon ? 20 : 24;
+      for (let i = 0; i < count; i++) {
+        const ang = (i * 2.39996) + t * (kind === 'desert-sand' ? 0.55 : kind === 'volcanic-embers' ? 0.18 : 0.12);
+        const rad = (input.isDungeon ? 3.5 : 5.5) + ((i * 7.13) % (input.isDungeon ? 11.5 : 16.5));
+        const driftX = kind === 'desert-sand' ? Math.sin(t * 2.4 + i) * 3.8 : Math.cos(ang) * rad;
+        const driftZ = kind === 'desert-sand' ? Math.cos(t * 1.9 + i) * 14.0 : Math.sin(ang) * rad;
+        const ax = input.playerX + driftX;
+        const az = input.playerZ + driftZ;
+        // Keep the close third-person camera lens corridor clear so particles never photobomb the lens
+        if (Math.abs(ax - input.playerX) < 3.4 && az > input.playerZ + 2.0 && az < input.playerZ + 12.5) {
+          continue;
+        }
+        const baseY = hAt(ax, az);
+        let ay = baseY + 1.5;
+        let sz = 0.075;
+        if (kind === 'volcanic-embers') {
+          ay = baseY + 0.6 + ((t * 1.85 + i * 0.71) % 6.8);
+          sz = 0.09;
+        } else if (kind === 'aurora-snow') {
+          ay = baseY + 7.2 - ((t * 1.35 + i * 0.83) % 6.6);
+          sz = 0.08;
+        } else if (kind === 'emerald-spores') {
+          ay = baseY + 1.1 + Math.sin(t * 1.6 + i * 1.3) * 1.2 + (i % 3) * 0.8;
+          sz = 0.095;
+        } else if (kind === 'sea-mist') {
+          ay = baseY + 0.9 + Math.sin(t * 1.2 + i) * 0.6 + (i % 3) * 0.65;
+          sz = 0.10;
+        } else if (kind === 'desert-sand') {
+          ay = baseY + 0.45 + ((i * 0.47) % 2.4);
+          sz = 0.07;
+        } else {
+          ay = baseY + 1.6 + Math.sin(t * 1.4 + i * 1.1) * 0.9 + (i % 4) * 0.7;
+          sz = 0.08;
+        }
+        this.addOctahedron(ax, ay, az, sz, sz * 1.2, t * 2.2 + i, ar, ag, ab, 3);
+      }
+
+      // 12. High-Altitude Biome Sky Ambience (Overworld Polar Aurora Ribbons, Caldera Plumes, Solar Halo)
+      if (!input.isDungeon) {
+        if (kind === 'aurora-snow') {
+          // Undulating Polar Aurora Borealis sky ribbons arcing high across Borealis Glacier's northern sky
+          for (let band = 0; band < 2; band++) {
+            const zBase = -52 - band * 24;
+            const yBase = 29 + band * 6.5;
+            for (let seg = 0; seg < 10; seg++) {
+              const x0 = -64 + seg * 13.5;
+              const x1 = x0 + 13.5;
+              const z0 = zBase + Math.sin(t * 0.55 + seg * 0.65 + band * 1.8) * 7.5;
+              const z1 = zBase + Math.sin(t * 0.55 + (seg + 1) * 0.65 + band * 1.8) * 7.5;
+              const hWave0 = 4.2 + Math.cos(t * 0.8 + seg * 0.9) * 1.4;
+              const hWave1 = 4.2 + Math.cos(t * 0.8 + (seg + 1) * 0.9) * 1.4;
+              const glow = 0.76 + Math.sin(t * 1.1 + seg * 0.7 + band) * 0.22;
+              const r = (band === 0 ? 0.24 : 0.46) * glow;
+              const g = (band === 0 ? 0.96 : 0.78) * glow;
+              const b = (band === 0 ? 0.74 : 0.98) * glow;
+              this.addQuad(
+                [x0, yBase, z0],
+                [x1, yBase, z1],
+                [x1, yBase + hWave1, z1],
+                [x0, yBase + hWave0, z0],
+                r,
+                g,
+                b,
+                3,
+              );
+            }
+          }
+        } else if (kind === 'volcanic-embers') {
+          // Glowing high-altitude volcanic caldera smoke & ember rings above the northern crater
+          for (let r = 0; r < 3; r++) {
+            const lift = 18 + ((t * 2.2 + r * 6.5) % 18);
+            const rad = 6 + r * 3.8;
+            this.addRing(0, lift, -28, rad - 0.55, rad, 18, 0.96, 0.36, 0.10, 3);
+          }
+        } else if (kind === 'desert-sand') {
+          // Gleaming overhead golden solar zenith halo above the Caravan Ziggurat
+          this.addRing(0, 29, -32, 11.5, 12.6, 24, 0.98, 0.82, 0.34, 3);
+          this.addRing(0, 29.6, -32, 7.2, 7.8, 20, 0.96, 0.66, 0.24, 3);
+        } else if (kind === 'emerald-spores') {
+          // Floating luminous canopy spore rings drifting high over Oakhaven's aqueduct terraces
+          for (let r = 0; r < 3; r++) {
+            const ang = t * 0.22 + r * 2.1;
+            this.addRing(Math.cos(ang) * 18, 17 + r * 2.4, -18 + Math.sin(ang) * 14, 2.4, 2.9, 16, 0.32, 0.94, 0.58, 3);
+          }
+        }
+      }
     }
 
     return {

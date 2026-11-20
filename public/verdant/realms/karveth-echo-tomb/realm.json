@@ -8,12 +8,12 @@
     -3,
     0
   ],
-  "theme": "citadel-highlands",
+  "theme": "amber-steppe",
   "seed": 17705,
   "worldHalfExtent": 46,
   "isDungeon": true,
   "parentRealmSlug": "kar-veth",
-  "dungeonStyle": "catacomb-vault",
+  "dungeonStyle": "echo-tomb",
   "dungeonTier": 3,
   "dungeonEntrances": [],
   "summary": "A subterranean vaulted sanctuary beneath Kar-Veth. Cross the glowing abyss bridge, ignite the three Resonant Seal Braziers, unseal the alcove vaults, and defeat Grand Wind-Harp Automaton.",
@@ -23,14 +23,14 @@
   "vdntUrl": "/verdant/realms/karveth-echo-tomb/world.vdnt",
   "ambientMood": "causeway",
   "skyFallbackRgb": [
-    0.08,
-    0.1,
-    0.14
+    0.18,
+    0.12,
+    0.07
   ],
   "fogRgb": [
-    0.12,
-    0.14,
-    0.18
+    0.26,
+    0.18,
+    0.1
   ],
   "spawnPoint": [
     0,
@@ -190,10 +190,10 @@
     }
   },
   "materials": {
-    "terrain": "cobblestone_04",
-    "masonry": "castle_brick_01",
-    "road": "mossy_cobblestone",
-    "timber": "dark_wooden_planks"
+    "terrain": "red_sand",
+    "masonry": "red_brick",
+    "road": "cobblestone_04",
+    "timber": "brown_planks_05"
   },
   "terrainProfile": {
     "macroAmp": 0,
@@ -226,9 +226,9 @@
       "targetHeight": 3.8,
       "yaw": 0.3,
       "tintRgb": [
-        0.46,
-        0.48,
-        0.52
+        0.76,
+        0.58,
+        0.34
       ],
       "maxTriangles": 480
     },
@@ -244,9 +244,9 @@
       "targetHeight": 3.8,
       "yaw": -0.3,
       "tintRgb": [
-        0.46,
-        0.48,
-        0.52
+        0.76,
+        0.58,
+        0.34
       ],
       "maxTriangles": 480
     },
@@ -262,9 +262,9 @@
       "targetHeight": 4.4,
       "yaw": 0.4,
       "tintRgb": [
-        0.46,
-        0.48,
-        0.52
+        0.76,
+        0.58,
+        0.34
       ],
       "maxTriangles": 500
     },
@@ -280,9 +280,9 @@
       "targetHeight": 4.4,
       "yaw": -0.4,
       "tintRgb": [
-        0.46,
-        0.48,
-        0.52
+        0.76,
+        0.58,
+        0.34
       ],
       "maxTriangles": 500
     },
@@ -298,8 +298,8 @@
       "targetHeight": 1.35,
       "yaw": 0.1,
       "tintRgb": [
-        0.92,
-        0.68,
+        0.98,
+        0.8,
         0.28
       ],
       "maxTriangles": 340
@@ -316,8 +316,8 @@
       "targetHeight": 1.35,
       "yaw": 1.5,
       "tintRgb": [
-        0.92,
-        0.68,
+        0.98,
+        0.8,
         0.28
       ],
       "maxTriangles": 340
@@ -334,8 +334,8 @@
       "targetHeight": 1.35,
       "yaw": 0.3,
       "tintRgb": [
-        0.92,
-        0.68,
+        0.98,
+        0.8,
         0.28
       ],
       "maxTriangles": 340
@@ -352,8 +352,8 @@
       "targetHeight": 1.35,
       "yaw": 1.9,
       "tintRgb": [
-        0.92,
-        0.68,
+        0.98,
+        0.8,
         0.28
       ],
       "maxTriangles": 340
@@ -389,8 +389,8 @@
       "targetHeight": 1.4,
       "yaw": 0.8,
       "tintRgb": [
-        0.92,
-        0.68,
+        0.98,
+        0.8,
         0.28
       ],
       "maxTriangles": 320
@@ -425,9 +425,9 @@
       "targetHeight": 3.2,
       "yaw": 0.9,
       "tintRgb": [
-        0.46,
-        0.48,
-        0.52
+        0.76,
+        0.58,
+        0.34
       ],
       "maxTriangles": 400
     }
@@ -496,7 +496,7 @@
       "guildId": "guild-kiln",
       "regionId": "boss-vault",
       "summary": "Conquer The Resonance Hall of Kar-Veth: ignite the Resonant Seal Braziers, plunder the side treasure vaults, and defeat Grand Wind-Harp Automaton in the northern Sanctum.",
-      "motif": "subterranean catacomb-vault delve",
+      "motif": "subterranean echo-tomb delve",
       "renownReward": 355,
       "status": "active",
       "objectives": [
@@ -736,13 +736,13 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:6dc6bc6e9fa369514dc386ad1e60d6c026beed328479d38d19dc758c8d21e3a1",
+    "worldGlbKappa": "sha256:dd4f38921fa39735333c2313ab08456d3af11b28a941591705937b25dad5d392",
     "vdntKappa": "sha256:5231267862cd46d0286d016540e3a5bedbc23a70f86da8a8fc1529c8fdc0cf53",
     "skyKappa": "sha256:0866d50aefb876d1eb7885f77b662002975c771a58559757ff9b55268e8cb823",
-    "triangles": 16562,
-    "vertices": 25709,
-    "glbBytes": 1840776,
-    "atlasTileCount": 4,
+    "triangles": 16742,
+    "vertices": 26113,
+    "glbBytes": 1621868,
+    "atlasTileCount": 3,
     "importedCatalogModelsCount": 12,
     "importedCatalogAssets": [
       "gothic_statue",
@@ -753,7 +753,7 @@
       "old_military_crate",
       "boulder_01"
     ],
-    "projectModelsRegistered": 9,
+    "projectModelsRegistered": 10,
     "cognitiveKnowledgeIngested": 4,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

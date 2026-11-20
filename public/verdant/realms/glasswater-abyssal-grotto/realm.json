@@ -8,12 +8,12 @@
     -2,
     0
   ],
-  "theme": "sunken-aqueducts",
+  "theme": "pelagic-spires",
   "seed": 17704,
   "worldHalfExtent": 46,
   "isDungeon": true,
   "parentRealmSlug": "glasswater",
-  "dungeonStyle": "sunken-cistern",
+  "dungeonStyle": "abyssal-grotto",
   "dungeonTier": 2,
   "dungeonEntrances": [],
   "summary": "A subterranean vaulted sanctuary beneath Glasswater. Cross the glowing abyss bridge, ignite the three Resonant Seal Braziers, unseal the alcove vaults, and defeat Abyssal Shoal Sentinel.",
@@ -23,14 +23,14 @@
   "vdntUrl": "/verdant/realms/glasswater-abyssal-grotto/world.vdnt",
   "ambientMood": "causeway",
   "skyFallbackRgb": [
-    0.06,
+    0.05,
     0.14,
-    0.16
+    0.2
   ],
   "fogRgb": [
-    0.1,
+    0.08,
     0.2,
-    0.22
+    0.28
   ],
   "spawnPoint": [
     0,
@@ -190,10 +190,10 @@
     }
   },
   "materials": {
-    "terrain": "cobblestone_02",
-    "masonry": "brick_moss_001",
-    "road": "mossy_cobblestone",
-    "timber": "brown_planks_05"
+    "terrain": "coast_sand_rocks_02",
+    "masonry": "stone_wall",
+    "road": "cobblestone_02",
+    "timber": "weathered_brown_planks"
   },
   "terrainProfile": {
     "macroAmp": 0,
@@ -226,9 +226,9 @@
       "targetHeight": 3.8,
       "yaw": 0.3,
       "tintRgb": [
-        0.38,
-        0.52,
-        0.46
+        0.32,
+        0.62,
+        0.68
       ],
       "maxTriangles": 480
     },
@@ -244,9 +244,9 @@
       "targetHeight": 3.8,
       "yaw": -0.3,
       "tintRgb": [
-        0.38,
-        0.52,
-        0.46
+        0.32,
+        0.62,
+        0.68
       ],
       "maxTriangles": 480
     },
@@ -262,9 +262,9 @@
       "targetHeight": 4.4,
       "yaw": 0.4,
       "tintRgb": [
-        0.38,
-        0.52,
-        0.46
+        0.32,
+        0.62,
+        0.68
       ],
       "maxTriangles": 500
     },
@@ -280,9 +280,9 @@
       "targetHeight": 4.4,
       "yaw": -0.4,
       "tintRgb": [
-        0.38,
-        0.52,
-        0.46
+        0.32,
+        0.62,
+        0.68
       ],
       "maxTriangles": 500
     },
@@ -298,9 +298,9 @@
       "targetHeight": 1.35,
       "yaw": 0.1,
       "tintRgb": [
-        0.36,
-        0.88,
-        0.68
+        0.28,
+        0.94,
+        0.96
       ],
       "maxTriangles": 340
     },
@@ -316,9 +316,9 @@
       "targetHeight": 1.35,
       "yaw": 1.5,
       "tintRgb": [
-        0.36,
-        0.88,
-        0.68
+        0.28,
+        0.94,
+        0.96
       ],
       "maxTriangles": 340
     },
@@ -334,9 +334,9 @@
       "targetHeight": 1.35,
       "yaw": 0.3,
       "tintRgb": [
-        0.36,
-        0.88,
-        0.68
+        0.28,
+        0.94,
+        0.96
       ],
       "maxTriangles": 340
     },
@@ -352,9 +352,9 @@
       "targetHeight": 1.35,
       "yaw": 1.9,
       "tintRgb": [
-        0.36,
-        0.88,
-        0.68
+        0.28,
+        0.94,
+        0.96
       ],
       "maxTriangles": 340
     },
@@ -389,9 +389,9 @@
       "targetHeight": 1.4,
       "yaw": 0.8,
       "tintRgb": [
-        0.36,
-        0.88,
-        0.68
+        0.28,
+        0.94,
+        0.96
       ],
       "maxTriangles": 320
     },
@@ -425,9 +425,9 @@
       "targetHeight": 3.2,
       "yaw": 0.9,
       "tintRgb": [
-        0.38,
-        0.52,
-        0.46
+        0.32,
+        0.62,
+        0.68
       ],
       "maxTriangles": 400
     }
@@ -496,7 +496,7 @@
       "guildId": "guild-kiln",
       "regionId": "boss-vault",
       "summary": "Conquer The Drowned Sextant Grotto: ignite the Resonant Seal Braziers, plunder the side treasure vaults, and defeat Abyssal Shoal Sentinel in the northern Sanctum.",
-      "motif": "subterranean sunken-cistern delve",
+      "motif": "subterranean abyssal-grotto delve",
       "renownReward": 310,
       "status": "active",
       "objectives": [
@@ -736,12 +736,12 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:1277dd0a3c581302400b67d1d0083a4722684bbbd3f987613b4f45d8d2257742",
+    "worldGlbKappa": "sha256:f0d8694fd73d3b55065276e08ebe82f3ac981f9e88adc6d058e1c34b17b192aa",
     "vdntKappa": "sha256:df38503fa3cc59b18e81cc7a284740858c9785d77e165e53931177cf4846cddf",
     "skyKappa": "sha256:4fa2ba43da087ab39f0c7fa7f5ed6361fe7e6f38dded47d2470a4895da2f28ca",
-    "triangles": 16562,
-    "vertices": 25709,
-    "glbBytes": 1725552,
+    "triangles": 16295,
+    "vertices": 25366,
+    "glbBytes": 1824892,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 12,
     "importedCatalogAssets": [
@@ -753,7 +753,7 @@
       "old_military_crate",
       "boulder_01"
     ],
-    "projectModelsRegistered": 9,
+    "projectModelsRegistered": 10,
     "cognitiveKnowledgeIngested": 4,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

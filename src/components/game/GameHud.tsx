@@ -280,6 +280,15 @@ export const GameHud: React.FC<GameHudProps> = ({
               {hud.region.name}
             </p>
             <p className="text-[10px] text-[#9aa5b3] truncate">{hud.region.subtitle}</p>
+            {hud.ecosystemBadge && (
+              <p
+                data-testid="ecosystem-phenomenon-badge"
+                title={hud.ecosystemBadge.summary}
+                className="mt-1 pt-1 border-t border-white/8 text-[9px] font-mono uppercase tracking-[0.1em] text-[#e0b86c] truncate"
+              >
+                {hud.ecosystemBadge.title}
+              </p>
+            )}
           </div>
           <div className="shrink-0 pl-2.5 border-l border-white/12 text-right">
             <p className="text-[9px] uppercase tracking-[0.14em] text-[#d4a253]">Renown</p>

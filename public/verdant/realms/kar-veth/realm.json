@@ -833,12 +833,12 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:1c6f036cc58b67ceb7dc84428983b2d64b6ede10f9a65fee2924636e768cadec",
+    "worldGlbKappa": "sha256:17a08ab944758b598a814e7458a33a8b6d09e5878ea205189e1b563a6915fda9",
     "vdntKappa": "sha256:6594313b15425d44e94c40b83de345bacf3d7852a186de53c860befdcd1f59de",
     "skyKappa": "sha256:b6b8ed9b069f5d9e46547d87aa7c6c50aecde988e5e23307cc0887e18a298543",
-    "triangles": 28135,
-    "vertices": 49501,
-    "glbBytes": 2843344,
+    "triangles": 28209,
+    "vertices": 50131,
+    "glbBytes": 2879364,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 11,
     "importedCatalogAssets": [
@@ -852,7 +852,7 @@
       "brass_diya_lantern",
       "Barrel_02"
     ],
-    "projectModelsRegistered": 11,
+    "projectModelsRegistered": 12,
     "cognitiveKnowledgeIngested": 10,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

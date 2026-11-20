@@ -833,12 +833,12 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:2b2682692ca479282b4efded4fce8f6c66a8e472287249b35f5be05d93a89445",
+    "worldGlbKappa": "sha256:e60cba57edb1cc90ff21ec312a547f8ef9303b76298c375cd0a49fe3511bc914",
     "vdntKappa": "sha256:4518735f5128254169577b7c1420476ba9d54f634bc069901368f13ff955e200",
     "skyKappa": "sha256:a296aabd2c26c36279c678c0ca2752f83a1f7e564d47d531755af11975c756c5",
-    "triangles": 27528,
-    "vertices": 49355,
-    "glbBytes": 2841728,
+    "triangles": 35101,
+    "vertices": 65382,
+    "glbBytes": 3518284,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 11,
     "importedCatalogAssets": [
@@ -852,7 +852,7 @@
       "antique_ceramic_vase_01",
       "old_military_crate"
     ],
-    "projectModelsRegistered": 11,
+    "projectModelsRegistered": 12,
     "cognitiveKnowledgeIngested": 10,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

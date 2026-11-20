@@ -8,6 +8,12 @@ import {
   type ImportedCatalogPropPlacement,
   type RealmPrismCustody,
 } from './realmModelSchema';
+import {
+  synthesizeRealmEcosystem,
+  type StructurePrimitive,
+  type SynthesizedFloraInstance,
+} from './verdantEcosystemCatalog';
+import { synthesizeDungeonEcosystem } from './verdantDungeonCatalog';
 
 export interface ParsedExternalMesh {
   assetId: string;
@@ -915,101 +921,38 @@ export async function compileRealmWithVerdant(
       }
     }
 
-    // Abyss Chasm Flagstone Bridge (z: 3.6 .. 18.4)
-    const DECK_Y = spec.terrainProfile.bridgeDeckY;
-    for (let seg = 0; seg < 6; seg++) {
-      const zs = 3.6 + seg * (14.8 / 6);
-      const ze = zs + 14.8 / 6;
-      addTiledBox(cobbleBucket, 0, DECK_Y - 0.25, (zs + ze) * 0.5, 5.4, 0.52, ze - zs + 0.05, 2.4);
-    }
-    for (const side of [-1, 1]) {
-      const px = side * 2.55;
-      addTiledBox(stoneBucket, px, DECK_Y + 0.42, 11.0, 0.38, 0.85, 14.8, 2.4);
-      for (const bz of [4.2, 8.8, 13.4, 17.8]) {
-        addBox(stoneBucket, px, DECK_Y + 0.88, bz, 0.68, 1.75, 0.68);
-        addBox(accentBucket, px, DECK_Y + 1.9, bz, 0.36, 0.38, 0.36, 0, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
+    // Bespoke 3D Dungeon Architecture (6 Distinct Architectural Styles from Extended Verdant Catalog!)
+    const dgPlan = synthesizeDungeonEcosystem(spec);
+    const dgBucketFor = (mat: StructurePrimitive['material']): MeshBucket =>
+      mat === 'stone'
+        ? stoneBucket
+        : mat === 'cobble'
+          ? cobbleBucket
+          : mat === 'timber'
+            ? timberBucket
+            : accentBucket;
+
+    for (const part of dgPlan.structures) {
+      const target = dgBucketFor(part.material);
+      const baseY = part.useAbsoluteY ? part.yOffset : realmTerrainHeightAt(spec, part.x, part.z) + part.yOffset;
+      const [cr, cg, cb] = part.rgb ?? [1, 1, 1];
+      if (part.kind === 'box') {
+        if (target.textured) {
+          addTiledBox(target, part.x, baseY, part.z, part.sx, part.sy, part.sz, 2.5, part.yaw ?? 0);
+        } else {
+          addBox(target, part.x, baseY, part.z, part.sx, part.sy, part.sz, part.yaw ?? 0, cr, cg, cb);
+        }
+      } else if (part.kind === 'cylinder') {
+        addCylinder(target, part.x, baseY, part.z, part.sx, part.sz, part.sy, part.segs ?? 8, cr, cg, cb, true);
+      } else if (part.kind === 'cone') {
+        addCone(target, part.x, baseY, part.z, part.sx, part.sy, part.segs ?? 8, cr, cg, cb);
       }
-    }
-    for (const pz of [5.2, 11.0, 16.8]) {
-      addTiledBox(stoneBucket, 0, -2.1, pz, 5.6, 6.2, 1.6, 2.4);
-    }
-
-    // Massive Subterranean Perimeter Walls & Buttresses
-    // South Entry Wall (z = 34.5) and North Boss Sanctum Wall (z = -38.5)
-    addTiledBox(stoneBucket, 0, 7.5, 34.5, 46.0, 17.0, 3.2, 3.2);
-    addTiledBox(stoneBucket, 0, 8.2, -38.5, 46.0, 18.5, 3.4, 3.2);
-
-    // Outer West & East Hall Enclosures (x = ±22.5)
-    addTiledBox(stoneBucket, -22.5, 7.8, -2.0, 3.2, 17.5, 76.0, 3.2);
-    addTiledBox(stoneBucket, 22.5, 7.8, -2.0, 3.2, 17.5, 76.0, 3.2);
-
-    // Vestibule Narrowing Curtain Walls (x = ±12.5, z: 18..34) & Boss Wing Walls (z: -38..-13)
-    for (const side of [-1, 1]) {
-      addTiledBox(stoneBucket, side * 15.5, 7.0, 26.0, 11.0, 15.5, 16.0, 3.0);
-      addTiledBox(stoneBucket, side * 16.5, 7.5, -25.5, 9.0, 16.5, 25.0, 3.0);
-      // Carved Alcove Archways framing East & West Treasure Alcoves (x = ±12.5, z = -4)
-      addTiledBox(stoneBucket, side * 12.2, 4.8, -9.2, 2.2, 9.6, 2.2, 2.4);
-      addTiledBox(stoneBucket, side * 12.2, 4.8, 1.2, 2.2, 9.6, 2.2, 2.4);
-      addTiledBox(stoneBucket, side * 12.2, 9.8, -4.0, 2.4, 2.2, 12.6, 2.4);
-      // Alcove Timber Ribbing & Relic Pedestal
-      addTiledBox(timberBucket, side * 16.8, 8.2, -4.0, 8.5, 0.5, 10.0, 2.6);
-      addTiledBox(stoneBucket, side * 16.5, 1.35, -4.0, 3.2, 0.7, 3.2, 2.0);
-    }
-
-    // Towering Octagonal Fluted Columns + High Vaulted Transverse Stone Ribs (z = 26, 18, 3, -4, -12, -20, -28)
-    const ribZs = [26, 18.5, 3.2, -4.0, -12.0, -20.0, -28.0];
-    for (const rz of ribZs) {
-      const floorY = realmTerrainHeightAt(spec, 0, rz);
-      const colX = rz > 14 ? 8.8 : 10.6;
-      for (const side of [-1, 1]) {
-        const cx = side * colX;
-        addBox(stoneBucket, cx, floorY + 0.55, rz, 2.1, 1.1, 2.1);
-        addCylinder(stoneBucket, cx, floorY + 1.1, rz, 0.88, 0.78, 12.2, 8, 1, 1, 1, true);
-        addBox(stoneBucket, cx, floorY + 13.5, rz, 2.2, 1.0, 2.2);
-        // Hanging Guild/Vault Banners on inner columns
-        addBox(accentBucket, cx - side * 0.95, floorY + 6.2, rz, 0.14, 3.8, 1.25, 0, bannerRgb[0], bannerRgb[1], bannerRgb[2]);
-        addBox(accentBucket, cx - side * 0.92, floorY + 8.15, rz, 0.24, 0.24, 1.65, 0, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
-      }
-      // High vaulted transverse stone arch beam (y = 14.5..16.2m so camera never clips!)
-      addTiledBox(stoneBucket, 0, floorY + 14.8, rz, colX * 2 + 2.6, 1.6, 1.45, 2.6);
-      addBox(accentBucket, 0, floorY + 13.8, rz, 1.4, 0.7, 1.6, 0, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
-    }
-
-    // Stepped Boss Sanctum Amphitheater Dais (z = -26) & Semi-Circular Monolith Crown
-    const bossY = realmTerrainHeightAt(spec, 0, -26);
-    addCylinder(stoneBucket, 0, bossY - 0.5, -26.0, 9.6, 9.2, 0.85, 12);
-    addCylinder(cobbleBucket, 0, bossY + 0.35, -26.0, 7.6, 7.4, 0.22, 12);
-    for (let i = 0; i < 6; i++) {
-      const ang = Math.PI + (i / 5) * Math.PI;
-      const mx = Math.cos(ang) * 9.8;
-      const mz = -26.0 + Math.sin(ang) * 8.4;
-      addCylinder(stoneBucket, mx, bossY, mz, 0.95, 0.72, 7.8, 8, 1, 1, 1, true);
-      addCone(accentBucket, mx, bossY + 7.8, mz, 0.82, 1.6, 6, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
-    }
-
-    // Sculpted Ascend Portal Stone Arches at Entry (z = 30.8) & Boss Sanctum (z = -33.8)
-    for (const [pz, py] of [[30.8, 1.0], [-33.8, realmTerrainHeightAt(spec, 0, -33.8)]] as Array<[number, number]>) {
-      addTiledBox(stoneBucket, -2.5, py + 2.8, pz, 1.35, 5.6, 1.55, 2.2);
-      addTiledBox(stoneBucket, 2.5, py + 2.8, pz, 1.35, 5.6, 1.55, 2.2);
-      addTiledBox(stoneBucket, 0, py + 5.9, pz, 6.8, 1.3, 1.8, 2.2);
-      addCone(accentBucket, 0, py + 6.55, pz, 0.75, 1.3, 4, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
-    }
-
-    // Crystalline / Geothermal / Cistern accent formations along the chasm walls
-    const randD = mulberry32(spec.seed + 55);
-    for (let i = 0; i < 16; i++) {
-      const side = i % 2 === 0 ? -1 : 1;
-      const fx = side * (6.2 + randD() * 11.0);
-      const fz = 5.5 + randD() * 10.5;
-      const fy = realmTerrainHeightAt(spec, fx, fz) - 0.5;
-      const fh = 3.2 + randD() * 4.5;
-      addCylinder(accentBucket, fx, fy, fz, 0.75, 0.25, fh, 6, spireRgb[0], spireRgb[1], spireRgb[2]);
-      addCone(accentBucket, fx, fy + fh, fz, 0.3, 1.1, 6, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
     }
   } else {
     // =========================================================================
-    // 3B. VAST 224m x 224m OPEN-WORLD FRONTIER REALM BUILDER
+    // 3B. VAST 224m x 224m BESPOKE ECOSYSTEM-SYNTHESIZED FRONTIER REALM BUILDER
     // =========================================================================
+    const ecoPlan = synthesizeRealmEcosystem(spec);
     const GRID_N = 96;
     const WORLD_HALF = spec.worldHalfExtent || 112;
     const STEP = (WORLD_HALF * 2) / GRID_N;
@@ -1036,32 +979,18 @@ export async function compileRealmWithVerdant(
 
         const onCausewayRoad = Math.abs(xm) < 3.6 && ((zm > 12 && zm < 92) || (zm > -92 && zm < -2.5));
         const onEwFrontierRoad = Math.abs(zm) < 3.4 && Math.abs(xm) > 14 && Math.abs(xm) < 92 && avgY > spec.terrainProfile.waterLevel + 0.35;
-        const onCitadelPlaza = Math.hypot(xm, zm + 16) < 11.0;
-        const onSouthPlaza = Math.hypot(xm, zm - 17) < 7.2;
-        const onWestRoad = Math.abs(zm + 5.5 + Math.sin(xm * 0.1) * 3.0) < 2.4 && xm < -2 && xm > -56;
-        const onEastRoad = Math.abs(zm - 2.0 + Math.sin(xm * 0.09) * 3.4) < 2.3 && xm > 2 && xm < 56;
-        const onCoastRoad = Math.abs((xm - 12) - (zm - 12) * 0.9) < 2.4 && xm > 3 && xm < 28 && zm > 12 && zm < 28;
+        const onEcoPlaza = ecoPlan.plazaZones.some((pz) => Math.hypot(xm - pz.x, zm - pz.z) < pz.radius);
         const onDungeonPath = spec.dungeonEntrances.some(
           (ent) => Math.hypot(xm - ent.position[0], zm - ent.position[1]) < 6.5,
         );
-        const onWestCircle = Math.hypot(xm + 54, zm + 22) < 9.5;
-        const onEastCamp = Math.hypot(xm - 54, zm - 10) < 8.5;
-        const onNorthWatch = Math.hypot(xm, zm + 56) < 8.5;
         // Steep mountain cliff strata & high alpine ridges wear natural granite/basalt/snow mineral strata
         // (never castle brick masonry!)
         const isAlpineRock = avgY > 8.6 || (avgY > 3.6 && avgNy < 0.85);
         const onRoadOrPlaza =
           onCausewayRoad ||
           onEwFrontierRoad ||
-          onCitadelPlaza ||
-          onSouthPlaza ||
-          onWestRoad ||
-          onEastRoad ||
-          onCoastRoad ||
-          onDungeonPath ||
-          onWestCircle ||
-          onEastCamp ||
-          onNorthWatch;
+          onEcoPlaza ||
+          onDungeonPath;
 
         const target = onRoadOrPlaza
           ? cobbleBucket
@@ -1103,276 +1032,322 @@ export async function compileRealmWithVerdant(
       }
     }
 
-    // Parabolic Causeway Bridge
+    // Bespoke Ecosystem Crossing Architecture (6 distinct foreground bridges — zero cloned spans!)
     const DECK_Y = spec.terrainProfile.bridgeDeckY;
-    for (let seg = 0; seg < 6; seg++) {
-      const zs = -3.4 + seg * (16.8 / 6);
-      const ze = zs + 16.8 / 6;
-      addTiledBox(cobbleBucket, 0, DECK_Y - 0.25, (zs + ze) * 0.5, 5.7, 0.5, ze - zs + 0.05, 2.6);
-    }
-    for (const side of [-1, 1]) {
-      const px = side * 2.65;
-      addTiledBox(stoneBucket, px, DECK_Y + 0.48, 5.0, 0.42, 0.95, 16.8, 2.4);
-      for (let z = -3.0; z <= 13.0; z += 4.0) {
-        addBox(stoneBucket, px, DECK_Y + 0.85, z, 0.72, 1.7, 0.72);
-        addBox(accentBucket, px, DECK_Y + 1.82, z, 0.36, 0.34, 0.36, 0, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
+    if (ecoPlan.layoutId === 'aqueduct-terraces') {
+      // Oakhaven: Moss-Covered Timber Footbridge with Overhead Living-Vine Pergola Arches
+      for (let seg = 0; seg < 8; seg++) {
+        const zs = -3.4 + seg * (16.8 / 8);
+        const ze = zs + 16.8 / 8;
+        addTiledBox(timberBucket, 0, DECK_Y - 0.22, (zs + ze) * 0.5, 5.7, 0.44, ze - zs - 0.04, 2.2);
       }
-    }
-    for (const pz of [-2.4, 5.2, 12.6]) {
-      const baseH = realmTerrainHeightAt(spec, 0, pz) - 1.5;
-      const pierH = DECK_Y - 0.35 - baseH;
-      addTiledBox(stoneBucket, 0, baseH + pierH * 0.5, pz, 5.9, pierH, 1.85, 2.4);
-      addTiledBox(stoneBucket, -3.2, baseH + pierH * 0.35, pz, 0.9, pierH * 0.7, 1.35, 2.2);
-      addTiledBox(stoneBucket, 3.2, baseH + pierH * 0.35, pz, 0.9, pierH * 0.7, 1.35, 2.2);
-    }
-    for (const archCenterZ of [1.4, 8.9]) {
-      for (let i = 0; i < 10; i++) {
-        const t = -1 + (2 * (i + 0.5)) / 10;
-        addTiledBox(stoneBucket, 0, DECK_Y - 0.6 - t * t * 2.25, archCenterZ + t * 3.4, 5.1, 0.65, 0.85, 2.4);
-      }
-    }
-
-    // Theme-Driven Northern Monumental Landmark
-    const citBaseY = realmTerrainHeightAt(spec, 0, -18);
-    addTiledBox(stoneBucket, 0, citBaseY + 0.5, -18.5, 19.5, 2.6, 15.0, 3.0);
-    for (let s = 0; s < 4; s++) {
-      addTiledBox(cobbleBucket, 0, citBaseY - 0.55 + s * 0.36, -10.5 - s * 0.9, 7.6 - s * 0.4, 0.42, 1.05, 2.4);
-    }
-
-    if (spec.theme === 'pelagic-spires') {
-      addCylinder(stoneBucket, 0, citBaseY + 1.5, -20.0, 4.8, 4.2, 5.5, 10, 1, 1, 1, false);
-      addCylinder(stoneBucket, 0, citBaseY + 7.0, -20.0, 4.2, 3.6, 5.5, 10, 1, 1, 1, false);
-      addCylinder(stoneBucket, 0, citBaseY + 12.5, -20.0, 3.6, 3.2, 5.2, 10, 1, 1, 1, true);
-      addCylinder(accentBucket, 0, citBaseY + 17.7, -20.0, 2.7, 2.7, 2.4, 10, 0.94, 0.82, 0.46, true);
-      addCone(accentBucket, 0, citBaseY + 20.1, -20.0, 3.8, 4.2, 10, spireRgb[0], spireRgb[1], spireRgb[2]);
-    } else if (spec.theme === 'sunken-aqueducts') {
-      for (let ax = -18; ax <= 18; ax += 6) {
-        const ay = realmTerrainHeightAt(spec, ax, -20.5);
-        addTiledBox(stoneBucket, ax, ay + 5.8, -20.5, 2.1, 11.6, 2.4, 2.4);
-      }
-      addTiledBox(stoneBucket, 0, citBaseY + 10.6, -20.5, 38.0, 2.2, 2.8, 2.8);
-      addCylinder(stoneBucket, 0, citBaseY + 1.5, -18.0, 5.8, 5.5, 5.4, 8, 1, 1, 1, true);
-      addCone(accentBucket, 0, citBaseY + 6.9, -18.0, 5.7, 4.5, 8, spireRgb[0], spireRgb[1], spireRgb[2]);
-    } else if (spec.theme === 'amber-steppe') {
-      // Stepped Sandstone Ziggurat + Twin Bronze Wind-Harp Monoliths
-      addTiledBox(stoneBucket, 0, citBaseY + 3.2, -20.5, 15.0, 3.8, 12.0, 2.8);
-      addTiledBox(stoneBucket, 0, citBaseY + 6.8, -20.5, 11.2, 3.4, 9.2, 2.6);
-      addTiledBox(stoneBucket, 0, citBaseY + 10.1, -20.5, 7.6, 3.2, 6.8, 2.4);
-      addCylinder(accentBucket, 0, citBaseY + 11.7, -20.5, 2.6, 1.4, 6.5, 6, 0.86, 0.66, 0.30, true);
-      addCone(accentBucket, 0, citBaseY + 18.2, -20.5, 1.6, 3.4, 6, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
       for (const side of [-1, 1]) {
-        addTiledBox(stoneBucket, side * 12.5, citBaseY + 5.8, -14.0, 1.8, 12.0, 1.8, 2.2);
-        addBox(accentBucket, side * 12.5, citBaseY + 12.2, -14.0, 0.6, 2.4, 0.6, 0, 0.92, 0.72, 0.30);
+        const px = side * 2.68;
+        addTiledBox(timberBucket, px, DECK_Y + 0.52, 5.0, 0.28, 0.32, 16.8, 2.2);
+        for (const z of [-2.8, 1.2, 5.2, 9.2, 12.8]) {
+          addCylinder(timberBucket, px, DECK_Y - 0.2, z, 0.24, 0.20, 4.4, 7, 1, 1, 1, true);
+          addBox(accentBucket, px, DECK_Y + 3.4, z, 0.32, 0.45, 0.32, 0, 0.22, 0.88, 0.56);
+        }
       }
-    } else if (spec.theme === 'glacial-spire') {
-      // Dark Slate Aurora Fortress + Faceted Crystalline Frostglass Needle Spires
-      addCylinder(stoneBucket, 0, citBaseY + 1.5, -20.5, 6.2, 5.4, 8.8, 8, 1, 1, 1, true);
-      addCone(accentBucket, 0, citBaseY + 10.3, -20.5, 5.2, 12.5, 6, 0.56, 0.82, 0.96);
+      // Overhead timber pergola cross-beams & hanging emerald moss drapes
+      for (const z of [-2.8, 1.2, 5.2, 9.2, 12.8]) {
+        addTiledBox(timberBucket, 0, DECK_Y + 4.35, z, 6.2, 0.34, 0.36, 2.2);
+        addBox(accentBucket, 0, DECK_Y + 4.62, z, 5.8, 0.22, 0.68, 0, 0.16, 0.50, 0.26);
+      }
+      for (const pz of [-2.4, 5.2, 12.6]) {
+        const baseH = realmTerrainHeightAt(spec, 0, pz) - 1.5;
+        const pierH = DECK_Y - 0.32 - baseH;
+        addCylinder(stoneBucket, -2.1, baseH, pz, 0.82, 0.68, pierH, 8, 1, 1, 1, true);
+        addCylinder(stoneBucket, 2.1, baseH, pz, 0.82, 0.68, pierH, 8, 1, 1, 1, true);
+      }
+    } else if (ecoPlan.layoutId === 'caldera-amphitheater') {
+      // Cinderfall: Forged Obsidian & Iron-Grate Foundry Span with Flaming Crucible Braziers
+      for (let seg = 0; seg < 6; seg++) {
+        const zs = -3.4 + seg * (16.8 / 6);
+        const ze = zs + 16.8 / 6;
+        addBox(accentBucket, 0, DECK_Y - 0.24, (zs + ze) * 0.5, 5.8, 0.48, ze - zs + 0.04, 0, 0.16, 0.15, 0.17);
+        // Glowing forge-seam trim strips along deck edges
+        addBox(accentBucket, -2.52, DECK_Y + 0.04, (zs + ze) * 0.5, 0.16, 0.08, ze - zs - 0.2, 0, 0.96, 0.38, 0.10);
+        addBox(accentBucket, 2.52, DECK_Y + 0.04, (zs + ze) * 0.5, 0.16, 0.08, ze - zs - 0.2, 0, 0.96, 0.38, 0.10);
+      }
       for (const side of [-1, 1]) {
-        addCylinder(accentBucket, side * 5.2, citBaseY + 1.5, -18.0, 1.9, 0.9, 10.5, 6, 0.48, 0.76, 0.92);
-        addCone(accentBucket, side * 5.2, citBaseY + 12.0, -18.0, 1.0, 5.8, 6, 0.72, 0.94, 1.0);
+        const px = side * 2.68;
+        addBox(accentBucket, px, DECK_Y + 0.52, 5.0, 0.32, 0.88, 16.8, 0, 0.18, 0.16, 0.18);
+        for (const z of [-2.8, 5.0, 12.8]) {
+          addBox(accentBucket, px, DECK_Y + 1.1, z, 0.88, 2.2, 0.88, 0, 0.20, 0.18, 0.20);
+          addCylinder(accentBucket, px, DECK_Y + 2.2, z, 0.62, 0.78, 0.42, 8, 0.28, 0.20, 0.16);
+          addCone(accentBucket, px, DECK_Y + 2.62, z, 0.44, 0.92, 6, 0.98, 0.44, 0.12);
+        }
+      }
+      for (const pz of [-2.4, 5.2, 12.6]) {
+        const baseH = realmTerrainHeightAt(spec, 0, pz) - 1.5;
+        const pierH = DECK_Y - 0.35 - baseH;
+        addBox(accentBucket, 0, baseH + pierH * 0.5, pz, 6.2, pierH, 1.9, 0, 0.14, 0.13, 0.15);
+      }
+    } else if (ecoPlan.layoutId === 'archipelago-atolls') {
+      // Glasswater: Weathered Driftwood Atoll Pier with Round Mooring Pilings & Turquoise Sea-Beacons
+      for (let seg = 0; seg < 12; seg++) {
+        const zs = -3.4 + seg * (16.8 / 12);
+        const ze = zs + 16.8 / 12;
+        addTiledBox(timberBucket, 0, DECK_Y - 0.2, (zs + ze) * 0.5, 5.75, 0.36, ze - zs - 0.08, 2.0);
+      }
+      for (const side of [-1, 1]) {
+        const px = side * 2.68;
+        // Twin timber rope rails
+        addTiledBox(timberBucket, px, DECK_Y + 0.45, 5.0, 0.16, 0.14, 16.8, 2.0);
+        addTiledBox(timberBucket, px, DECK_Y + 0.85, 5.0, 0.16, 0.14, 16.8, 2.0);
+        for (const z of [-2.8, 1.2, 5.2, 9.2, 12.8]) {
+          const baseH = realmTerrainHeightAt(spec, px, z) - 1.5;
+          const pileH = DECK_Y + 1.45 - baseH;
+          addCylinder(timberBucket, px, baseH, z, 0.32, 0.28, pileH, 8, 1, 1, 1, true);
+          addBox(accentBucket, px, DECK_Y + 1.65, z, 0.36, 0.42, 0.36, 0, 0.22, 0.86, 0.84);
+        }
+      }
+      for (const pz of [-2.4, 5.2, 12.6]) {
+        const baseH = realmTerrainHeightAt(spec, 0, pz) - 1.5;
+        const pierH = DECK_Y - 0.3 - baseH;
+        addCylinder(timberBucket, -1.5, baseH, pz, 0.46, 0.40, pierH, 8, 1, 1, 1, true);
+        addCylinder(timberBucket, 1.5, baseH, pz, 0.46, 0.40, pierH, 8, 1, 1, 1, true);
+      }
+    } else if (ecoPlan.layoutId === 'caravan-ziggurat') {
+      // Kar-Veth: Stepped Sandstone Sun-Causeway flanked by Ochre Obelisks & Gilded Solar Discs
+      for (let seg = 0; seg < 6; seg++) {
+        const zs = -3.4 + seg * (16.8 / 6);
+        const ze = zs + 16.8 / 6;
+        addTiledBox(cobbleBucket, 0, DECK_Y - 0.25, (zs + ze) * 0.5, 5.8, 0.52, ze - zs + 0.05, 2.6);
+      }
+      for (const side of [-1, 1]) {
+        const px = side * 2.68;
+        addTiledBox(stoneBucket, px, DECK_Y + 0.38, 5.0, 0.46, 0.78, 16.8, 2.4);
+        for (const z of [-2.8, 5.0, 12.8]) {
+          addBox(accentBucket, px, DECK_Y + 1.4, z, 0.76, 2.8, 0.76, 0, 0.78, 0.58, 0.34);
+          addCone(accentBucket, px, DECK_Y + 2.8, z, 0.54, 0.95, 4, 0.96, 0.78, 0.28);
+        }
+      }
+      for (const pz of [-2.4, 5.2, 12.6]) {
+        const baseH = realmTerrainHeightAt(spec, 0, pz) - 1.5;
+        const pierH = DECK_Y - 0.35 - baseH;
+        addTiledBox(stoneBucket, 0, baseH + pierH * 0.5, pz, 6.0, pierH, 2.1, 2.6);
+      }
+    } else if (ecoPlan.layoutId === 'aurora-observatory') {
+      // Borealis: Translucent Frostglass Crystal Prism Bridge with Faceted Ice-Shard Pylons
+      for (let seg = 0; seg < 6; seg++) {
+        const zs = -3.4 + seg * (16.8 / 6);
+        const ze = zs + 16.8 / 6;
+        addBox(accentBucket, 0, DECK_Y - 0.22, (zs + ze) * 0.5, 5.7, 0.44, ze - zs + 0.04, 0, 0.58, 0.80, 0.94);
+        addBox(accentBucket, 0, DECK_Y + 0.02, (zs + ze) * 0.5, 3.8, 0.06, ze - zs - 0.25, 0, 0.74, 0.92, 0.99);
+      }
+      for (const side of [-1, 1]) {
+        const px = side * 2.68;
+        addBox(accentBucket, px, DECK_Y + 0.46, 5.0, 0.34, 0.86, 16.8, 0, 0.46, 0.74, 0.92);
+        for (const z of [-2.8, 1.2, 5.2, 9.2, 12.8]) {
+          addCylinder(accentBucket, px, DECK_Y - 0.1, z, 0.48, 0.22, 2.4, 6, 0.56, 0.84, 0.96);
+          addCone(accentBucket, px, DECK_Y + 2.3, z, 0.28, 1.05, 6, 0.44, 0.96, 0.98);
+        }
+      }
+      for (const pz of [-2.4, 5.2, 12.6]) {
+        const baseH = realmTerrainHeightAt(spec, 0, pz) - 1.5;
+        const pierH = DECK_Y - 0.35 - baseH;
+        addCylinder(accentBucket, -1.9, baseH, pz, 0.95, 0.55, pierH, 6, 0.48, 0.74, 0.90);
+        addCylinder(accentBucket, 1.9, baseH, pz, 0.95, 0.55, pierH, 6, 0.48, 0.74, 0.90);
       }
     } else {
-      // Monumental Octagonal Basalt Keep (Vaelmor & Cinderfall Anvil Keep)
-      addCylinder(stoneBucket, 0, citBaseY + 1.5, -20.5, 6.4, 6.2, 4.1, 8, 1, 1, 1, false);
-      addCylinder(stoneBucket, 0, citBaseY + 5.6, -20.5, 6.2, 6.0, 4.1, 8, 1, 1, 1, false);
-      addCylinder(stoneBucket, 0, citBaseY + 9.7, -20.5, 6.0, 5.8, 4.0, 8, 1, 1, 1, true);
-      addCylinder(stoneBucket, 0, citBaseY + 13.4, -20.5, 6.2, 6.2, 1.5, 8);
-      addCone(accentBucket, 0, citBaseY + 14.9, -20.5, 6.0, 6.8, 8, spireRgb[0], spireRgb[1], spireRgb[2]);
-      addCone(accentBucket, 0, citBaseY + 21.3, -20.5, 0.55, 2.4, 6, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
-    }
-
-    // Gatehouse & Flanking Bastions
-    addTiledBox(stoneBucket, -3.2, citBaseY + 4.4, -14.0, 2.3, 6.6, 2.4, 2.4);
-    addTiledBox(stoneBucket, 3.2, citBaseY + 4.4, -14.0, 2.3, 6.6, 2.4, 2.4);
-    addTiledBox(stoneBucket, 0, citBaseY + 7.6, -14.0, 9.2, 2.0, 2.6, 2.5);
-    for (const side of [-1, 1]) {
-      const tx = side * 9.8, tz = -17.0;
-      const ty = realmTerrainHeightAt(spec, tx, tz);
-      addCylinder(stoneBucket, tx, ty - 0.8, tz, 3.2, 3.1, 3.8, 8, 1, 1, 1, false);
-      addCylinder(stoneBucket, tx, ty + 3.0, tz, 3.1, 3.0, 3.8, 8, 1, 1, 1, false);
-      addCylinder(stoneBucket, tx, ty + 6.8, tz, 3.0, 2.9, 3.6, 8, 1, 1, 1, true);
-      addCylinder(stoneBucket, tx, ty + 10.2, tz, 3.3, 3.3, 1.2, 8);
-      addCone(accentBucket, tx, ty + 11.4, tz, 3.4, 4.4, 8, spireRgb[0], spireRgb[1], spireRgb[2]);
-      addTiledBox(stoneBucket, side * 6.0, ty + 3.4, -17.8, 5.2, 6.8, 2.0, 2.6);
-      addBox(accentBucket, tx, ty + 6.4, tz + 3.05, 1.4, 3.8, 0.14, 0, bannerRgb[0], bannerRgb[1], bannerRgb[2]);
-      addBox(accentBucket, tx, ty + 8.35, tz + 3.1, 1.8, 0.22, 0.22, 0, 0.85, 0.66, 0.30);
-    }
-
-    // Sculpted Carved Dungeon Vault Gateways for every linked Dungeon Entrance!
-    for (const ent of spec.dungeonEntrances) {
-      const [dx, dz] = ent.position;
-      const dy = realmTerrainHeightAt(spec, dx, dz);
-      // Heavy buttressed stone portal arch + recessed dark threshold + glowing rune keystone
-      addTiledBox(stoneBucket, dx - 3.0, dy + 3.2, dz, 1.9, 6.8, 2.8, 2.2);
-      addTiledBox(stoneBucket, dx + 3.0, dy + 3.2, dz, 1.9, 6.8, 2.8, 2.2);
-      addTiledBox(stoneBucket, dx, dy + 6.9, dz, 8.6, 2.0, 3.2, 2.2);
-      addTiledBox(stoneBucket, dx, dy + 3.2, dz - 1.6, 5.6, 6.4, 1.4, 2.2);
-      addCone(accentBucket, dx, dy + 7.9, dz, 1.05, 2.2, 4, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
-      addBox(accentBucket, dx - 3.0, dy + 6.9, dz + 1.5, 0.65, 0.65, 0.45, 0, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
-      addBox(accentBucket, dx + 3.0, dy + 6.9, dz + 1.5, 0.65, 0.65, 0.45, 0, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
-    }
-
-    // OUTER FRONTIER LANDMARK 1: Northern Watchtower Spire (0, -56)
-    const nwY = realmTerrainHeightAt(spec, 0, -56);
-    addCylinder(stoneBucket, 0, nwY - 0.6, -56, 5.2, 4.6, 2.0, 8);
-    addCylinder(stoneBucket, 0, nwY + 1.4, -56, 3.6, 3.0, 12.0, 8);
-    addCylinder(stoneBucket, 0, nwY + 13.4, -56, 3.8, 3.8, 1.4, 8);
-    addCone(accentBucket, 0, nwY + 14.8, -56, 4.0, 5.2, 8, spireRgb[0], spireRgb[1], spireRgb[2]);
-    addCone(accentBucket, 0, nwY + 19.6, -56, 0.6, 1.8, 6, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
-
-    // OUTER FRONTIER LANDMARK 2: Western Pre-Charter Monolith Stone Circle (-54, -22)
-    const wcY = realmTerrainHeightAt(spec, -54, -22);
-    addCylinder(cobbleBucket, -54, wcY - 0.2, -22, 8.2, 8.0, 0.55, 12);
-    addTiledBox(stoneBucket, -54, wcY + 0.6, -22, 2.8, 1.0, 2.8, 2.0);
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2;
-      const mx = -54 + Math.cos(a) * 7.2;
-      const mz = -22 + Math.sin(a) * 7.2;
-      const my = realmTerrainHeightAt(spec, mx, mz);
-      const mh = 5.2 + (i % 3) * 1.4;
-      addTiledBox(stoneBucket, mx, my + mh * 0.5, mz, 1.45, mh, 1.05, 2.2, a);
-      if (i % 2 === 0) {
-        addCone(accentBucket, mx, my + mh, mz, 0.52, 1.1, 4, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
+      // Vaelmor Citadel: Classic Parabolic Basalt Causeway Bridge
+      for (let seg = 0; seg < 6; seg++) {
+        const zs = -3.4 + seg * (16.8 / 6);
+        const ze = zs + 16.8 / 6;
+        addTiledBox(cobbleBucket, 0, DECK_Y - 0.25, (zs + ze) * 0.5, 5.7, 0.5, ze - zs + 0.05, 2.6);
       }
-    }
-
-    // OUTER FRONTIER LANDMARK 3: Eastern Caravan Bastion & Timber Pavilion (54, 10)
-    const ecY = realmTerrainHeightAt(spec, 54, 10);
-    addTiledBox(stoneBucket, 54, ecY + 0.4, 10, 10.5, 1.2, 8.5, 2.6);
-    for (const [dx, dz] of [[-4.2, -3.2], [4.2, -3.2], [-4.2, 3.2], [4.2, 3.2]]) {
-      addBox(timberBucket, 54 + dx, ecY + 3.2, 10 + dz, 0.42, 4.6, 0.42);
-    }
-    addTiledBox(timberBucket, 54, ecY + 5.6, 10, 10.8, 0.45, 8.8, 2.6);
-    addCone(accentBucket, 54, ecY + 5.8, 10, 5.8, 2.8, 4, spireRgb[0], spireRgb[1], spireRgb[2]);
-    addBox(accentBucket, 54 - 4.5, ecY + 4.4, 10 + 3.4, 0.14, 3.2, 1.2, 0, bannerRgb[0], bannerRgb[1], bannerRgb[2]);
-
-    // Southern Surveyor Outpost & Gateway Obelisks
-    const outY = realmTerrainHeightAt(spec, -6.2, 16.5);
-    addTiledBox(stoneBucket, -6.4, outY + 0.3, 16.6, 5.4, 0.9, 4.4, 2.4);
-    for (const [dx, dz] of [[-2.2, -1.7], [2.2, -1.7], [-2.2, 1.7], [2.2, 1.7]]) {
-      addBox(timberBucket, -6.4 + dx, outY + 2.3, 16.6 + dz, 0.32, 3.6, 0.32);
-    }
-    addTiledBox(timberBucket, -6.4, outY + 4.2, 15.6, 5.8, 0.28, 2.6, 2.4);
-    addTiledBox(timberBucket, -6.4, outY + 4.2, 17.6, 5.8, 0.28, 2.6, 2.4);
-    for (const side of [-1, 1]) {
-      const gx = side * 4.4, gz = 14.0;
-      const gy = realmTerrainHeightAt(spec, gx, gz);
-      addTiledBox(stoneBucket, gx, gy + 2.1, gz, 1.4, 4.6, 1.4, 2.2);
-      addCone(accentBucket, gx, gy + 4.4, gz, 0.85, 1.1, 4, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
-    }
-
-    // West Basin Bell Pavilion & Smelter / Mill
-    const kilnY = realmTerrainHeightAt(spec, -26, -8);
-    addCylinder(stoneBucket, -26, kilnY - 0.6, -8, 6.8, 6.5, 1.2, 8);
-    for (let i = 0; i < 6; i++) {
-      const a = (i / 6) * Math.PI * 2 + 0.25;
-      addBox(timberBucket, -26 + Math.cos(a) * 4.8, kilnY + 3.8, -8 + Math.sin(a) * 4.8, 0.52, 6.8, 0.52);
-    }
-    addCylinder(timberBucket, -26, kilnY + 6.9, -8, 5.6, 5.4, 0.65, 6);
-    addCone(accentBucket, -26, kilnY + 7.5, -8, 6.1, 3.6, 6, 0.34, 0.22, 0.17);
-    const smY = realmTerrainHeightAt(spec, -29.5, -1.5);
-    addTiledBox(stoneBucket, -29.5, smY + 2.5, -1.5, 6.2, 5.4, 4.8, 2.5);
-    addCylinder(stoneBucket, -31.2, smY + 5.0, -2.5, 1.25, 0.9, 6.2, 8);
-
-    // East Shelter + Vast Biome Groves Across the 224m Landscape
-    const shY = realmTerrainHeightAt(spec, 20.0, -3.5);
-    addBox(timberBucket, 20.0, shY + 0.2, -3.5, 4.4, 0.6, 3.6);
-    for (const [dx, dz] of [[-1.8, -1.4], [1.8, -1.4], [-1.8, 1.4], [1.8, 1.4]]) {
-      addBox(timberBucket, 20.0 + dx, shY + 1.9, -3.5 + dz, 0.28, 3.2, 0.28);
-    }
-    addBox(timberBucket, 20.0, shY + 3.6, -3.5, 4.8, 0.25, 4.0);
-
-    const rand = mulberry32(spec.seed + 101);
-    const treeSpots = [
-      // Inner groves
-      [24, -10], [28, -13], [32, -9], [35, -4], [31, 1], [25, -1], [20, -11], [17, -14],
-      [29, -16], [36, -12], [22, -17], [15, -9], [-12, 18], [-16, 12], [-14, 24],
-      [11, 17], [14, 12], [10, 26], [-15, -18], [-19, -24], [15, -18], [19, -25],
-      [-22, 15], [-30, 12], [-18, 28], [14, 34],
-      // Outer frontier forests & formations (spanning +-82m)
-      [-42, -38], [-34, -48], [-22, -52], [20, -48], [32, -44], [44, -36],
-      [-64, -10], [-68, -32], [-44, -6], [-48, 22], [-36, 36], [-24, 48],
-      [42, -24], [52, -16], [66, -8], [64, 22], [46, 34], [34, 48],
-      [-16, -68], [18, -68], [-58, -48], [58, -44], [-66, 26], [68, -28],
-    ];
-    for (const [tx, tz] of treeSpots) {
-      const ty = realmTerrainHeightAt(spec, tx, tz);
-      const tNorm = terrainNormalAt(spec, tx, tz);
-      if (ty < spec.terrainProfile.waterLevel + 0.25 || tNorm[1] < 0.82) continue;
-      const hScale = 0.85 + rand() * 0.72;
-      const isEastBiome = tx > 12 && tz < 10;
-      if (spec.theme === 'obsidian-crucible') {
-        addCylinder(accentBucket, tx, ty - 0.6, tz, 1.45 * hScale, 0.55 * hScale, 5.6 * hScale, 6, 0.19, 0.17, 0.19);
-        addCone(accentBucket, tx, ty + 5.0 * hScale, tz, 0.55 * hScale, 1.8 * hScale, 6, 0.38, 0.22, 0.16);
-        continue;
-      }
-      if (spec.theme === 'amber-steppe') {
-        // Ochre Sandstone Hoodoo Pillars & Desert Juniper
-        addCylinder(accentBucket, tx, ty - 0.5, tz, 1.35 * hScale, 0.85 * hScale, 4.6 * hScale, 7, 0.62, 0.44, 0.26);
-        addCone(accentBucket, tx, ty + 4.1 * hScale, tz, 1.6 * hScale, 1.2 * hScale, 7, 0.72, 0.52, 0.30);
-        continue;
-      }
-      if (spec.theme === 'glacial-spire') {
-        // Frost-Rimed Alpine Pines & Crystalline Ice-Spires
-        if (rand() > 0.68) {
-          addCylinder(accentBucket, tx, ty - 0.5, tz, 1.1 * hScale, 0.45 * hScale, 5.2 * hScale, 6, 0.48, 0.74, 0.90);
-          addCone(accentBucket, tx, ty + 4.7 * hScale, tz, 0.5 * hScale, 2.8 * hScale, 6, 0.74, 0.92, 1.0);
-        } else {
-          const trunkH = 3.2 * hScale;
-          addCylinder(accentBucket, tx, ty - 0.5, tz, 0.42 * hScale, 0.2 * hScale, trunkH, 7, 0.22, 0.20, 0.22);
-          addCone(accentBucket, tx, ty + trunkH * 0.5, tz, 2.4 * hScale, 2.8 * hScale, 8, 0.20, 0.34, 0.38);
-          addCone(accentBucket, tx, ty + trunkH * 0.9, tz, 1.8 * hScale, 2.6 * hScale, 8, 0.54, 0.68, 0.76);
-          addCone(accentBucket, tx, ty + trunkH * 1.25, tz, 1.1 * hScale, 2.2 * hScale, 8, 0.80, 0.88, 0.94);
+      for (const side of [-1, 1]) {
+        const px = side * 2.65;
+        addTiledBox(stoneBucket, px, DECK_Y + 0.48, 5.0, 0.42, 0.95, 16.8, 2.4);
+        for (let z = -3.0; z <= 13.0; z += 4.0) {
+          addBox(stoneBucket, px, DECK_Y + 0.85, z, 0.72, 1.7, 0.72);
+          addBox(accentBucket, px, DECK_Y + 1.82, z, 0.36, 0.34, 0.36, 0, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
         }
-        continue;
       }
-      const trunkH = (isEastBiome ? 4.2 : 3.1) * hScale;
-      const trunkR = (isEastBiome ? 0.5 : 0.36) * hScale;
-      addCylinder(accentBucket, tx, ty - 0.5, tz, trunkR * 1.5, trunkR * 0.62, trunkH, 7, 0.27, 0.19, 0.13);
-      const shade = 0.88 + rand() * 0.22;
-      const c1 =
-        spec.theme === 'sunken-aqueducts'
-          ? [0.12 * shade, 0.38 * shade, 0.24 * shade]
-          : isEastBiome
-            ? [0.74 * shade, 0.42 * shade, 0.14]
-            : [0.15 * shade, 0.32 * shade, 0.19 * shade];
-      const c2 =
-        spec.theme === 'sunken-aqueducts'
-          ? [0.18 * shade, 0.48 * shade, 0.30 * shade]
-          : isEastBiome
-            ? [0.85 * shade, 0.55 * shade, 0.18]
-            : [0.20 * shade, 0.40 * shade, 0.23 * shade];
-      const c3 =
-        spec.theme === 'sunken-aqueducts'
-          ? [0.26 * shade, 0.58 * shade, 0.36 * shade]
-          : isEastBiome
-            ? [0.92 * shade, 0.67 * shade, 0.25]
-            : [0.26 * shade, 0.48 * shade, 0.27 * shade];
-      const rBase = (isEastBiome ? 3.2 : 2.5) * hScale;
-      addCone(accentBucket, tx, ty + trunkH * 0.54, tz, rBase, 2.7 * hScale, 8, c1[0], c1[1], c1[2]);
-      addCone(accentBucket, tx + (rand() - 0.5) * 0.6, ty + trunkH * 0.82, tz + (rand() - 0.5) * 0.6, rBase * 0.78, 2.5 * hScale, 8, c2[0], c2[1], c2[2]);
-      addCone(accentBucket, tx + (rand() - 0.5) * 0.4, ty + trunkH * 1.1, tz + (rand() - 0.5) * 0.4, rBase * 0.52, 2.1 * hScale, 8, c3[0], c3[1], c3[2]);
+      for (const pz of [-2.4, 5.2, 12.6]) {
+        const baseH = realmTerrainHeightAt(spec, 0, pz) - 1.5;
+        const pierH = DECK_Y - 0.35 - baseH;
+        addTiledBox(stoneBucket, 0, baseH + pierH * 0.5, pz, 5.9, pierH, 1.85, 2.4);
+        addTiledBox(stoneBucket, -3.2, baseH + pierH * 0.35, pz, 0.9, pierH * 0.7, 1.35, 2.2);
+        addTiledBox(stoneBucket, 3.2, baseH + pierH * 0.35, pz, 0.9, pierH * 0.7, 1.35, 2.2);
+      }
+      for (const archCenterZ of [1.4, 8.9]) {
+        for (let i = 0; i < 10; i++) {
+          const t = -1 + (2 * (i + 0.5)) / 10;
+          addTiledBox(stoneBucket, 0, DECK_Y - 0.6 - t * t * 2.25, archCenterZ + t * 3.4, 5.1, 0.65, 0.85, 2.4);
+        }
+      }
     }
 
-    // Coastal Arch, Grounded Timber Wharf (with pilings into cove bed) & Sea-Stacks
-    const slY = realmTerrainHeightAt(spec, 24.5, 22.0);
-    addTiledBox(stoneBucket, 22.8, slY + 2.2, 23.8, 1.5, 5.2, 1.5, 2.2);
-    addTiledBox(stoneBucket, 26.2, slY + 2.2, 23.8, 1.5, 5.2, 1.5, 2.2);
-    addTiledBox(stoneBucket, 24.5, slY + 4.9, 23.8, 5.2, 1.2, 1.7, 2.2);
-    const pierY = Math.max(spec.terrainProfile.waterLevel + 0.55, realmTerrainHeightAt(spec, 19.5, 22.5));
-    addTiledBox(timberBucket, 20.5, pierY + 0.2, 24.0, 2.6, 0.35, 6.2, 2.4, 0.35);
-    for (const [px, pz] of [[19.4, 21.8], [21.6, 21.8], [19.4, 26.2], [21.6, 26.2]]) {
-      const bedY = realmTerrainHeightAt(spec, px, pz) - 0.6;
-      const hP = Math.max(0.8, pierY + 0.2 - bedY);
-      addCylinder(timberBucket, px, bedY, pz, 0.18, 0.16, hP, 6);
+    // Bespoke Ecosystem-Synthesized Architecture (from Extended Verdant Catalog — ZERO cloned layouts!)
+    const bucketFor = (mat: StructurePrimitive['material']): MeshBucket =>
+      mat === 'stone'
+        ? stoneBucket
+        : mat === 'cobble'
+          ? cobbleBucket
+          : mat === 'timber'
+            ? timberBucket
+            : accentBucket;
+
+    for (const part of ecoPlan.structures) {
+      const target = bucketFor(part.material);
+      const baseY = part.useAbsoluteY ? part.yOffset : realmTerrainHeightAt(spec, part.x, part.z) + part.yOffset;
+      const [cr, cg, cb] = part.rgb ?? [1, 1, 1];
+      if (part.kind === 'box') {
+        if (target.textured) {
+          addTiledBox(target, part.x, baseY, part.z, part.sx, part.sy, part.sz, 2.5, part.yaw ?? 0);
+        } else {
+          addBox(target, part.x, baseY, part.z, part.sx, part.sy, part.sz, part.yaw ?? 0, cr, cg, cb);
+        }
+      } else if (part.kind === 'cylinder') {
+        addCylinder(target, part.x, baseY, part.z, part.sx, part.sz, part.sy, part.segs ?? 8, cr, cg, cb, true);
+      } else if (part.kind === 'cone') {
+        addCone(target, part.x, baseY, part.z, part.sx, part.sy, part.segs ?? 8, cr, cg, cb);
+      }
     }
-    for (const [sx, sz, sr, sh] of [[33, 28, 2.4, 7.8], [37, 32, 3.1, 11.4], [29, 34, 2.0, 6.2], [39, 24, 2.6, 9.0]]) {
-      const sy = realmTerrainHeightAt(spec, sx, sz) - 1.5;
-      addCylinder(accentBucket, sx, sy, sz, sr, sr * 0.72, sh, 6, 0.15, 0.18, 0.22);
-      addCone(accentBucket, sx, sy + sh, sz, sr * 0.72, sh * 0.22, 6, 0.20, 0.25, 0.30);
+
+    // Bespoke Ecosystem-Synthesized Flora & Botanical/Geological Morphologies (8 Distinct Kits!)
+    const stampFlora = (f: SynthesizedFloraInstance): void => {
+      const ty = realmTerrainHeightAt(spec, f.x, f.z);
+      const s = f.scale;
+      const shade = 0.88 + f.variant * 0.24;
+
+      switch (f.kit) {
+        case 'weeping-banyan': {
+          // Broad moss-draped banyan/willow with flared buttress roots, wide umbrella dome, & hanging vine curtains
+          const th = 3.6 * s;
+          addCylinder(accentBucket, f.x, ty - 0.5, f.z, 0.72 * s, 0.42 * s, th, 7, 0.28, 0.22, 0.16);
+          for (let r = 0; r < 3; r++) {
+            const a = f.yaw + (r * Math.PI * 2) / 3;
+            addCylinder(accentBucket, f.x + Math.cos(a) * 0.58 * s, ty - 0.4, f.z + Math.sin(a) * 0.58 * s, 0.34 * s, 0.12 * s, 1.8 * s, 5, 0.25, 0.20, 0.14);
+          }
+          addCylinder(accentBucket, f.x, ty + th * 0.82, f.z, 3.6 * s, 2.5 * s, 1.5 * s, 9, 0.12 * shade, 0.42 * shade, 0.24 * shade);
+          addCone(accentBucket, f.x, ty + th * 0.82 + 1.45 * s, f.z, 2.7 * s, 1.55 * s, 9, 0.18 * shade, 0.54 * shade, 0.30 * shade);
+          // Hanging bioluminescent moss-vine strands
+          for (let v = 0; v < 5; v++) {
+            const a = f.yaw + (v * Math.PI * 2) / 5;
+            const vx = f.x + Math.cos(a) * 2.55 * s;
+            const vz = f.z + Math.sin(a) * 2.55 * s;
+            addCylinder(accentBucket, vx, ty + th * 0.22, vz, 0.11 * s, 0.16 * s, th * 0.65, 5, 0.22 * shade, 0.62 * shade, 0.36 * shade);
+          }
+          break;
+        }
+        case 'obsidian-vent-spires': {
+          // Clustered angled hexagonal obsidian crystals + glowing magma fumarole throat
+          addCylinder(accentBucket, f.x, ty - 0.6, f.z, 1.35 * s, 0.45 * s, 5.4 * s, 6, 0.16, 0.14, 0.17);
+          addCone(accentBucket, f.x, ty + 4.8 * s, f.z, 0.48 * s, 2.1 * s, 6, 0.24, 0.18, 0.20);
+          const ox = Math.cos(f.yaw) * 1.15 * s;
+          const oz = Math.sin(f.yaw) * 1.15 * s;
+          addCylinder(accentBucket, f.x + ox, ty - 0.4, f.z + oz, 0.82 * s, 0.26 * s, 3.4 * s, 6, 0.20, 0.17, 0.19);
+          addCone(accentBucket, f.x - ox * 0.7, ty + 0.1, f.z - oz * 0.7, 0.65 * s, 1.45 * s, 5, 0.96, 0.42, 0.14);
+          break;
+        }
+        case 'coral-palm-atoll': {
+          if (ty < spec.terrainProfile.waterLevel + 0.45 || f.variant > 0.65) {
+            // Branching rose-gold & turquoise reef-coral polyp formation
+            const coralCol: [number, number, number] = f.variant > 0.82 ? [0.88, 0.40, 0.46] : [0.22, 0.74, 0.72];
+            addCylinder(accentBucket, f.x, ty - 0.3, f.z, 0.62 * s, 1.15 * s, 1.8 * s, 7, coralCol[0], coralCol[1], coralCol[2]);
+            for (let b = 0; b < 4; b++) {
+              const a = f.yaw + (b * Math.PI) / 2;
+              addCylinder(accentBucket, f.x + Math.cos(a) * 0.85 * s, ty + 0.4 * s, f.z + Math.sin(a) * 0.85 * s, 0.26 * s, 0.48 * s, 1.6 * s, 6, coralCol[0] * 1.08, coralCol[1] * 1.08, coralCol[2] * 1.05);
+            }
+          } else {
+            // Smooth 3-segment gently curved coastal sea-palm with 6 radiating arched sun-fronds
+            const leanX = Math.cos(f.yaw) * 0.45 * s;
+            const leanZ = Math.sin(f.yaw) * 0.45 * s;
+            addCylinder(accentBucket, f.x, ty - 0.4, f.z, 0.38 * s, 0.30 * s, 1.9 * s, 8, 0.42, 0.30, 0.19);
+            addCylinder(accentBucket, f.x + leanX * 0.35, ty + 1.45 * s, f.z + leanZ * 0.35, 0.30 * s, 0.24 * s, 1.8 * s, 8, 0.44, 0.31, 0.20);
+            addCylinder(accentBucket, f.x + leanX * 0.75, ty + 3.15 * s, f.z + leanZ * 0.75, 0.24 * s, 0.19 * s, 1.65 * s, 8, 0.46, 0.33, 0.21);
+            const topX = f.x + leanX * 0.92;
+            const topZ = f.z + leanZ * 0.92;
+            const topY = ty + 4.75 * s;
+            // Coconut cluster crown hub
+            addCylinder(accentBucket, topX, topY - 0.32 * s, topZ, 0.32 * s, 0.28 * s, 0.42 * s, 7, 0.34, 0.24, 0.14);
+            for (let fr = 0; fr < 6; fr++) {
+              const a = f.yaw + (fr * Math.PI * 2) / 6;
+              // Inner arched frond leaf + overlapping outer drooping tip leaf
+              addBox(accentBucket, topX + Math.cos(a) * 1.05 * s, topY + 0.06 * s, topZ + Math.sin(a) * 1.05 * s, 2.05 * s, 0.18 * s, 0.68 * s, -a, 0.16 * shade, 0.54 * shade, 0.26 * shade);
+              addBox(accentBucket, topX + Math.cos(a) * 1.98 * s, topY - 0.08 * s, topZ + Math.sin(a) * 1.98 * s, 1.35 * s, 0.15 * s, 0.54 * s, -a, 0.20 * shade, 0.60 * shade, 0.30 * shade);
+            }
+          }
+          break;
+        }
+        case 'mesa-hoodoo-juniper': {
+          if (f.variant < 0.52) {
+            // Wind-eroded banded ochre sandstone mushroom hoodoo
+            addCylinder(accentBucket, f.x, ty - 0.5, f.z, 1.25 * s, 0.62 * s, 3.8 * s, 7, 0.66, 0.44, 0.25);
+            addCylinder(accentBucket, f.x, ty + 3.3 * s, f.z, 1.85 * s, 1.45 * s, 1.25 * s, 7, 0.78, 0.54, 0.30);
+            addCone(accentBucket, f.x, ty + 4.55 * s, f.z, 1.45 * s, 0.75 * s, 7, 0.84, 0.62, 0.36);
+          } else {
+            // Flat wind-sheared desert iron-juniper & ribbed saguaro succulent
+            addCylinder(accentBucket, f.x, ty - 0.4, f.z, 0.34 * s, 0.24 * s, 2.6 * s, 6, 0.38, 0.25, 0.16);
+            addCylinder(accentBucket, f.x, ty + 2.2 * s, f.z, 2.6 * s, 2.2 * s, 0.85 * s, 8, 0.44 * shade, 0.52 * shade, 0.20 * shade);
+            addCylinder(accentBucket, f.x + 1.2 * s, ty - 0.2, f.z + 0.6 * s, 0.32 * s, 0.26 * s, 2.1 * s, 6, 0.26 * shade, 0.48 * shade, 0.24 * shade);
+          }
+          break;
+        }
+        case 'frostglass-crystal-pine': {
+          if (f.variant > 0.55) {
+            // Translucent faceted polar frostglass crystal shard cluster
+            addCylinder(accentBucket, f.x, ty - 0.5, f.z, 1.05 * s, 0.38 * s, 4.8 * s, 6, 0.48, 0.78, 0.94);
+            addCone(accentBucket, f.x, ty + 4.3 * s, f.z, 0.42 * s, 2.8 * s, 6, 0.76, 0.95, 1.0);
+            const sx = Math.cos(f.yaw) * 0.95 * s;
+            const sz = Math.sin(f.yaw) * 0.95 * s;
+            addCylinder(accentBucket, f.x + sx, ty - 0.3, f.z + sz, 0.58 * s, 0.2 * s, 2.8 * s, 5, 0.58, 0.84, 0.98);
+          } else {
+            // Snow-laden boreal rime-spruce
+            const trunkH = 3.2 * s;
+            addCylinder(accentBucket, f.x, ty - 0.5, f.z, 0.42 * s, 0.2 * s, trunkH, 7, 0.22, 0.20, 0.22);
+            addCone(accentBucket, f.x, ty + trunkH * 0.48, f.z, 2.4 * s, 2.7 * s, 8, 0.18, 0.34, 0.38);
+            addCone(accentBucket, f.x, ty + trunkH * 0.88, f.z, 1.8 * s, 2.5 * s, 8, 0.56, 0.72, 0.80);
+            addCone(accentBucket, f.x, ty + trunkH * 1.24, f.z, 1.15 * s, 2.1 * s, 8, 0.84, 0.91, 0.97);
+          }
+          break;
+        }
+        case 'giant-fungal-canopy': {
+          // Towering bioluminescent fluted mushroom tree + glowing shelf spores
+          const stH = 4.2 * s;
+          addCylinder(accentBucket, f.x, ty - 0.4, f.z, 0.62 * s, 0.36 * s, stH, 8, 0.76, 0.74, 0.66);
+          const capCol: [number, number, number] = f.variant > 0.5 ? [0.20, 0.68, 0.58] : [0.46, 0.32, 0.68];
+          addCylinder(accentBucket, f.x, ty + stH - 0.3 * s, f.z, 3.2 * s, 2.4 * s, 0.95 * s, 10, capCol[0] * shade, capCol[1] * shade, capCol[2] * shade);
+          addCone(accentBucket, f.x, ty + stH + 0.65 * s, f.z, 2.5 * s, 1.35 * s, 10, capCol[0] * 1.15, capCol[1] * 1.15, capCol[2] * 1.15);
+          // Smaller glowing toadstool buddy
+          addCylinder(accentBucket, f.x + 1.5 * s, ty - 0.2, f.z + 0.9 * s, 0.24 * s, 0.18 * s, 1.4 * s, 6, 0.74, 0.72, 0.64);
+          addCone(accentBucket, f.x + 1.5 * s, ty + 1.15 * s, f.z + 0.9 * s, 0.95 * s, 0.75 * s, 8, 0.36, 0.92, 0.74);
+          break;
+        }
+        case 'petrified-amber-grove': {
+          // Spiral-fluted petrified stone trunk inlaid with luminous amber resin rings
+          const th = 4.6 * s;
+          addCylinder(accentBucket, f.x, ty - 0.5, f.z, 0.82 * s, 0.44 * s, th, 7, 0.36, 0.32, 0.30);
+          addCylinder(accentBucket, f.x, ty + th * 0.45, f.z, 0.72 * s, 0.68 * s, 0.45 * s, 7, 0.94, 0.66, 0.18);
+          addCone(accentBucket, f.x, ty + th, f.z, 1.45 * s, 2.2 * s, 6, 0.92, 0.64, 0.20);
+          break;
+        }
+        default: {
+          // Highland Amber Ironwood & Alpine Conifers
+          const isAmberGrove = f.x > 10 && f.z < 12;
+          const trunkH = (isAmberGrove ? 4.2 : 3.1) * s;
+          const trunkR = (isAmberGrove ? 0.48 : 0.36) * s;
+          addCylinder(accentBucket, f.x, ty - 0.5, f.z, trunkR * 1.5, trunkR * 0.62, trunkH, 7, 0.27, 0.19, 0.13);
+          const c1 = isAmberGrove ? [0.74 * shade, 0.42 * shade, 0.14] : [0.15 * shade, 0.32 * shade, 0.19 * shade];
+          const c2 = isAmberGrove ? [0.85 * shade, 0.55 * shade, 0.18] : [0.20 * shade, 0.40 * shade, 0.23 * shade];
+          const c3 = isAmberGrove ? [0.92 * shade, 0.67 * shade, 0.25] : [0.26 * shade, 0.48 * shade, 0.27 * shade];
+          const rBase = (isAmberGrove ? 3.1 : 2.45) * s;
+          addCone(accentBucket, f.x, ty + trunkH * 0.54, f.z, rBase, 2.7 * s, 8, c1[0], c1[1], c1[2]);
+          addCone(accentBucket, f.x + 0.22 * Math.cos(f.yaw), ty + trunkH * 0.82, f.z + 0.22 * Math.sin(f.yaw), rBase * 0.78, 2.5 * s, 8, c2[0], c2[1], c2[2]);
+          addCone(accentBucket, f.x - 0.15 * Math.sin(f.yaw), ty + trunkH * 1.1, f.z + 0.15 * Math.cos(f.yaw), rBase * 0.52, 2.1 * s, 8, c3[0], c3[1], c3[2]);
+          break;
+        }
+      }
+    };
+
+    for (const f of ecoPlan.floraInstances) {
+      stampFlora(f);
     }
-    // Mountain ranges are now sculpted directly into the continuous terrain mesh (realmTerrainHeightAt)
+    // Mountain ranges are sculpted directly into the continuous terrain mesh (realmTerrainHeightAt)
     // with zero floating perimeter cone meshes, allowing players to walk around or climb up into them!
   }
 
@@ -1447,6 +1422,14 @@ export async function compileRealmWithVerdant(
       endpointUrl: 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/model-index.json',
       targetParts: ['hero-props', 'character-rigs'],
     },
+    {
+      streamId: 'verdant-ecosystem-catalog',
+      label: 'Verdant Extensible Ecosystem & Procedural Synthesis Catalog',
+      authority: 'Frontiers and Foundations Procedural Catalog',
+      adapterKind: 'verdant-catalog',
+      endpointUrl: 'urn:verdant:catalog:ecosystems',
+      targetParts: ['stage-environment', 'hero-props', 'character-rigs'],
+    },
   ]) {
     stageIo(enc.encode(JSON.stringify(stream)));
     ex.verdant_wasm_register_stream_io();
@@ -1484,6 +1467,69 @@ export async function compileRealmWithVerdant(
       tags: ['polyhaven', 'cc0', 'customized-prop', spec.slug],
       propertiesJson: JSON.stringify({ realm: spec.slug, assetId }),
       commitNote: `Imported & customized Poly Haven CC0 model ${assetId} into ${spec.slug}`,
+    });
+  }
+
+  if (spec.isDungeon) {
+    const compiledDg = synthesizeDungeonEcosystem(spec);
+    registerPm({
+      modelId: `frontiers:dungeon-blueprint:${spec.slug}`,
+      title: `${spec.name} — ${compiledDg.styleTitle}`,
+      schemaType: 'DungeonBlueprint',
+      mediaType: 'application/vnd.verdant.dungeon+json',
+      targetSlot: 'stage-environment',
+      sourceStream: 'verdant-ecosystem-catalog',
+      sourceUri: `urn:frontiers:dungeon-blueprint:${spec.slug}`,
+      licenseSpdx: 'CC0-1.0',
+      tags: [
+        'dungeon-blueprint',
+        compiledDg.style,
+        compiledDg.faunaKit,
+        compiledDg.chasmVisual,
+        compiledDg.phenomenon.id,
+        spec.slug,
+      ],
+      propertiesJson: JSON.stringify({
+        style: compiledDg.style,
+        styleTitle: compiledDg.styleTitle,
+        faunaKit: compiledDg.faunaKit,
+        chasmVisual: compiledDg.chasmVisual,
+        phenomenon: compiledDg.phenomenon.id,
+        structureCount: compiledDg.structures.length,
+        thermalVentCount: compiledDg.thermalVents.length,
+        catalogExtensions: compiledDg.catalogExtensionIds,
+      }),
+      commitNote: `Synthesized bespoke 3D dungeon "${compiledDg.styleTitle}" for ${spec.name}`,
+    });
+  } else {
+    const compiledEco = synthesizeRealmEcosystem(spec);
+    registerPm({
+      modelId: `frontiers:ecosystem:${spec.slug}`,
+      title: `${spec.name} — ${compiledEco.layoutTitle} (${compiledEco.floraTitle})`,
+      schemaType: 'EcosystemBlueprint',
+      mediaType: 'application/vnd.verdant.ecosystem+json',
+      targetSlot: 'stage-environment',
+      sourceStream: 'verdant-ecosystem-catalog',
+      sourceUri: `urn:frontiers:ecosystem:${spec.slug}`,
+      licenseSpdx: 'CC0-1.0',
+      tags: [
+        'ecosystem-blueprint',
+        compiledEco.layoutId,
+        compiledEco.floraKit,
+        compiledEco.faunaKit,
+        compiledEco.phenomenon.id,
+        spec.slug,
+      ],
+      propertiesJson: JSON.stringify({
+        layoutId: compiledEco.layoutId,
+        floraKit: compiledEco.floraKit,
+        faunaKit: compiledEco.faunaKit,
+        phenomenon: compiledEco.phenomenon.id,
+        structureCount: compiledEco.structures.length,
+        floraCount: compiledEco.floraInstances.length,
+        catalogExtensions: compiledEco.catalogExtensionIds,
+      }),
+      commitNote: `Synthesized bespoke ecosystem "${compiledEco.layoutTitle}" with ${compiledEco.floraTitle} for ${spec.name}`,
     });
   }
 

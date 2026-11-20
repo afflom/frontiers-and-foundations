@@ -736,12 +736,12 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:1309ddf9b0558131dbfb291bd824c90a49bbb213713d2ba57f86a6bb7c7735fb",
+    "worldGlbKappa": "sha256:5fb22c18677ae5c69a2adb141e02f7280dc0978149d3c7e642214a27572c0442",
     "vdntKappa": "sha256:f4c335d7e9cb7590f511016628d05c643fd07fe3eaf3c7dece420cd0f54bee1e",
     "skyKappa": "sha256:3deabf539a2ee617eed2264c85ddaaf18154043243252848b31af06af08b73c7",
-    "triangles": 16562,
-    "vertices": 25709,
-    "glbBytes": 1725568,
+    "triangles": 18006,
+    "vertices": 28985,
+    "glbBytes": 1853032,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 12,
     "importedCatalogAssets": [
@@ -753,7 +753,7 @@
       "old_military_crate",
       "boulder_01"
     ],
-    "projectModelsRegistered": 9,
+    "projectModelsRegistered": 10,
     "cognitiveKnowledgeIngested": 4,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

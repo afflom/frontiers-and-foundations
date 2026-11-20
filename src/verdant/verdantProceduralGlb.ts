@@ -3,7 +3,12 @@ import {
   type FrontiersRealmSpec,
   type RealmThemeId,
 } from './realmModelSchema';
-import { createSeededRng } from './verdantCharacterSynthesizer';
+import {
+  synthesizeRealmEcosystem,
+  type StructurePrimitive,
+  type SynthesizedFloraInstance,
+} from './verdantEcosystemCatalog';
+import { synthesizeDungeonEcosystem } from './verdantDungeonCatalog';
 
 type Rgb = [number, number, number];
 
@@ -238,7 +243,7 @@ function mixRgb(a: Rgb, b: Rgb, t: number): Rgb {
 
 function buildOverworldMesh(spec: FrontiersRealmSpec, mb: MeshBuilder): void {
   const pal = BIOME_PALETTES[spec.theme] ?? BIOME_PALETTES['citadel-highlands'];
-  const rng = createSeededRng(spec.seed ^ 0x51a9);
+  const ecoPlan = synthesizeRealmEcosystem(spec);
 
   // 1. Continuous 64×64 terrain grid covering [-108..+108] with integrated mountain ranges & riverbanks
   const gridN = 64;
@@ -304,9 +309,11 @@ function buildOverworldMesh(spec: FrontiersRealmSpec, mb: MeshBuilder): void {
 
       const onNsRoad = Math.abs(x) < 4.0 && y > waterY + 0.3;
       const onEwRoad = Math.abs(z) < 4.0 && Math.abs(x) > 10 && y > waterY + 0.3;
-      if (onNsRoad || onEwRoad) {
+      const onPlaza = ecoPlan.plazaZones.some((pz) => Math.hypot(x - pz.x, z - pz.z) < pz.radius);
+      if (onNsRoad || onEwRoad || onPlaza) {
         const distAxis = onNsRoad ? Math.abs(x) : Math.abs(z);
-        c = mixRgb(c, pal.road, Math.max(0, 1 - distAxis / 4.0) * 0.92);
+        const roadWeight = onPlaza ? 0.78 : Math.max(0, 1 - distAxis / 4.0) * 0.92;
+        c = mixRgb(c, pal.road, roadWeight);
       }
 
       mb.addVertex(x, y, z, nx, ny, nz, c[0], c[1], c[2]);
@@ -325,17 +332,60 @@ function buildOverworldMesh(spec: FrontiersRealmSpec, mb: MeshBuilder): void {
     }
   }
 
-  // 2. Parabolic Causeway Stone Bridge across the gorge + Frontier Road Waymarker Lanterns
+  // 2. Bespoke Ecosystem Crossing Bridge across the gorge
   const tp = spec.terrainProfile;
   if (tp.hasBridge) {
     const bLen = tp.bridgeZMax - tp.bridgeZMin;
     const bMidZ = (tp.bridgeZMin + tp.bridgeZMax) * 0.5;
-    mb.addBox(0, tp.bridgeDeckY - 0.42, bMidZ, tp.bridgeHalfWidth * 2, 0.84, bLen, pal.road);
-    // Low stone parapets + accent coping stones
-    mb.addBox(-tp.bridgeHalfWidth + 0.22, tp.bridgeDeckY + 0.42, bMidZ, 0.42, 0.85, bLen, pal.masonry);
-    mb.addBox(tp.bridgeHalfWidth - 0.22, tp.bridgeDeckY + 0.42, bMidZ, 0.42, 0.85, bLen, pal.masonry);
-    mb.addBox(-tp.bridgeHalfWidth + 0.22, tp.bridgeDeckY + 0.92, bMidZ, 0.54, 0.16, bLen, pal.masonryAccent);
-    mb.addBox(tp.bridgeHalfWidth - 0.22, tp.bridgeDeckY + 0.92, bMidZ, 0.54, 0.16, bLen, pal.masonryAccent);
+    if (ecoPlan.layoutId === 'aqueduct-terraces') {
+      mb.addBox(0, tp.bridgeDeckY - 0.35, bMidZ, tp.bridgeHalfWidth * 2, 0.7, bLen, pal.trunk);
+      for (const z of [-2.8, 1.2, 5.2, 9.2, 12.8]) {
+        mb.addCylinder(-2.65, tp.bridgeDeckY, z, 0.24, 0.2, 4.3, 7, pal.trunk);
+        mb.addCylinder(2.65, tp.bridgeDeckY, z, 0.24, 0.2, 4.3, 7, pal.trunk);
+        mb.addBox(0, tp.bridgeDeckY + 4.35, z, 6.0, 0.34, 0.36, pal.trunk);
+      }
+    } else if (ecoPlan.layoutId === 'caldera-amphitheater') {
+      mb.addBox(0, tp.bridgeDeckY - 0.38, bMidZ, tp.bridgeHalfWidth * 2, 0.76, bLen, [0.16, 0.15, 0.17]);
+      for (const side of [-1, 1]) {
+        mb.addBox(side * 2.65, tp.bridgeDeckY + 0.45, bMidZ, 0.34, 0.88, bLen, [0.19, 0.17, 0.19]);
+        for (const z of [-2.8, 5.0, 12.8]) {
+          mb.addBox(side * 2.65, tp.bridgeDeckY + 1.1, z, 0.85, 2.1, 0.85, [0.22, 0.18, 0.20]);
+          mb.addCylinder(side * 2.65, tp.bridgeDeckY + 2.2, z, 0.45, 0.12, 0.9, 6, [0.98, 0.44, 0.12]);
+        }
+      }
+    } else if (ecoPlan.layoutId === 'archipelago-atolls') {
+      mb.addBox(0, tp.bridgeDeckY - 0.32, bMidZ, tp.bridgeHalfWidth * 2, 0.56, bLen, pal.trunk);
+      for (const side of [-1, 1]) {
+        mb.addBox(side * 2.65, tp.bridgeDeckY + 0.65, bMidZ, 0.18, 0.22, bLen, pal.trunk);
+        for (const z of [-2.8, 1.2, 5.2, 9.2, 12.8]) {
+          mb.addCylinder(side * 2.65, tp.bridgeDeckY - 2.8, z, 0.32, 0.28, 4.4, 8, pal.trunk);
+          mb.addBox(side * 2.65, tp.bridgeDeckY + 1.65, z, 0.36, 0.42, 0.36, [0.22, 0.86, 0.84]);
+        }
+      }
+    } else if (ecoPlan.layoutId === 'caravan-ziggurat') {
+      mb.addBox(0, tp.bridgeDeckY - 0.4, bMidZ, tp.bridgeHalfWidth * 2, 0.8, bLen, pal.road);
+      for (const side of [-1, 1]) {
+        mb.addBox(side * 2.65, tp.bridgeDeckY + 0.38, bMidZ, 0.46, 0.78, bLen, pal.masonry);
+        for (const z of [-2.8, 5.0, 12.8]) {
+          mb.addBox(side * 2.65, tp.bridgeDeckY + 1.4, z, 0.74, 2.7, 0.74, [0.78, 0.58, 0.34]);
+          mb.addCylinder(side * 2.65, tp.bridgeDeckY + 2.75, z, 0.52, 0.08, 0.95, 4, [0.96, 0.78, 0.28]);
+        }
+      }
+    } else if (ecoPlan.layoutId === 'aurora-observatory') {
+      mb.addBox(0, tp.bridgeDeckY - 0.36, bMidZ, tp.bridgeHalfWidth * 2, 0.72, bLen, [0.58, 0.80, 0.94]);
+      for (const side of [-1, 1]) {
+        mb.addBox(side * 2.65, tp.bridgeDeckY + 0.46, bMidZ, 0.34, 0.86, bLen, [0.46, 0.74, 0.92]);
+        for (const z of [-2.8, 1.2, 5.2, 9.2, 12.8]) {
+          mb.addCylinder(side * 2.65, tp.bridgeDeckY, z, 0.46, 0.14, 3.2, 6, [0.56, 0.88, 0.98]);
+        }
+      }
+    } else {
+      mb.addBox(0, tp.bridgeDeckY - 0.42, bMidZ, tp.bridgeHalfWidth * 2, 0.84, bLen, pal.road);
+      mb.addBox(-tp.bridgeHalfWidth + 0.22, tp.bridgeDeckY + 0.42, bMidZ, 0.42, 0.85, bLen, pal.masonry);
+      mb.addBox(tp.bridgeHalfWidth - 0.22, tp.bridgeDeckY + 0.42, bMidZ, 0.42, 0.85, bLen, pal.masonry);
+      mb.addBox(-tp.bridgeHalfWidth + 0.22, tp.bridgeDeckY + 0.92, bMidZ, 0.54, 0.16, bLen, pal.masonryAccent);
+      mb.addBox(tp.bridgeHalfWidth - 0.22, tp.bridgeDeckY + 0.92, bMidZ, 0.54, 0.16, bLen, pal.masonryAccent);
+    }
     // Support piers into gorge
     for (const pz of [tp.bridgeZMin + 2.5, bMidZ, tp.bridgeZMax - 2.5]) {
       mb.addBox(-2.1, tp.bridgeDeckY - 3.2, pz, 1.1, 5.6, 1.4, pal.masonry);
@@ -359,188 +409,151 @@ function buildOverworldMesh(spec: FrontiersRealmSpec, mb: MeshBuilder): void {
     }
   }
 
-  // 3. Northern Citadel / Biome-Differentiated Landmark Keep (aligned with verdantCollision.ts!)
-  const keepY = realmTerrainHeightAt(spec, 0, -18);
-  // Courtyard plinth
-  mb.addBox(0, keepY - 0.15, -18.5, 25.5, 0.7, 15.5, pal.road);
-  // Gatehouse flanking towers (leaving open center passage at x=0, z=-13.8)
-  mb.addBox(-5.2, keepY + 3.4, -13.8, 3.2, 7.2, 3.0, pal.masonry);
-  mb.addBox(5.2, keepY + 3.4, -13.8, 3.2, 7.2, 3.0, pal.masonry);
-  mb.addBox(0, keepY + 6.4, -13.8, 12.6, 1.3, 2.4, pal.masonryAccent);
-  // Crenellations along gatehouse lintel
-  for (const cx of [-4.5, -1.5, 1.5, 4.5]) {
-    mb.addBox(cx, keepY + 7.45, -13.8, 1.1, 0.9, 1.4, pal.masonry);
-  }
+  // 3. Bespoke Ecosystem-Synthesized Architecture (aligned 1:1 with verdantCollision.ts — ZERO cloned layouts!)
+  const colorForPart = (p: StructurePrimitive): Rgb => {
+    if (p.rgb) return p.rgb;
+    if (p.material === 'stone') return pal.masonry;
+    if (p.material === 'cobble') return pal.road;
+    if (p.material === 'timber') return pal.trunk;
+    return pal.masonryAccent;
+  };
 
-  // Outer bastion wings
-  mb.addBox(-11.4, keepY + 4.8, -17.5, 4.6, 10.0, 4.6, pal.masonry);
-  mb.addBox(11.4, keepY + 4.8, -17.5, 4.6, 10.0, 4.6, pal.masonry);
-  mb.addBox(-11.4, keepY + 9.9, -17.5, 5.2, 0.6, 5.2, pal.masonryAccent);
-  mb.addBox(11.4, keepY + 9.9, -17.5, 5.2, 0.6, 5.2, pal.masonryAccent);
-  mb.addCylinder(-11.4, keepY + 10.2, -17.5, 2.9, 0.2, 4.2, 8, pal.roof);
-  mb.addCylinder(11.4, keepY + 10.2, -17.5, 2.9, 0.2, 4.2, 8, pal.roof);
-
-  if (spec.theme === 'pelagic-spires') {
-    // Tall Coastal Lighthouse Spire with beacon gallery
-    mb.addCylinder(0, keepY - 0.5, -21.8, 5.6, 3.9, 14.5, 10, pal.masonry);
-    mb.addCylinder(0, keepY + 14.0, -21.8, 4.5, 4.5, 1.6, 10, pal.masonryAccent);
-    mb.addCylinder(0, keepY + 15.6, -21.8, 3.4, 0.3, 4.8, 10, pal.roof);
-  } else if (spec.theme === 'amber-steppe') {
-    // Stepped Sandstone Ziggurat with gilded summit altar
-    mb.addBox(0, keepY + 2.2, -21.8, 14.0, 4.8, 10.8, pal.masonry);
-    mb.addBox(0, keepY + 6.0, -21.8, 10.4, 3.8, 8.0, pal.masonry);
-    mb.addBox(0, keepY + 9.4, -21.8, 6.8, 3.2, 5.4, pal.masonryAccent);
-    mb.addBox(0, keepY + 11.6, -21.8, 3.4, 1.8, 3.4, pal.roof);
-  } else if (spec.theme === 'sunken-aqueducts') {
-    // Aqueduct Rotunda & grand flanking colonnade arches
-    mb.addCylinder(0, keepY - 0.4, -21.8, 6.5, 6.0, 9.2, 12, pal.masonry);
-    mb.addCylinder(0, keepY + 8.8, -21.8, 6.8, 0.6, 4.8, 12, pal.roof);
-    for (const ax of [-16, -22, 16, 22]) {
-      const ay = realmTerrainHeightAt(spec, ax, -20);
-      mb.addBox(ax, ay + 4.0, -20, 2.3, 8.4, 2.3, pal.masonry);
+  for (const part of ecoPlan.structures) {
+    const baseY = part.useAbsoluteY ? part.yOffset : realmTerrainHeightAt(spec, part.x, part.z) + part.yOffset;
+    const col = colorForPart(part);
+    if (part.kind === 'box') {
+      mb.addBox(part.x, baseY, part.z, part.sx, part.sy, part.sz, col, part.yaw ?? 0);
+    } else if (part.kind === 'cylinder') {
+      mb.addCylinder(part.x, baseY, part.z, part.sx, part.sz, part.sy, part.segs ?? 8, col);
+    } else if (part.kind === 'cone') {
+      mb.addCylinder(part.x, baseY, part.z, part.sx, 0.08, part.sy, part.segs ?? 8, col);
     }
-    mb.addBox(-19, keepY + 7.8, -20, 12.6, 1.3, 2.2, pal.masonryAccent);
-    mb.addBox(19, keepY + 7.8, -20, 12.6, 1.3, 2.2, pal.masonryAccent);
-  } else if (spec.theme === 'glacial-spire') {
-    // Faceted Frostglass Crystal Citadel
-    mb.addCylinder(0, keepY - 0.4, -21.8, 6.4, 4.6, 12.0, 6, pal.masonry);
-    mb.addCylinder(0, keepY + 11.6, -21.8, 4.8, 0.15, 8.2, 6, pal.masonryAccent);
-  } else {
-    // Octagonal Basalt Citadel / Obsidian Crucible Keep with crown buttresses
-    mb.addCylinder(0, keepY - 0.5, -21.8, 6.6, 5.8, 11.6, 8, pal.masonry);
-    mb.addCylinder(0, keepY + 11.1, -21.8, 6.5, 6.5, 0.9, 8, pal.masonryAccent);
-    mb.addCylinder(0, keepY + 12.0, -21.8, 6.0, 0.4, 5.2, 8, pal.roof);
   }
 
-  // 4. Outer Frontier Landmarks (aligned with verdantCollision.ts)
-  // Northern Watchtower (0, -56)
-  const nwY = realmTerrainHeightAt(spec, 0, -56);
-  mb.addCylinder(0, nwY - 0.4, -56, 4.0, 3.3, 12.0, 8, pal.masonry);
-  mb.addCylinder(0, nwY + 11.4, -56, 4.2, 4.2, 0.7, 8, pal.masonryAccent);
-  mb.addCylinder(0, nwY + 12.1, -56, 3.8, 0.25, 3.8, 8, pal.roof);
+  // 4. Bespoke Ecosystem-Synthesized Flora (8 distinct procedural botanical/geological kits!)
+  const stampFloraProc = (f: SynthesizedFloraInstance): void => {
+    const py = realmTerrainHeightAt(spec, f.x, f.z);
+    const s = f.scale;
+    const shade = 0.88 + f.variant * 0.24;
 
-  // Western Forge Pavilion (-26, -8)
-  const fgY = realmTerrainHeightAt(spec, -26, -8);
-  mb.addBox(-26, fgY + 0.1, -8, 8.6, 0.6, 8.6, pal.road);
-  for (const [px, pz] of [[-29, -11], [-23, -11], [-29, -5], [-23, -5]]) {
-    mb.addBox(px, fgY + 2.6, pz, 0.9, 5.4, 0.9, pal.masonry);
-  }
-  mb.addBox(-26, fgY + 5.5, -8, 8.2, 0.9, 8.2, pal.roof);
-  mb.addBox(-26, fgY + 6.2, -8, 4.4, 0.6, 4.4, pal.masonryAccent);
-
-  // Western Standing Monolith Ring (-54, -22)
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2;
-    const mx = -54 + Math.cos(a) * 8.4;
-    const mz = -22 + Math.sin(a) * 8.4;
-    const my = realmTerrainHeightAt(spec, mx, mz);
-    mb.addBox(mx, my + 2.8, mz, 1.45, 6.2 + (i % 2) * 1.6, 1.2, i % 2 === 0 ? pal.masonry : pal.masonryAccent, a);
-  }
-
-  // Eastern Caravan Pavilion (54, 10)
-  const ecY = realmTerrainHeightAt(spec, 54, 10);
-  mb.addBox(54, ecY + 0.1, 10, 9.2, 0.5, 8.4, pal.road);
-  for (const [px, pz] of [[50.5, 6.8], [57.5, 6.8], [50.5, 13.2], [57.5, 13.2]]) {
-    mb.addBox(px, ecY + 2.3, pz, 0.75, 5.0, 0.75, pal.trunk);
-  }
-  mb.addBox(54, ecY + 5.0, 10, 8.8, 0.8, 8.0, pal.masonryAccent);
-
-  // Dungeon Portal Arch (-14, -34)
-  const dgY = realmTerrainHeightAt(spec, -14, -34);
-  mb.addBox(-16.2, dgY + 2.7, -34, 1.5, 5.8, 1.7, pal.masonry);
-  mb.addBox(-11.8, dgY + 2.7, -34, 1.5, 5.8, 1.7, pal.masonry);
-  mb.addBox(-14, dgY + 5.8, -34, 6.6, 1.3, 2.0, pal.masonryAccent);
-
-  // 5. Biome Flora, Spires, Rock Clusters & Landmarks scattered cleanly away from roads and plazas
-  const propCount = 68;
-  for (let i = 0; i < propCount; i++) {
-    const px = (rng() - 0.5) * 172;
-    const pz = (rng() - 0.5) * 172;
-    // Keep cardinal roads, bridge, spawn plaza, keep, and landmarks unobstructed
-    if (Math.abs(px) < 7.5 || Math.abs(pz) < 7.5) continue;
-    if (Math.hypot(px, pz - 20) < 12) continue;
-    if (Math.hypot(px, pz + 18) < 19) continue;
-    if (Math.hypot(px + 26, pz + 8) < 10) continue;
-    if (Math.hypot(px + 54, pz + 22) < 12) continue;
-    if (Math.hypot(px - 54, pz - 10) < 11) continue;
-    if (Math.hypot(px + 14, pz + 34) < 8) continue;
-
-    const py = realmTerrainHeightAt(spec, px, pz);
-    if (py < tp.waterLevel + 0.35) continue;
-    // Skip steep mountain cliff faces so trees & spires never float on sheer rock
-    const pSlope = Math.hypot(
-      (realmTerrainHeightAt(spec, px + 1, pz) - realmTerrainHeightAt(spec, px - 1, pz)) * 0.5,
-      (realmTerrainHeightAt(spec, px, pz + 1) - realmTerrainHeightAt(spec, px, pz - 1)) * 0.5,
-    );
-    if (pSlope > 0.48) continue;
-
-    const scale = 0.85 + rng() * 1.05;
-    if (spec.theme === 'obsidian-crucible') {
-      // Dramatic clustered volcanic basalt spires with glowing magma veins & obsidian outcrops
-      mb.addCylinder(px, py - 0.4, pz, 1.55 * scale, 0.55 * scale, 5.8 * scale, 6, pal.rock);
-      mb.addCylinder(px + 1.2 * scale, py - 0.3, pz + 0.8 * scale, 0.95 * scale, 0.35 * scale, 3.4 * scale, 6, pal.masonry);
-      if (rng() > 0.35) {
-        mb.addCylinder(px - 0.8 * scale, py - 0.2, pz - 0.6 * scale, 0.55 * scale, 0.18 * scale, 2.2 * scale, 5, pal.masonryAccent);
+    switch (f.kit) {
+      case 'weeping-banyan': {
+        const th = 3.5 * s;
+        mb.addCylinder(f.x, py - 0.4, f.z, 0.68 * s, 0.38 * s, th, 7, pal.trunk);
+        mb.addCylinder(f.x, py + th * 0.8, f.z, 3.4 * s, 2.3 * s, 1.5 * s, 8, [0.12 * shade, 0.44 * shade, 0.24 * shade]);
+        mb.addCylinder(f.x, py + th * 0.8 + 1.4 * s, f.z, 2.4 * s, 0.3 * s, 1.5 * s, 8, [0.20 * shade, 0.56 * shade, 0.32 * shade]);
+        for (let v = 0; v < 4; v++) {
+          const a = f.yaw + (v * Math.PI) / 2;
+          mb.addCylinder(f.x + Math.cos(a) * 2.3 * s, py + th * 0.2, f.z + Math.sin(a) * 2.3 * s, 0.12 * s, 0.16 * s, th * 0.65, 5, [0.24 * shade, 0.64 * shade, 0.36 * shade]);
+        }
+        break;
       }
-    } else if (spec.theme === 'amber-steppe') {
-      // Sculpted layered sandstone hoodoo mesa & desert scrub
-      mb.addCylinder(px, py - 0.4, pz, 1.4 * scale, 0.7 * scale, 4.6 * scale, 6, pal.rock);
-      mb.addCylinder(px, py + 4.0 * scale, pz, 2.0 * scale, 1.3 * scale, 1.4 * scale, 6, pal.masonry);
-      if (rng() > 0.5) {
-        mb.addCylinder(px + 1.6 * scale, py - 0.2, pz + 1.1 * scale, 0.9 * scale, 0.4 * scale, 1.8 * scale, 6, pal.foliage);
+      case 'obsidian-vent-spires': {
+        mb.addCylinder(f.x, py - 0.5, f.z, 1.35 * s, 0.38 * s, 5.4 * s, 6, pal.rock);
+        mb.addCylinder(f.x + Math.cos(f.yaw) * 1.1 * s, py - 0.3, f.z + Math.sin(f.yaw) * 1.1 * s, 0.85 * s, 0.22 * s, 3.4 * s, 6, pal.masonry);
+        mb.addCylinder(f.x - Math.cos(f.yaw) * 0.7 * s, py - 0.1, f.z - Math.sin(f.yaw) * 0.7 * s, 0.58 * s, 0.12 * s, 1.8 * s, 5, pal.masonryAccent);
+        break;
       }
-    } else if (spec.theme === 'glacial-spire') {
-      // Faceted cyan crystal shard cluster + snow-laden alpine spruce
-      if (rng() > 0.42) {
-        mb.addCylinder(px, py - 0.2, pz, 0.36 * scale, 0.18 * scale, 3.0 * scale, 6, pal.trunk);
-        mb.addCylinder(px, py + 2.0 * scale, pz, 2.5 * scale, 0.25 * scale, 4.6 * scale, 7, pal.foliage);
-        mb.addCylinder(px, py + 4.4 * scale, pz, 1.6 * scale, 0.12 * scale, 3.0 * scale, 7, pal.groundHigh);
-      } else {
-        mb.addCylinder(px, py - 0.3, pz, 1.25 * scale, 0.14 * scale, 6.2 * scale, 5, pal.masonryAccent);
-        mb.addCylinder(px + 0.9 * scale, py - 0.2, pz - 0.6 * scale, 0.75 * scale, 0.1 * scale, 3.6 * scale, 5, pal.masonry);
+      case 'coral-palm-atoll': {
+        if (py < waterY + 0.45 || f.variant > 0.65) {
+          const cc: Rgb = f.variant > 0.82 ? [0.88, 0.40, 0.46] : [0.22, 0.74, 0.72];
+          mb.addCylinder(f.x, py - 0.3, f.z, 0.6 * s, 1.15 * s, 1.8 * s, 7, cc);
+        } else {
+          const lx = Math.cos(f.yaw) * 0.42 * s;
+          const lz = Math.sin(f.yaw) * 0.42 * s;
+          mb.addCylinder(f.x, py - 0.3, f.z, 0.36 * s, 0.28 * s, 1.85 * s, 7, pal.trunk);
+          mb.addCylinder(f.x + lx * 0.35, py + 1.5 * s, f.z + lz * 0.35, 0.28 * s, 0.22 * s, 1.75 * s, 7, pal.trunk);
+          mb.addCylinder(f.x + lx * 0.75, py + 3.15 * s, f.z + lz * 0.75, 0.22 * s, 0.18 * s, 1.6 * s, 7, pal.trunk);
+          const topX = f.x + lx * 0.9;
+          const topZ = f.z + lz * 0.9;
+          for (let fr = 0; fr < 6; fr++) {
+            const a = f.yaw + (fr * Math.PI * 2) / 6;
+            mb.addBox(topX + Math.cos(a) * 1.05 * s, py + 4.72 * s, topZ + Math.sin(a) * 1.05 * s, 2.0 * s, 0.18 * s, 0.66 * s, pal.foliage, -a);
+            mb.addBox(topX + Math.cos(a) * 1.98 * s, py + 4.58 * s, topZ + Math.sin(a) * 1.98 * s, 1.35 * s, 0.15 * s, 0.52 * s, pal.foliage, -a);
+          }
+        }
+        break;
       }
-    } else {
-      // Sculpted multi-tiered highland/aqueduct/coastal trees & moss-draped boulders
-      if (rng() > 0.26) {
-        mb.addCylinder(px, py - 0.2, pz, 0.38 * scale, 0.22 * scale, 3.4 * scale, 6, pal.trunk);
-        mb.addCylinder(px, py + 2.5 * scale, pz, 2.6 * scale, 0.4 * scale, 3.8 * scale, 7, pal.foliage);
-        mb.addCylinder(px, py + 4.7 * scale, pz, 1.75 * scale, 0.2 * scale, 2.9 * scale, 7, mixRgb(pal.foliage, pal.groundHigh, 0.24));
-      } else {
-        mb.addCylinder(px, py - 0.3, pz, 1.8 * scale, 1.0 * scale, 2.1 * scale, 6, pal.rock);
-        mb.addCylinder(px + 1.1 * scale, py - 0.3, pz + 0.8 * scale, 1.0 * scale, 0.55 * scale, 1.2 * scale, 6, pal.masonry);
+      case 'mesa-hoodoo-juniper': {
+        if (f.variant < 0.52) {
+          mb.addCylinder(f.x, py - 0.4, f.z, 1.25 * s, 0.62 * s, 3.8 * s, 7, pal.rock);
+          mb.addCylinder(f.x, py + 3.3 * s, f.z, 1.85 * s, 1.35 * s, 1.35 * s, 7, pal.masonry);
+        } else {
+          mb.addCylinder(f.x, py - 0.3, f.z, 0.34 * s, 0.24 * s, 2.5 * s, 6, pal.trunk);
+          mb.addCylinder(f.x, py + 2.1 * s, f.z, 2.5 * s, 2.1 * s, 0.85 * s, 7, pal.foliage);
+        }
+        break;
+      }
+      case 'frostglass-crystal-pine': {
+        if (f.variant > 0.55) {
+          mb.addCylinder(f.x, py - 0.4, f.z, 1.05 * s, 0.14 * s, 6.2 * s, 6, pal.masonryAccent);
+          mb.addCylinder(f.x + Math.cos(f.yaw) * 0.9 * s, py - 0.2, f.z + Math.sin(f.yaw) * 0.9 * s, 0.62 * s, 0.1 * s, 3.4 * s, 5, pal.masonry);
+        } else {
+          mb.addCylinder(f.x, py - 0.2, f.z, 0.36 * s, 0.18 * s, 3.0 * s, 6, pal.trunk);
+          mb.addCylinder(f.x, py + 2.0 * s, f.z, 2.4 * s, 0.25 * s, 4.4 * s, 7, pal.foliage);
+          mb.addCylinder(f.x, py + 4.3 * s, f.z, 1.55 * s, 0.12 * s, 2.9 * s, 7, pal.groundHigh);
+        }
+        break;
+      }
+      case 'giant-fungal-canopy': {
+        const stH = 4.0 * s;
+        mb.addCylinder(f.x, py - 0.3, f.z, 0.58 * s, 0.34 * s, stH, 7, [0.76, 0.74, 0.66]);
+        const cap: Rgb = f.variant > 0.5 ? [0.22 * shade, 0.72 * shade, 0.60 * shade] : [0.48 * shade, 0.34 * shade, 0.70 * shade];
+        mb.addCylinder(f.x, py + stH - 0.25 * s, f.z, 3.1 * s, 2.2 * s, 1.0 * s, 9, cap);
+        mb.addCylinder(f.x, py + stH + 0.7 * s, f.z, 2.3 * s, 0.25 * s, 1.2 * s, 9, cap);
+        break;
+      }
+      case 'petrified-amber-grove': {
+        const th = 4.4 * s;
+        mb.addCylinder(f.x, py - 0.4, f.z, 0.78 * s, 0.42 * s, th, 7, pal.rock);
+        mb.addCylinder(f.x, py + th * 0.45, f.z, 0.7 * s, 0.68 * s, 0.45 * s, 7, pal.masonryAccent);
+        mb.addCylinder(f.x, py + th, f.z, 1.4 * s, 0.15 * s, 2.2 * s, 6, pal.masonryAccent);
+        break;
+      }
+      default: {
+        mb.addCylinder(f.x, py - 0.2, f.z, 0.38 * s, 0.22 * s, 3.4 * s, 6, pal.trunk);
+        mb.addCylinder(f.x, py + 2.5 * s, f.z, 2.5 * s, 0.38 * s, 3.7 * s, 7, pal.foliage);
+        mb.addCylinder(f.x, py + 4.6 * s, f.z, 1.7 * s, 0.18 * s, 2.8 * s, 7, mixRgb(pal.foliage, pal.groundHigh, 0.24));
+        break;
       }
     }
+  };
+
+  for (const f of ecoPlan.floraInstances) {
+    stampFloraProc(f);
   }
 }
 
 function buildDungeonMesh(spec: FrontiersRealmSpec, mb: MeshBuilder): void {
   const pal = BIOME_PALETTES[spec.theme] ?? BIOME_PALETTES['citadel-highlands'];
-  const wallCol: Rgb = mixRgb(pal.masonry, [0.16, 0.18, 0.22], 0.55);
-  const floorCol: Rgb = mixRgb(pal.road, [0.18, 0.20, 0.24], 0.52);
+  const floorCol: Rgb = mixRgb(pal.road, [0.18, 0.20, 0.24], 0.48);
+  const dgPlan = synthesizeDungeonEcosystem(spec);
 
   // Entry vestibule floor (z: 18..34)
   mb.addBox(0, 0.5, 26, 22, 1.0, 16, floorCol);
-  // Central chasm bridge (z: 3.6..18.4)
-  mb.addBox(0, 0.65, 11, 5.8, 0.8, 15.2, pal.road);
   // Central rotunda floor (z: -14..4)
   mb.addBox(0, 0.5, -5, 42, 1.0, 18, floorCol);
   // Boss sanctum stepped amphitheater (z: -38..-14)
   mb.addBox(0, 1.0, -26, 22, 2.0, 24, floorCol);
 
-  // Perimeter stone walls
-  mb.addBox(-11, 5.5, 26, 2.0, 11, 16, wallCol);
-  mb.addBox(11, 5.5, 26, 2.0, 11, 16, wallCol);
-  mb.addBox(0, 5.5, 34, 24, 11, 2.0, wallCol);
-  mb.addBox(-21, 5.5, -5, 2.0, 11, 20, wallCol);
-  mb.addBox(21, 5.5, -5, 2.0, 11, 20, wallCol);
-  mb.addBox(-11, 6.0, -26, 2.0, 12, 24, wallCol);
-  mb.addBox(11, 6.0, -26, 2.0, 12, 24, wallCol);
-  mb.addBox(0, 6.0, -38, 24, 12, 2.0, wallCol);
+  const colorForPart = (p: StructurePrimitive): Rgb => {
+    if (p.rgb) return p.rgb;
+    if (p.material === 'stone') return mixRgb(pal.masonry, [0.16, 0.18, 0.22], 0.42);
+    if (p.material === 'cobble') return pal.road;
+    if (p.material === 'timber') return pal.trunk;
+    return dgPlan.accentRgb;
+  };
 
-  // Vaulted columns inside rotunda & sanctum
-  for (const [cx, cz] of [[-8, -10], [8, -10], [-8, 1], [8, 1], [-7, -22], [7, -22], [-7, -31], [7, -31]]) {
-    mb.addCylinder(cx, 1.0, cz, 1.15, 0.95, 9.6, 8, pal.masonry);
-    mb.addBox(cx, 10.6, cz, 2.6, 0.8, 2.6, pal.masonryAccent);
+  for (const part of dgPlan.structures) {
+    const baseY = part.useAbsoluteY ? part.yOffset : realmTerrainHeightAt(spec, part.x, part.z) + part.yOffset;
+    const col = colorForPart(part);
+    if (part.kind === 'box') {
+      mb.addBox(part.x, baseY, part.z, part.sx, part.sy, part.sz, col, part.yaw ?? 0);
+    } else if (part.kind === 'cylinder') {
+      mb.addCylinder(part.x, baseY, part.z, part.sx, part.sz, part.sy, part.segs ?? 8, col);
+    } else if (part.kind === 'cone') {
+      mb.addCylinder(part.x, baseY, part.z, part.sx, 0.08, part.sy, part.segs ?? 8, col);
+    }
   }
 }
 

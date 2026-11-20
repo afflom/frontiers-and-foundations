@@ -883,13 +883,13 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:0eac26a461d4a16657c1538d9c5db2cef25eae4749f7a5ac58bd2434e50184a7",
+    "worldGlbKappa": "sha256:d816dcd4777a7581e208500b840ab22a1616a7587a60254e6a3eb992a6e6dc2d",
     "vdntKappa": "sha256:0029cbb616637f120310159e2f8aa3c846d7ec0b643b607fce20e48395c8b179",
     "skyKappa": "sha256:928dc0f22532d523e8753500cf57e9c0e84c0b505837556e9c60e390dbe1ada8",
-    "triangles": 27780,
-    "vertices": 48119,
-    "glbBytes": 2714452,
-    "atlasTileCount": 4,
+    "triangles": 27666,
+    "vertices": 48677,
+    "glbBytes": 2749832,
+    "atlasTileCount": 3,
     "importedCatalogModelsCount": 12,
     "importedCatalogAssets": [
       "moon_rock_01",
@@ -902,7 +902,7 @@
       "gothic_statue",
       "Lantern_01"
     ],
-    "projectModelsRegistered": 11,
+    "projectModelsRegistered": 12,
     "cognitiveKnowledgeIngested": 10,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

@@ -736,12 +736,12 @@
   "interactables": [],
   "enemies": [],
   "prismCustody": {
-    "worldGlbKappa": "sha256:05b17f931ef926a0b61c8b697d426fa915ae4715d6d84f42bc8b1f5dba748b75",
+    "worldGlbKappa": "sha256:813bd8314035e01db0efb2819feded5013661ceae7411b22759ceccdc55bd9ad",
     "vdntKappa": "sha256:c47ece7b6f4e2d18103841e063d512a722537987ef31f8a13f8dd6f6fd594d2e",
     "skyKappa": "sha256:a5883ec7ae9ef22ee45d65969e7ec0711ec5e8b8ba94cc8b2fd52d82a37f61b9",
-    "triangles": 31400,
-    "vertices": 51573,
-    "glbBytes": 2955520,
+    "triangles": 31775,
+    "vertices": 52788,
+    "glbBytes": 3006636,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 18,
     "importedCatalogAssets": [
@@ -759,7 +759,7 @@
       "antique_estoc",
       "antique_ceramic_vase_01"
     ],
-    "projectModelsRegistered": 15,
+    "projectModelsRegistered": 16,
     "cognitiveKnowledgeIngested": 9,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,
