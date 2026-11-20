@@ -34,10 +34,12 @@
   "soundtrack": {
     "id": "score-borealis",
     "title": "Aurora Canticle of Borealis",
-    "composerNote": "Crystalline alpine Aeolian-Lydian meditation: shimmering high modal glass-bells, spacious legato strings, and solemn distant horns.",
+    "composerNote": "Crystalline 4/4 Aeolian alpine meditation: shimmering modal glass-bells, spacious legato strings, and solemn distant horns.",
     "realmSlug": "borealis",
     "isDungeon": false,
     "mode": "aeolian",
+    "meter": "4/4",
+    "category": "exploration",
     "rootMidi": 57,
     "bpm": 78,
     "chordProgression": [
@@ -87,6 +89,33 @@
         "velocity": 0
       }
     ],
+    "sectionBMelody": [
+      {
+        "degree": 12,
+        "lengthSteps": 4,
+        "velocity": 0.84
+      },
+      {
+        "degree": 11,
+        "lengthSteps": 2,
+        "velocity": 0.76
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.74
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 4,
+        "velocity": 0.78
+      },
+      {
+        "degree": 5,
+        "lengthSteps": 4,
+        "velocity": 0.72
+      }
+    ],
     "harpArpeggio": [
       0,
       4,
@@ -105,13 +134,36 @@
       4,
       null
     ],
+    "bassPattern": [
+      0,
+      null,
+      null,
+      null,
+      5,
+      null,
+      null,
+      null
+    ],
+    "dulcimerPattern": [
+      null,
+      11,
+      null,
+      14,
+      null,
+      11,
+      9,
+      null
+    ],
     "instrumentation": {
-      "harp": 0.86,
-      "strings": 0.9,
-      "flute": 0.72,
-      "horn": 0.68,
+      "harp": 0.88,
+      "strings": 0.92,
+      "flute": 0.74,
+      "horn": 0.7,
       "percussion": 0.28,
-      "modalBells": 0.92
+      "modalBells": 0.94,
+      "dulcimer": 0.84,
+      "pizzicato": 0.48,
+      "reed": 0.66
     },
     "foleyProfile": "glacial-aurora",
     "reverbDecaySec": 4.1,
@@ -772,12 +824,12 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:b7319905ff6ec65972886ad4855c3ce74efd07e0bc4073881648aadac61b48f3",
+    "worldGlbKappa": "sha256:d11f3c8be77fd30d24907883a49d41d2b51169cd1d6f3a888677ae7b0c420e70",
     "vdntKappa": "sha256:a394e95595b7ba11d7629d538680aa8bd0529703826da2cdabe9e772fc7a6e56",
     "skyKappa": "sha256:e3e66cf54f9b64916fe6d2f870e79b0ed6a3038f58880736bb79784cb023348e",
-    "triangles": 23896,
-    "vertices": 42324,
-    "glbBytes": 2539824,
+    "triangles": 27292,
+    "vertices": 48812,
+    "glbBytes": 2808152,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 11,
     "importedCatalogAssets": [

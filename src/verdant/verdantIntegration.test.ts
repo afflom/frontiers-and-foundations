@@ -19,7 +19,7 @@ import { VERDANT_MCP_TOOLS, VerdantMcpHost } from './verdantMcpHost';
 import { INITIAL_INTERACTABLES, INITIAL_NPCS } from '../game/worldData';
 import { createInitialEnemies } from '../game/rpgLogic';
 
-describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 16 MCP Tools + Orchestral Score + Prism + Stitch', () => {
+describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 20 MCP Tools + Procedural Universe & Characters + Orchestral Score + Prism + Stitch', () => {
   it('boots blank stage, imports vast 224m Frontiers & Foundations PBR GLB, verifies Stitch 2-of-3 recovery, and seals Prism identity', async () => {
     const verdantDir = join(process.cwd(), 'public', 'verdant');
     const wasmBytes = readFileSync(join(verdantDir, 'verdant-uorc.wasm'));
@@ -118,8 +118,8 @@ describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 16 MCP Tool
     }
   });
 
-  it('exposes all 16 real verdant-uorc.wasm-backed MCP tools including score, questline, NPC cast, relic arsenal, and Stitch tools', async () => {
-    assert.equal(VERDANT_MCP_TOOLS.length, 16, 'Expected 16 Verdant MCP tools');
+  it('exposes all 20 real verdant-uorc.wasm-backed MCP tools including procedural UniverseCell & character synthesis, HD character rigs, score, questline, NPC cast, relic arsenal, and Stitch tools', async () => {
+    assert.equal(VERDANT_MCP_TOOLS.length, 20, 'Expected 20 Verdant MCP tools');
 
     const mcp = new VerdantMcpHost(process.cwd());
     await mcp.ensureReady();
@@ -203,6 +203,76 @@ describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 16 MCP Tool
       null,
     )) as { payload: string };
     assert.equal(recovered.payload, payload, 'Verdant Wasm Stitch 2-of-3 recovery must match bit-for-bit');
+
+    // Verify portrait-matched HD CharacterRig compilation via Verdant API
+    const tarsikRig = (await mcp.handleToolCall(
+      'verdant_compile_character_rig',
+      { npcId: 'npc-tarsik', realmSlug: 'vaelmor' },
+      null,
+    )) as {
+      npcId: string;
+      appearance: {
+        portraitArchetype: string;
+        garmentStyle: string;
+        bareForearms: boolean;
+        signatureProp: string;
+      };
+      projectModel: unknown;
+    };
+    assert.equal(tarsikRig.npcId, 'npc-tarsik');
+    assert.equal(tarsikRig.appearance.portraitArchetype, 'tarsik');
+    assert.equal(tarsikRig.appearance.garmentStyle, 'smith-apron');
+    assert.equal(tarsikRig.appearance.bareForearms, true);
+    assert.equal(tarsikRig.appearance.signatureProp, 'tuning-fork');
+    assert.ok(tarsikRig.projectModel, 'CharacterRig must be registered in verdant-uorc.wasm');
+
+    // Verify automated HD refinement across all 12 federated realms via Verdant API
+    const hdRefine = (await mcp.handleToolCall('verdant_refine_world_hd', {}, null)) as {
+      realmsRefined: number;
+      rigsCompiled: number;
+      distinctArchetypes: string[];
+      refinementKappa: string;
+      operatorDecision: { admitted?: boolean };
+    };
+    assert.ok(hdRefine.realmsRefined >= 12, `Expected >=12 realms refined, got ${hdRefine.realmsRefined}`);
+    assert.ok(hdRefine.rigsCompiled >= 10, `Expected >=10 HD rigs compiled, got ${hdRefine.rigsCompiled}`);
+    assert.equal(hdRefine.distinctArchetypes.length, 4, 'All 4 distinct portrait archetypes must be compiled');
+    assert.equal(hdRefine.operatorDecision?.admitted, true);
+    assert.match(hdRefine.refinementKappa, /^sha256:[0-9a-f]{64}$/);
+
+    // Verify boundless procedural UniverseCell synthesis via Verdant MCP + real WASM GLB import
+    const synthCell = (await mcp.handleToolCall(
+      'verdant_synthesize_universe_cell',
+      { cx: 2, cz: -1 },
+      null,
+    )) as {
+      triangles: number;
+      cellKappa: string;
+      realm: { cell: number[]; isProceduralCell: boolean; npcs: Array<{ portraitUrl: string; appearance?: unknown }> };
+    };
+    assert.deepEqual(synthCell.realm.cell, [2, 0, -1]);
+    assert.equal(synthCell.realm.isProceduralCell, true);
+    assert.ok(synthCell.triangles > 5000, `Expected >5000 triangles for synthesized cell, got ${synthCell.triangles}`);
+    assert.equal(synthCell.realm.npcs.length, 3);
+    assert.ok(synthCell.realm.npcs[0].portraitUrl.startsWith('data:image/svg+xml'));
+    assert.ok(synthCell.realm.npcs[0].appearance);
+    assert.match(synthCell.cellKappa, /^sha256:[0-9a-f]{64}$/);
+
+    // Verify procedural character synthesis via Verdant MCP
+    const synthChar = (await mcp.handleToolCall(
+      'verdant_synthesize_character',
+      { theme: 'amber-steppe', realmName: 'Saffron Reaches', roleHint: 'scholar', seed: 9191 },
+      null,
+    )) as {
+      npc: { name: string; portraitUrl: string; cognitiveDrive: string; choices: unknown[] };
+      appearance: { portraitArchetype: string; traitSummary?: string };
+      projectModel: unknown;
+    };
+    assert.ok(synthChar.npc.name.length > 4);
+    assert.ok(synthChar.npc.portraitUrl.startsWith('data:image/svg+xml'));
+    assert.equal(synthChar.appearance.portraitArchetype, 'synthesized');
+    assert.ok(synthChar.npc.choices.length >= 3);
+    assert.ok(synthChar.projectModel);
   });
 
   it('produces distinct orchestral soundtracks across themes and dungeons without monotonous drones', () => {

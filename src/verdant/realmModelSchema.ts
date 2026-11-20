@@ -131,17 +131,86 @@ export interface FrontiersRealmSpec {
   interactables: WorldInteractable[];
   enemies: EnemyEntity[];
   isGenerated?: boolean;
+  isProceduralCell?: boolean;
   prismCustody?: RealmPrismCustody;
 }
+
+/**
+ * Spatial stride (in meters) between adjacent Verdant UniverseCells on the infinite Meridian grid.
+ * Cell (cx, 0, cz) spans local coordinates [-96..+96] along X and Z, meeting neighbor (cx+1, 0, cz)
+ * at world coordinate cx * CELL_STRIDE + 96 === (cx + 1) * CELL_STRIDE - 96.
+ */
+export const CELL_STRIDE = 192;
+export const CELL_BORDER_HALF = CELL_STRIDE / 2; // 96m
+export const CELL_BORDER_TRIGGER = 94;
 
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * Single source of truth for a realm's meandering river gorge centerline Z(x).
+ * Shared identically by terrain carving, water mesh clipping, and hydrology audio.
+ */
+export function realmRiverCenterZ(spec: FrontiersRealmSpec, x: number): number {
+  const p = spec.terrainProfile;
+  const seedPhase = (spec.seed % 997) * 0.017;
+  return p.gorgeZ + Math.sin(x * 0.055 + seedPhase) * p.gorgeWaveAmp;
+}
+
+/**
+ * Continuous world-space elevation field shared identically across ALL UniverseCells (cx, 0, cz).
+ * Integrates sweeping continent-scale mountain ranges, alpine passes, foothills, and broad valleys
+ * directly into the terrain mesh (ZERO floating cone meshes!) while grading cardinal frontier road
+ * passes so players can travel smoothly between cells OR hike directly up into the mountain ranges.
+ */
+export function worldGlobalHeightAt(worldX: number, worldZ: number): number {
+  // Base rolling highland meadows and river valleys
+  const macro1 =
+    Math.sin(worldX * 0.0085 + 0.4) * Math.cos(worldZ * 0.0079 - 0.3) * 2.15;
+  const macro2 =
+    Math.sin(worldX * 0.017 - worldZ * 0.014 + 1.1) * 0.92;
+  const micro =
+    Math.cos(worldX * 0.036 + worldZ * 0.029) * 0.32;
+
+  // Integrated multi-ridge continent mountain ranges (ridged multifractal with climbable foothills)
+  const rangeEnvelope = smoothstep(
+    0.26,
+    0.86,
+    Math.sin(worldX * 0.0046 - worldZ * 0.0039 + 1.15) * 0.5 + 0.5,
+  );
+  const ridgeA = 1 - Math.abs(Math.sin(worldX * 0.0115 + worldZ * 0.0072 + 0.65));
+  const ridgeB = 1 - Math.abs(Math.cos(worldX * 0.0078 - worldZ * 0.0108 - 0.35));
+  const spur = 1 - Math.abs(Math.sin(worldX * 0.024 + worldZ * 0.021 + 0.2));
+  const mountainLift =
+    rangeEnvelope * (Math.pow(ridgeA, 1.9) * 11.5 + Math.pow(ridgeB, 2.1) * 7.2 + Math.pow(spur, 2.0) * 2.2);
+
+  let h = 1.2 + macro1 + macro2 + micro + mountainLift;
+
+  // Gently carve mountain passes along cardinal frontier road axes (x ≈ 0 mod 192 or z ≈ 0 mod 192)
+  // so every cell boundary road crosses smoothly through open passes while ridges flank both sides!
+  const localX = (((worldX + CELL_BORDER_HALF) % CELL_STRIDE) + CELL_STRIDE) % CELL_STRIDE - CELL_BORDER_HALF;
+  const localZ = (((worldZ + CELL_BORDER_HALF) % CELL_STRIDE) + CELL_STRIDE) % CELL_STRIDE - CELL_BORDER_HALF;
+  const nearRoadAxis = Math.min(Math.abs(localX), Math.abs(localZ));
+  if (nearRoadAxis < 14.0) {
+    const roadPass = 1 - smoothstep(4.2, 14.0, nearRoadAxis);
+    const passElevation = 1.25 + Math.sin(worldX * 0.007 + worldZ * 0.007) * 0.55;
+    h = lerp(h, passElevation, roadPass * 0.92);
+  }
+  return h;
+}
+
 /**
  * Parametric deterministic elevation function shared 1:1 between the Verdant
- * GLB World Compiler and the browser 3D movement/camera/actor grounder.
- * Supports both vast 224m x 224m Overworld Realms AND Multi-Chamber 3D Dungeons!
+ * GLB World Compiler, Procedural Cell Synthesizer, and browser 3D movement/camera grounder.
+ * Mountains are sculpted directly into the terrain with climbable foothills and alpine ridges;
+ * overworld cells seamlessly blend into `worldGlobalHeightAt` near their +/-96m boundaries
+ * so neighboring UniverseCells connect bit-for-bit continuously.
  */
 export function realmTerrainHeightAt(spec: FrontiersRealmSpec, x: number, z: number): number {
   if (spec.isDungeon) {
@@ -164,7 +233,6 @@ export function realmTerrainHeightAt(spec: FrontiersRealmSpec, x: number, z: num
 
   const p = spec.terrainProfile;
   const seedPhase = (spec.seed % 997) * 0.017;
-  const dist = Math.hypot(x, z);
 
   const macro =
     Math.sin(x * p.macroFreq + seedPhase) * Math.cos(z * (p.macroFreq * 0.92)) * p.macroAmp +
@@ -172,12 +240,19 @@ export function realmTerrainHeightAt(spec: FrontiersRealmSpec, x: number, z: num
       Math.sin(z * (p.macroFreq * 2.0) - 0.5) *
       (p.macroAmp * 0.35);
 
-  const riverZ = p.gorgeZ + Math.sin(x * 0.055 + seedPhase) * p.gorgeWaveAmp;
+  // Natural meandering river gorge with smooth walkable/wadeable banks tapering cleanly before borders
+  const riverZ = realmRiverCenterZ(spec, x);
   const gorgeDist = Math.abs(z - riverZ);
-  const gorgeCut = Math.exp(-(gorgeDist * gorgeDist) / 28) * -p.gorgeDepth;
+  const gorgeSpanFade = 1 - smoothstep(52, 82, Math.abs(x));
+  // Broad gentle outer bank slope + deeper central swimming channel
+  const gorgeCut =
+    (Math.exp(-(gorgeDist * gorgeDist) / 42) * -p.gorgeDepth * 0.78 +
+      Math.exp(-(gorgeDist * gorgeDist) / 14) * -p.gorgeDepth * 0.28) *
+    gorgeSpanFade;
 
-  const coastDist = Math.hypot(x - 38, z - 36);
-  const coastDip = Math.exp(-(coastDist * coastDist) / 340) * -p.coastDip;
+  // Southeastern coastal cove basin sloping naturally into the river mouth (zero sharp edges)
+  const coastDist = Math.hypot((x - 36) * 0.92, (z - 34) * 1.05);
+  const coastDip = Math.exp(-(coastDist * coastDist) / 420) * -p.coastDip * 1.15;
 
   const citDist = Math.hypot(x, z - p.citadelZ);
   const citLift = Math.exp(-(citDist * citDist) / 195) * p.citadelLift;
@@ -185,33 +260,82 @@ export function realmTerrainHeightAt(spec: FrontiersRealmSpec, x: number, z: num
   const northWatchDist = Math.hypot(x, z + 56);
   const northWatchLift = Math.exp(-(northWatchDist * northWatchDist) / 280) * (p.citadelLift * 0.85);
 
+  // Integrated Local Climbable Mountain Massifs & Foothill Ridges (part of the terrain!)
+  // Placed in open outer quadrants away from roads, bridge, citadel, and settlement landmarks,
+  // with broad walkable foothill approaches (slope ~0.30..0.58) so players can hike UP into them!
+  const peakAmp =
+    spec.theme === 'glacial-spire'
+      ? 1.18
+      : spec.theme === 'obsidian-crucible'
+        ? 1.12
+        : spec.theme === 'pelagic-spires'
+          ? 0.88
+          : 1.0;
+
+  const nwPeakDist = Math.hypot((x + 48) * 0.82, (z + 56) * 0.92);
+  const nwSubRidge = Math.hypot((x + 68) * 0.85, (z + 36) * 0.85);
+  const nePeakDist = Math.hypot((x - 50) * 0.84, (z + 52) * 0.90);
+  const neSubRidge = Math.hypot((x - 70) * 0.9, (z + 28) * 0.85);
+  const swPeakDist = Math.hypot((x + 56) * 0.85, (z - 52) * 0.88);
+  const ridgeDetail = 1.0 + Math.sin(x * 0.09 + z * 0.08 + seedPhase) * 0.14;
+
+  const mountainRangeLift =
+    peakAmp *
+    ridgeDetail *
+    (Math.exp(-(nwPeakDist * nwPeakDist) / 560) * 13.8 +
+      Math.exp(-(nwSubRidge * nwSubRidge) / 420) * 8.4 +
+      Math.exp(-(nePeakDist * nePeakDist) / 520) * 12.6 +
+      Math.exp(-(neSubRidge * neSubRidge) / 380) * 7.8 +
+      Math.exp(-(swPeakDist * swPeakDist) / 520) * 11.4);
+
   const spawnDist = Math.hypot(x - spec.spawnPoint[0], z - spec.spawnPoint[1]);
-  const spawnFlat = Math.exp(-(spawnDist * spawnDist) / 100);
+  const spawnFlat = Math.exp(-(spawnDist * spawnDist) / 110);
 
   const westDist = Math.hypot(x + 26, z + 6);
-  const westFlat = Math.exp(-(westDist * westDist) / 120);
+  const westFlat = Math.exp(-(westDist * westDist) / 130);
 
   const farWestDist = Math.hypot(x + 54, z + 22);
-  const farWestFlat = Math.exp(-(farWestDist * farWestDist) / 180);
+  const farWestFlat = Math.exp(-(farWestDist * farWestDist) / 190);
 
   const farEastDist = Math.hypot(x - 54, z - 10);
-  const farEastFlat = Math.exp(-(farEastDist * farEastDist) / 180);
+  const farEastFlat = Math.exp(-(farEastDist * farEastDist) / 190);
 
   const dungeonEntranceDist = Math.hypot(x + 14, z + 34);
-  const dungeonFlat = Math.exp(-(dungeonEntranceDist * dungeonEntranceDist) / 90);
+  const dungeonFlat = Math.exp(-(dungeonEntranceDist * dungeonEntranceDist) / 95);
 
-  const rim = dist > p.rimStart ? Math.pow((dist - p.rimStart) * 0.085, 1.5) * p.rimHeight : 0;
-
-  let h = macro + gorgeCut + coastDip + citLift + northWatchLift + rim;
+  let h = macro + gorgeCut + coastDip + citLift + northWatchLift + mountainRangeLift;
   h = lerp(h, 0.9, spawnFlat * 0.88);
-  h = lerp(h, 0.6, westFlat * 0.78);
-  h = lerp(h, 1.8, farWestFlat * 0.72);
-  h = lerp(h, 1.4, farEastFlat * 0.72);
-  h = lerp(h, 2.2, dungeonFlat * 0.82);
+  h = lerp(h, 0.65, westFlat * 0.82);
+  h = lerp(h, 1.85, farWestFlat * 0.82);
+  h = lerp(h, 1.45, farEastFlat * 0.82);
+  h = lerp(h, 2.2, dungeonFlat * 0.84);
 
-  if (Math.abs(x) < 4.4 && z > 10.5 && z < 28) {
-    h = lerp(h, 0.95, 0.88);
+  // Keep cardinal frontier roads smoothly graded through mountain foothills & valleys
+  const onNsCorridor = Math.abs(x) < 8.5 && (z > 12 || z < -28);
+  const onEwCorridor = Math.abs(z) < 8.5 && Math.abs(x) > 14;
+  if (onNsCorridor) {
+    const corrBlend = 1 - smoothstep(3.8, 8.5, Math.abs(x));
+    const roadTarget = z > 12 ? 0.95 : 1.75;
+    h = lerp(h, roadTarget, corrBlend * 0.78);
+  } else if (onEwCorridor) {
+    const corrBlend = 1 - smoothstep(3.8, 8.5, Math.abs(z));
+    // Only flatten mountain lift above water, never erase the river gorge!
+    if (h > 1.2) {
+      h = lerp(h, 1.45, corrBlend * 0.78);
+    }
   }
+
+  // Seamless continuous border blending toward worldGlobalHeightAt so neighboring
+  // UniverseCells share exact border elevation (including mountain ranges spanning borders!)
+  const edgeDist = Math.max(Math.abs(x), Math.abs(z));
+  const edgeBlend = smoothstep(66, CELL_BORDER_HALF, edgeDist);
+  if (edgeBlend > 0) {
+    const worldX = spec.cell[0] * CELL_STRIDE + x;
+    const worldZ = spec.cell[2] * CELL_STRIDE + z;
+    const globalH = worldGlobalHeightAt(worldX, worldZ);
+    h = lerp(h, globalH, edgeBlend);
+  }
+
   return h;
 }
 

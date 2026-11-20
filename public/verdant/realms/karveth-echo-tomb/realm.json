@@ -39,10 +39,12 @@
   "soundtrack": {
     "id": "score-karveth-echo-tomb",
     "title": "Echoes of The Resonance Hall of Kar-Veth",
-    "composerNote": "Cavernous chamber score: deep hall reverb, plucked harp ostinato, dark bowed cello suspensions, and resonant subterranean bells.",
+    "composerNote": "Cavernous 4/4 Harmonic Minor chamber dirge: deep hall reverb, plucked harp ostinato, dark bowed cellos, and subterranean bells.",
     "realmSlug": "karveth-echo-tomb",
     "isDungeon": true,
     "mode": "harmonic-minor",
+    "meter": "4/4",
+    "category": "dungeon",
     "rootMidi": 47,
     "bpm": 84,
     "chordProgression": [
@@ -59,7 +61,7 @@
       {
         "degree": 7,
         "lengthSteps": 3,
-        "velocity": 0.72
+        "velocity": 0.74
       },
       {
         "degree": null,
@@ -69,27 +71,59 @@
       {
         "degree": 9,
         "lengthSteps": 2,
-        "velocity": 0.78
+        "velocity": 0.8
       },
       {
         "degree": 8,
         "lengthSteps": 2,
-        "velocity": 0.66
+        "velocity": 0.68
       },
       {
         "degree": 7,
         "lengthSteps": 4,
+        "velocity": 0.76
+      },
+      {
+        "degree": 6,
+        "lengthSteps": 2,
+        "velocity": 0.64
+      },
+      {
+        "degree": 4,
+        "lengthSteps": 2,
+        "velocity": 0.72
+      }
+    ],
+    "sectionBMelody": [
+      {
+        "degree": 11,
+        "lengthSteps": 2,
+        "velocity": 0.82
+      },
+      {
+        "degree": 10,
+        "lengthSteps": 2,
+        "velocity": 0.78
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 4,
+        "velocity": 0.84
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 2,
         "velocity": 0.74
       },
       {
         "degree": 6,
         "lengthSteps": 2,
-        "velocity": 0.62
+        "velocity": 0.76
       },
       {
-        "degree": 4,
-        "lengthSteps": 2,
-        "velocity": 0.7
+        "degree": 7,
+        "lengthSteps": 4,
+        "velocity": 0.8
       }
     ],
     "harpArpeggio": [
@@ -110,18 +144,41 @@
       4,
       null
     ],
+    "bassPattern": [
+      0,
+      null,
+      null,
+      0,
+      5,
+      null,
+      4,
+      null
+    ],
+    "dulcimerPattern": [
+      null,
+      7,
+      null,
+      9,
+      8,
+      null,
+      6,
+      null
+    ],
     "instrumentation": {
-      "harp": 0.78,
-      "strings": 0.82,
-      "flute": 0.42,
-      "horn": 0.65,
+      "harp": 0.8,
+      "strings": 0.86,
+      "flute": 0.44,
+      "horn": 0.72,
       "percussion": 0.68,
-      "modalBells": 0.72
+      "modalBells": 0.8,
+      "dulcimer": 0.58,
+      "pizzicato": 0.82,
+      "reed": 0.78
     },
     "foleyProfile": "dungeon-cavern",
     "reverbDecaySec": 4.4,
     "workletTuning": {
-      "fundamentalHz": 247,
+      "fundamentalHz": 123,
       "rt60Ms": 3200,
       "modeNumers": [
         100,

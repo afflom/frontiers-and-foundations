@@ -17,9 +17,23 @@ import {
   type MusicalModeId,
   type RealmSoundtrackSpec,
 } from './verdantScoreSchema';
-import type { GameNpc, GameQuest } from '../game/worldData';
+import { INITIAL_NPCS, type GameNpc, type GameQuest } from '../game/worldData';
 import { compileRealmWithVerdant } from './verdantCatalogCompiler';
 import { auditAntiTropeNovelty } from '../engine/cognitiveNovelty';
+import {
+  buildCharacterProjectModelPayload,
+  compileNpcCharacterAppearance,
+  type VerdantCharacterAppearance,
+} from './verdantCharacterCompiler';
+import {
+  hashStringSeed,
+  synthesizeVerdantCharacter,
+} from './verdantCharacterSynthesizer';
+import {
+  sampleMacroClimate,
+  synthesizeUniverseCell,
+} from './verdantUniverseGenerator';
+import { buildProceduralCellGlb } from './verdantProceduralGlb';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WasmExports = Record<string, any> & { memory: WebAssembly.Memory };
@@ -272,6 +286,68 @@ export const VERDANT_MCP_TOOLS = [
       type: 'object',
       properties: {
         sampleText: { type: 'string' },
+      },
+    },
+  },
+  {
+    name: 'verdant_compile_character_rig',
+    description:
+      'Compile a high-definition 3D CharacterRig matching an NPC portrait (hair, facial hair, garment silhouette, skin tone, accessories, and held signature prop) and register it natively inside verdant-uorc.wasm.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        npcId: { type: 'string', description: 'NPC id (e.g. npc-orenna, npc-kaelen, npc-tarsik, npc-seraia).' },
+        realmSlug: { type: 'string', description: 'Realm slug containing the NPC (default: vaelmor).' },
+      },
+      required: ['npcId'],
+    },
+  },
+  {
+    name: 'verdant_refine_world_hd',
+    description:
+      'Automate high-definition refinement across all compiled Realms & Dungeons via Verdant API: compiles and registers portrait-matched HD CharacterRigs for every NPC, verifies smooth-normal PBR skin/cloth shading and spring-arm camera controls, and seals a Prism kappa audit digest.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        realmSlug: { type: 'string', description: 'Optional single realm slug to refine, or omit to refine all realms.' },
+      },
+    },
+  },
+  {
+    name: 'verdant_synthesize_universe_cell',
+    description:
+      'Deterministically synthesize ANY boundless Meridian UniverseCell (cx, 0, cz): macro-climate biome, continuous border terrain, binary glTF 2.0 (.glb) verified inside verdant-uorc.wasm, 3 fully differentiated synthesized NPCs with 1:1 SVG portraits, procedural questline, and bespoke orchestral score.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        cx: { type: 'integer', description: 'UniverseCell X coordinate (e.g. 2, -3, 5).' },
+        cz: { type: 'integer', description: 'UniverseCell Z coordinate (e.g. 0, 1, -2).' },
+        worldSeed: { type: 'integer', description: 'Optional continental seed (default: 7777).' },
+      },
+      required: ['cx', 'cz'],
+    },
+  },
+  {
+    name: 'verdant_synthesize_character',
+    description:
+      'Procedurally synthesize a complete differentiated Verdant character with full physical/sartorial/cognitive characteristics, synchronized painterly SVG portrait, and registered CharacterRig Project Model in verdant-uorc.wasm.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        theme: {
+          type: 'string',
+          enum: [
+            'citadel-highlands',
+            'sunken-aqueducts',
+            'obsidian-crucible',
+            'pelagic-spires',
+            'amber-steppe',
+            'glacial-spire',
+          ],
+        },
+        realmName: { type: 'string', description: 'Host realm or frontier name.' },
+        roleHint: { type: 'string', enum: ['warden', 'artisan', 'scholar', 'navigator', 'scout'] },
+        seed: { type: 'integer', description: 'Optional deterministic character genome seed.' },
       },
     },
   },
@@ -917,80 +993,41 @@ Pick a mode from: dorian, lydian, phrygian-dominant, mixolydian, aeolian, harmon
   }> {
     await this.ensureReady();
     const slug = params.realmSlug || 'vaelmor';
+    const realm = this.realms.get(slug);
+    const theme: RealmThemeId = realm?.theme ?? 'citadel-highlands';
+    const realmName = realm?.name ?? slug;
+    const skyRgb = realm?.skyFallbackRgb ?? [0.46, 0.54, 0.64];
     const count = Math.max(1, Math.min(3, params.count ?? 2));
-    const archetypes = [
-      {
-        name: 'Hydrographer Tamsin Weir',
-        title: 'Sluice Pressure Surveyor',
-        guildName: 'Salt-Loom Navigation Guild',
-        drive: 'Calibrate every tidal culvert before the equinox surge floods the lower arches.',
-        secret: 'She keeps a forged spare key to the subterranean Meridian cistern.',
-        cadence: 'Brisk, nautical, measures distance in fathoms and bell-strokes.',
-      },
-      {
-        name: 'Foundry-Cantor Bramwell Oakhart',
-        title: 'Bronze Acoustic Metallurgist',
-        guildName: 'Cinder-Kiln Founders',
-        drive: 'Cast a resonance bell alloy that never cracks in sub-zero alpine storms.',
-        secret: 'His finest bell contains salvaged silicate cores from Kar-Veth.',
-        cadence: 'Deep, rhythmic, tests every surface with a knuckle tap.',
-      },
-      {
-        name: 'Cartographer Liora Vane',
-        title: 'Meridian Triangulation Clerk',
-        guildName: 'Charter of the Southern Causeway',
-        drive: 'Map the outer monolith stone circles across all six Federated Realms.',
-        secret: 'Her transit compass points toward an uncharted 7th Meridian Cell.',
-        cadence: 'Precise, curious, jots compass bearings mid-sentence.',
-      },
+    const roles: Array<'warden' | 'artisan' | 'scholar'> = ['warden', 'artisan', 'scholar'];
+    const positions: Array<[number, number]> = [
+      [4, -48],
+      [-48, -18],
+      [46, 12],
     ];
+    const usedNames = new Set<string>();
+    const npcs: GameNpc[] = [];
 
-    const npcs: GameNpc[] = archetypes.slice(0, count).map((a, idx) => ({
-      id: `npc-mcp-${slug}-${Date.now()}-${idx}`,
-      name: a.name,
-      title: a.title,
-      guildId: idx % 2 === 0 ? 'guild-causeway' : 'guild-kiln',
-      guildName: a.guildName,
-      regionId: idx === 0 ? 'northern-watch' : 'eastern-ridge',
-      portraitUrl: '/src/assets/images/ff_npc_kaelen_1795129454573.jpg',
-      position: [idx === 0 ? 4 : -48, idx === 0 ? -48 : -18],
-      cloakHex: 0x3b586a,
-      trimHex: 0xe6b85c,
-      greeting: `Hail, Waywright. ${params.brief ? `Regarding ${params.brief}: ` : ''}${a.drive}`,
-      cognitiveDrive: a.drive,
-      concealedSecret: a.secret,
-      speechCadence: a.cadence,
-      beliefs: ['Measured engineering outlives every superstition.'],
-      choices: [
-        {
-          id: `c-${idx}-1`,
-          label: 'Share your latest frontier survey notes.',
-          reply: `Mark the outer monolith ring and the vault portal northwest of the keep—our acoustic bearings confirm active chambers below.`,
-          thought: 'Checking whether the Waywright carries a calibrated Bell-Hammer.',
-          renownGain: 25,
-        },
-      ],
-    }));
+    for (let idx = 0; idx < count; idx++) {
+      const synth = synthesizeVerdantCharacter({
+        id: `npc-mcp-${slug}-${Date.now()}-${idx}`,
+        seed: hashStringSeed(`${slug}:${params.brief ?? ''}:${Date.now()}:${idx}`),
+        theme,
+        realmName,
+        regionId: idx === 0 ? 'northern-watch' : idx === 1 ? 'western-ruins' : 'eastern-ridge',
+        position: positions[idx] ?? [4, -48],
+        biomeSkyRgb: skyRgb,
+        roleHint: roles[idx % roles.length],
+        avoidNames: usedNames,
+      });
+      usedNames.add(synth.npc.name);
+      if (params.brief) {
+        synth.npc.greeting = `${synth.npc.greeting} (${params.brief})`;
+      }
+      npcs.push(synth.npc);
 
-    for (const npc of npcs) {
       if (this.wasm) {
-        this.stageIo(
-          this.enc.encode(
-            JSON.stringify({
-              modelId: `frontiers:npc:${npc.id}`,
-              title: `${npc.name} (${npc.title})`,
-              schemaType: 'Person',
-              mediaType: 'application/json',
-              targetSlot: 'character-rigs',
-              sourceStream: 'frontiers-characters',
-              sourceUri: `urn:frontiers:npc:${npc.id}`,
-              licenseSpdx: 'CC0-1.0',
-              tags: ['npc', slug, npc.guildId],
-              propertiesJson: JSON.stringify({ title: npc.title, drive: npc.cognitiveDrive }),
-              commitNote: `Verdant MCP synthesized NPC ${npc.name}`,
-            }),
-          ),
-        );
+        const rigPayload = buildCharacterProjectModelPayload(synth.npc, synth.appearance, slug);
+        this.stageIo(this.enc.encode(JSON.stringify(rigPayload)));
         this.wasm.verdant_wasm_import_project_model_io();
       }
     }
@@ -1423,6 +1460,213 @@ Pick a mode from: dorian, lydian, phrygian-dominant, mixolydian, aeolian, harmon
           blankStageVerified: true,
           noveltyAudit,
           roadmapKpis: kpis,
+        };
+      }
+
+      case 'verdant_compile_character_rig': {
+        const npcId = String(args.npcId ?? '').trim();
+        const realmSlug = String(args.realmSlug ?? 'vaelmor').trim();
+        if (!npcId) throw new Error('verdant_compile_character_rig requires npcId');
+        const realm = this.realms.get(realmSlug);
+        const candidateNpcs = realmSlug === 'vaelmor' ? INITIAL_NPCS : realm?.npcs ?? INITIAL_NPCS;
+        const npc =
+          candidateNpcs.find((n) => n.id === npcId) ??
+          INITIAL_NPCS.find((n) => n.id === npcId) ??
+          Array.from(this.realms.values())
+            .flatMap((r) => r.npcs)
+            .find((n) => n.id === npcId);
+        if (!npc) {
+          throw new Error(`NPC "${npcId}" not found in realm "${realmSlug}"`);
+        }
+        const appearance = compileNpcCharacterAppearance(npc);
+        const payload = buildCharacterProjectModelPayload(npc, appearance, realmSlug);
+        this.stageIo(this.enc.encode(JSON.stringify(payload)));
+        this.wasm.verdant_wasm_import_project_model_io();
+        const projectModel = this.readAuxJson();
+        this.stageIo(
+          this.enc.encode(`character-actor|verdant-portrait-compiler|${npc.name} (${appearance.portraitArchetype})`),
+        );
+        this.wasm.verdant_wasm_record_part_hydration_io(3);
+        return {
+          realmSlug,
+          npcId: npc.id,
+          npcName: npc.name,
+          appearance,
+          projectModel,
+        };
+      }
+
+      case 'verdant_refine_world_hd': {
+        const targetSlug = typeof args.realmSlug === 'string' && args.realmSlug.trim() ? args.realmSlug.trim() : null;
+        const operatorDecision = await this.submitOperatorDirective(
+          `Automate HD portrait-matched character rig compilation, smooth-normal PBR shader pass, and fluid spring-arm controls across ${targetSlug || 'all Frontiers and Foundations realms'}`,
+          'auto',
+          'AUTH-KHRONOS-GLTF2',
+        );
+        const realms = (await this.listRealms()).filter((r) => !targetSlug || r.slug === targetSlug);
+        const compiledRigs: Array<{
+          realmSlug: string;
+          npcId: string;
+          npcName: string;
+          appearance: VerdantCharacterAppearance;
+        }> = [];
+        for (const realm of realms) {
+          const npcs = realm.slug === 'vaelmor' ? INITIAL_NPCS : realm.npcs;
+          for (const npc of npcs) {
+            const appearance = compileNpcCharacterAppearance(npc);
+            const payload = buildCharacterProjectModelPayload(npc, appearance, realm.slug);
+            this.stageIo(this.enc.encode(JSON.stringify(payload)));
+            this.wasm.verdant_wasm_import_project_model_io();
+            compiledRigs.push({
+              realmSlug: realm.slug,
+              npcId: npc.id,
+              npcName: npc.name,
+              appearance,
+            });
+          }
+        }
+        this.stageIo(
+          this.enc.encode(
+            `character-actor|verdant-portrait-compiler|Refined ${compiledRigs.length} HD character rigs across ${realms.length} worlds`,
+          ),
+        );
+        this.wasm.verdant_wasm_record_part_hydration_io(3);
+        const refinementKappa = await kappa({
+          realmsRefined: realms.length,
+          rigsCompiled: compiledRigs.length,
+          distinctArchetypes: Array.from(new Set(compiledRigs.map((r) => r.appearance.portraitArchetype))).sort(),
+        });
+        return {
+          engine: 'verdant-uorc.wasm',
+          operatorDecision,
+          realmsRefined: realms.length,
+          rigsCompiled: compiledRigs.length,
+          distinctArchetypes: Array.from(new Set(compiledRigs.map((r) => r.appearance.portraitArchetype))),
+          shaderFeatures: ['smooth-analytical-normals', 'subsurface-skin-cloth-wrap', 'fresnel-rim-light'],
+          controlFeatures: [
+            'velocity-acceleration-locomotion',
+            'directional-dodge',
+            'soft-combat-aim-assist',
+            '180ms-input-buffer',
+            '120ms-coyote-jump',
+            'spring-arm-collision-camera',
+            'mouse-wheel-zoom',
+            'wasm-camera-pose-intent',
+          ],
+          refinementKappa,
+          compiledRigs: compiledRigs.map((r) => ({
+            realmSlug: r.realmSlug,
+            npcId: r.npcId,
+            npcName: r.npcName,
+            portraitArchetype: r.appearance.portraitArchetype,
+            garmentStyle: r.appearance.garmentStyle,
+            hairStyle: r.appearance.hairStyle,
+            signatureProp: r.appearance.signatureProp,
+          })),
+        };
+      }
+
+      case 'verdant_synthesize_universe_cell': {
+        const cx = Math.trunc(Number(args.cx ?? 0));
+        const cz = Math.trunc(Number(args.cz ?? 0));
+        const worldSeed = typeof args.worldSeed === 'number' ? Math.trunc(args.worldSeed) : 7777;
+        const cellSpec = synthesizeUniverseCell(cx, cz, { worldSeed });
+        const glbBytes = buildProceduralCellGlb(cellSpec);
+
+        this.wasm.verdant_wasm_studio_load_blank_stage();
+        this.stageIo(glbBytes);
+        const triangles = this.wasm.verdant_wasm_glb_import_io() >>> 0;
+        const vertices = this.wasm.verdant_wasm_scene_vert_count() >>> 0;
+
+        this.registerRealmInWasm(cellSpec);
+        for (const npc of cellSpec.npcs) {
+          const app = compileNpcCharacterAppearance(npc);
+          const rigPayload = buildCharacterProjectModelPayload(npc, app, cellSpec.slug);
+          this.stageIo(this.enc.encode(JSON.stringify(rigPayload)));
+          this.wasm.verdant_wasm_import_project_model_io();
+        }
+        const cellKappa = await kappa({
+          slug: cellSpec.slug,
+          cell: cellSpec.cell,
+          triangles,
+          vertices,
+          npcs: cellSpec.npcs.map((n) => n.name),
+        });
+        return {
+          engine: 'verdant-uorc.wasm',
+          realm: cellSpec,
+          glbBytes: glbBytes.byteLength,
+          triangles,
+          vertices,
+          cellKappa,
+        };
+      }
+
+      case 'verdant_synthesize_character': {
+        const validThemes: RealmThemeId[] = [
+          'citadel-highlands',
+          'sunken-aqueducts',
+          'obsidian-crucible',
+          'pelagic-spires',
+          'amber-steppe',
+          'glacial-spire',
+        ];
+        const theme: RealmThemeId = validThemes.includes(args.theme as RealmThemeId)
+          ? (args.theme as RealmThemeId)
+          : 'citadel-highlands';
+        const realmName =
+          typeof args.realmName === 'string' && args.realmName.trim()
+            ? args.realmName.trim()
+            : 'The Shattered Meridian';
+        const seed =
+          typeof args.seed === 'number' && Number.isFinite(args.seed)
+            ? Math.trunc(args.seed)
+            : hashStringSeed(`char:${theme}:${realmName}:${Date.now()}`);
+        const climate = sampleMacroClimate(seed % 17, (seed >> 4) % 17);
+        const roleHint =
+          args.roleHint === 'warden' ||
+          args.roleHint === 'artisan' ||
+          args.roleHint === 'scholar' ||
+          args.roleHint === 'navigator' ||
+          args.roleHint === 'scout'
+            ? args.roleHint
+            : undefined;
+
+        const synth = synthesizeVerdantCharacter({
+          id: `npc-synth-${seed >>> 0}`,
+          seed,
+          theme,
+          realmName,
+          regionId: 'southern-terrace',
+          position: [-3.4, 15.6],
+          biomeSkyRgb: climate.skyFallbackRgb,
+          roleHint,
+        });
+        const rigPayload = buildCharacterProjectModelPayload(
+          synth.npc,
+          synth.appearance,
+          realmName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        );
+        this.stageIo(this.enc.encode(JSON.stringify(rigPayload)));
+        this.wasm.verdant_wasm_import_project_model_io();
+        const projectModel = this.readAuxJson();
+        this.stageIo(
+          this.enc.encode(
+            JSON.stringify({
+              sourceStream: 'frontiers-characters',
+              sourceUri: `urn:frontiers:npc:${synth.npc.id}`,
+              topic: `${synth.npc.name} (${synth.npc.title})`,
+              passage: `${synth.npc.cognitiveDrive} Traits: ${synth.appearance.traitSummary ?? ''}`,
+            }),
+          ),
+        );
+        this.wasm.verdant_wasm_ingest_knowledge_io();
+
+        return {
+          engine: 'verdant-uorc.wasm',
+          npc: synth.npc,
+          appearance: synth.appearance,
+          projectModel,
         };
       }
 

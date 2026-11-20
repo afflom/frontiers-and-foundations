@@ -41,6 +41,7 @@ export interface HudSnapshot {
   proximity: ProximityPrompt | null;
   nearbyEnemies: Array<{ id: string; name: string; hp: number; maxHp: number; archetype: EnemyArchetype }>;
   defeatedCount: number;
+  waterPosture?: 'dry' | 'wading' | 'swimming';
 }
 
 export interface EngineCallbacks {

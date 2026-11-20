@@ -4,6 +4,7 @@ import { isStaticPagesHost, resolvePublicUrl } from '../../utils/publicUrl';
 
 interface DialogueOverlayProps {
   npc: GameNpc;
+  realmName?: string;
   usedMotifs: string[];
   onSelectChoice: (npc: GameNpc, choice: DialogueChoice) => void;
   onClose: () => void;
@@ -17,6 +18,7 @@ interface SpokenTurn {
 
 export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
   npc,
+  realmName,
   usedMotifs,
   onSelectChoice,
   onClose,
@@ -125,14 +127,36 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
               alt={npc.name}
               className="w-20 h-20 md:w-full md:h-44 object-cover rounded-sm border border-[#d4a253]/40 shrink-0"
             />
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-[#d4a253] font-semibold">
-                {npc.guildName}
+            <div className="min-w-0 space-y-1.5">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-[#d4a253] font-semibold">
+                  {npc.guildName}
+                </p>
+                <h2 className="font-display text-base font-bold text-[#f3efe6] mt-0.5 leading-snug">
+                  {npc.name}
+                </h2>
+                <p className="text-xs text-[#9ca7b5] mt-0.5">{npc.title}</p>
+              </div>
+              {npc.appearance?.traitSummary && (
+                <p
+                  data-testid="npc-trait-summary"
+                  className="text-[10px] leading-snug text-[#9eb2c6] pt-1.5 border-t border-white/10"
+                >
+                  {npc.appearance.traitSummary
+                    .split('·')
+                    .map((seg) =>
+                      seg
+                        .trim()
+                        .split('-')
+                        .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : ''))
+                        .join(' '),
+                    )
+                    .join(' · ')}
+                </p>
+              )}
+              <p className="text-[10px] italic text-[#7e91a3] leading-snug">
+                {npc.speechCadence}
               </p>
-              <h2 className="font-display text-base font-bold text-[#f3efe6] mt-0.5 leading-snug">
-                {npc.name}
-              </h2>
-              <p className="text-xs text-[#9ca7b5] mt-0.5">{npc.title}</p>
             </div>
           </div>
 
@@ -232,7 +256,7 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
                   type="text"
                   value={customLine}
                   onChange={(e) => setCustomLine(e.target.value)}
-                  placeholder={`Ask ${npc.name.split(' ')[0]} anything about Vaelmor...`}
+                  placeholder={`Ask ${npc.name.split(' ')[0]} about ${realmName || 'this frontier'}...`}
                   className="flex-1 bg-[#0e1218] border border-white/15 focus:border-[#d4a253] rounded-sm px-3 py-2 text-xs text-[#f0ebe2] placeholder:text-[#738090] outline-none"
                 />
                 <button

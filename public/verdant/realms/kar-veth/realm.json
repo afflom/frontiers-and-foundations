@@ -34,10 +34,12 @@
   "soundtrack": {
     "id": "score-kar-veth",
     "title": "Wind-Harps of Kar-Veth",
-    "composerNote": "Sunlit Pentatonic frontier ballad: resonant harp strums, warm caravan frame-drums, and open horizon flute motifs.",
+    "composerNote": "Sunlit 4/4 Pentatonic frontier ballad: resonant harp strums, hammered dulcimer sparkle, and horizon flute motifs.",
     "realmSlug": "kar-veth",
     "isDungeon": false,
     "mode": "pentatonic-major",
+    "meter": "4/4",
+    "category": "exploration",
     "rootMidi": 52,
     "bpm": 92,
     "chordProgression": [
@@ -54,7 +56,7 @@
       {
         "degree": 5,
         "lengthSteps": 2,
-        "velocity": 0.76
+        "velocity": 0.78
       },
       {
         "degree": 7,
@@ -92,6 +94,38 @@
         "velocity": 0
       }
     ],
+    "sectionBMelody": [
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.84
+      },
+      {
+        "degree": 10,
+        "lengthSteps": 2,
+        "velocity": 0.86
+      },
+      {
+        "degree": 12,
+        "lengthSteps": 4,
+        "velocity": 0.9
+      },
+      {
+        "degree": 10,
+        "lengthSteps": 2,
+        "velocity": 0.78
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.8
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 4,
+        "velocity": 0.76
+      }
+    ],
     "harpArpeggio": [
       0,
       2,
@@ -110,13 +144,36 @@
       5,
       4
     ],
+    "bassPattern": [
+      0,
+      null,
+      null,
+      3,
+      4,
+      null,
+      2,
+      null
+    ],
+    "dulcimerPattern": [
+      5,
+      null,
+      9,
+      7,
+      null,
+      10,
+      9,
+      7
+    ],
     "instrumentation": {
       "harp": 0.94,
-      "strings": 0.7,
-      "flute": 0.84,
-      "horn": 0.62,
-      "percussion": 0.62,
-      "modalBells": 0.74
+      "strings": 0.72,
+      "flute": 0.86,
+      "horn": 0.64,
+      "percussion": 0.64,
+      "modalBells": 0.76,
+      "dulcimer": 0.88,
+      "pizzicato": 0.74,
+      "reed": 0.7
     },
     "foleyProfile": "steppe-chimes",
     "reverbDecaySec": 3,
@@ -776,12 +833,12 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:fa50cabb220285a73ac2c86e0b86c758c59340981629fc64cb024aec3b35871f",
+    "worldGlbKappa": "sha256:1c6f036cc58b67ceb7dc84428983b2d64b6ede10f9a65fee2924636e768cadec",
     "vdntKappa": "sha256:6594313b15425d44e94c40b83de345bacf3d7852a186de53c860befdcd1f59de",
     "skyKappa": "sha256:b6b8ed9b069f5d9e46547d87aa7c6c50aecde988e5e23307cc0887e18a298543",
-    "triangles": 24623,
-    "vertices": 42723,
-    "glbBytes": 2569704,
+    "triangles": 28135,
+    "vertices": 49501,
+    "glbBytes": 2843344,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 11,
     "importedCatalogAssets": [

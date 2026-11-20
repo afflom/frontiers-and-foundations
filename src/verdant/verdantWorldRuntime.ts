@@ -26,10 +26,22 @@ import {
 import { resolvePublicUrl } from '../utils/publicUrl';
 import {
   CANONICAL_REALM_SPECS,
+  CELL_BORDER_TRIGGER,
   getRealmRegionAt,
   realmSurfaceHeightAt,
+  realmTerrainHeightAt,
   type FrontiersRealmSpec,
 } from './realmModelSchema';
+import {
+  evaluateWaterImmersion,
+  resolveTerrainSlopeStep,
+  sampleTerrainClippedWaterQuads,
+  sampleTerrainSlope,
+  type WaterPosture,
+  type WaterQuadTile,
+} from './verdantEnvironmentPhysics';
+import { buildProceduralCellGlb } from './verdantProceduralGlb';
+import { getAdjacentCellsSummary } from './verdantUniverseGenerator';
 import { createPrism, kappa } from './prism-id.mjs';
 import {
   buildRealmCollisionMap,
@@ -40,6 +52,16 @@ import {
   resolveDynamicBodySeparation,
   type WorldCollisionMap,
 } from './verdantCollision';
+import {
+  buildCharacterProjectModelPayload,
+  compileNpcCharacterAppearance,
+} from './verdantCharacterCompiler';
+import {
+  findSoftCombatTargetYaw,
+  resolveSpringArmCamera,
+  shortestAngleDelta,
+  stepVelocityMovement,
+} from './verdantControls';
 
 export interface VerdantWorldStatus {
   wasmActive: boolean;
@@ -115,6 +137,13 @@ export class VerdantFrontiersRuntime {
   private onSpatialAudio?: (metrics: { pan: number; gain: number; itdMicros: number }) => void;
   private onCombatIntensity?: (intensity: number) => void;
   private onFootstep?: (surface: 'stone' | 'earth' | 'water') => void;
+  private onCrossFrontierBorder?: (
+    dir: 'N' | 'S' | 'E' | 'W',
+    nextCell: [number, number, number],
+    entryPos: [number, number],
+    entryYaw: number,
+  ) => void;
+  private crossingBorder = false;
   private footstepTimer = 0;
   private smoothedCombatIntensity = 0;
 
@@ -168,7 +197,10 @@ export class VerdantFrontiersRuntime {
   private playerX = 0;
   private playerY = 0.95;
   private playerZ = 21.5;
+  private playerVx = 0;
+  private playerVz = 0;
   private playerVy = 0;
+  private coyoteTimer = 0;
   private playerYaw = Math.PI; // facing north toward the Causeway & Citadel
   private playerSpeed = 0;
   private hp = 120;
@@ -188,18 +220,25 @@ export class VerdantFrontiersRuntime {
   private dodgeTimer = 0;
   private dodgeDirX = 0;
   private dodgeDirZ = 0;
+  private bufferedAction: 'primary' | 'dodge' | null = null;
+  private bufferedActionTimer = 0;
   private hitstopTimer = 0;
   private cameraTrauma = 0;
   private defeatedCount = 0;
   private completedQuestsCount = 0;
   private lastRegionMood: WorldRegion['ambientMood'] = 'causeway';
 
-  // Camera orbit
+  // Smooth damped spring-arm camera orbit & zoom
   private camYaw = Math.PI;
-  private camPitch = 0.34;
-  private camEye = [0, 7.5, 31.5];
-  private camTarget = [0, 2.2, 16.0];
+  private targetCamYaw = Math.PI;
+  private camPitch = 0.30;
+  private targetCamPitch = 0.30;
+  private camDist = 8.4;
+  private targetCamDist = 8.4;
+  private camEye = [0, 7.2, 29.8];
+  private camTarget = [0, 2.0, 16.0];
   private dragging = false;
+  private dragButton = -1;
   private lastPointerX = 0;
   private lastPointerY = 0;
   private pointerDownX = 0;
@@ -217,6 +256,11 @@ export class VerdantFrontiersRuntime {
   private remotePlayers: RemotePlayerState[] = [];
   private projectiles: ProjectileEntity[] = [];
   private collisionMap: WorldCollisionMap;
+  private waterTiles: WaterQuadTile[] = [];
+  private waterPosture: WaterPosture = 'dry';
+  private waterDepth = 0;
+  private terrainSlope = 0;
+  private waterSplashTimer = 0;
   private trackedCoords: [number, number] | null = [-3.4, 15.2];
   private keys = new Set<string>();
 
@@ -236,6 +280,12 @@ export class VerdantFrontiersRuntime {
       onSpatialAudio?: (metrics: { pan: number; gain: number; itdMicros: number }) => void;
       onCombatIntensity?: (intensity: number) => void;
       onFootstep?: (surface: 'stone' | 'earth' | 'water') => void;
+      onCrossFrontierBorder?: (
+        dir: 'N' | 'S' | 'E' | 'W',
+        nextCell: [number, number, number],
+        entryPos: [number, number],
+        entryYaw: number,
+      ) => void;
     },
   ) {
     this.container = container;
@@ -248,6 +298,7 @@ export class VerdantFrontiersRuntime {
     this.onSpatialAudio = hooks?.onSpatialAudio;
     this.onCombatIntensity = hooks?.onCombatIntensity;
     this.onFootstep = hooks?.onFootstep;
+    this.onCrossFrontierBorder = hooks?.onCrossFrontierBorder;
 
     for (let i = 0; i < 64; i++) {
       this.particles.push({
@@ -275,6 +326,7 @@ export class VerdantFrontiersRuntime {
     this.resizeCanvas();
 
     this.collisionMap = buildRealmCollisionMap(this.activeRealm, this.interactables);
+    this.waterTiles = sampleTerrainClippedWaterQuads(this.activeRealm, 104, 2.5);
     const resolvedSpawn = resolveCircleVsWorld(
       this.playerX,
       this.playerZ,
@@ -294,6 +346,7 @@ export class VerdantFrontiersRuntime {
     this.canvas.addEventListener('pointerdown', this.onPointerDown);
     window.addEventListener('pointermove', this.onPointerMove);
     window.addEventListener('pointerup', this.onPointerUp);
+    this.canvas.addEventListener('wheel', this.onWheel, { passive: false });
     this.canvas.addEventListener('contextmenu', this.onContextMenu);
 
     void this.bootVerdantEngine();
@@ -330,6 +383,17 @@ export class VerdantFrontiersRuntime {
     return realmSurfaceHeightAt(this.activeRealm, x, z);
   }
 
+  private isOnBridge(x: number, z: number, y: number): boolean {
+    const tp = this.activeRealm.terrainProfile;
+    return (
+      tp.hasBridge &&
+      Math.abs(x) <= tp.bridgeHalfWidth + 0.15 &&
+      z >= tp.bridgeZMin - 0.2 &&
+      z <= tp.bridgeZMax + 0.2 &&
+      y >= tp.bridgeDeckY - 0.55
+    );
+  }
+
   private async loadRealmGlbAndSky(realm: FrontiersRealmSpec): Promise<{
     tris: number;
     verts: number;
@@ -343,21 +407,27 @@ export class VerdantFrontiersRuntime {
     const ex = this.wasm;
     const blankOk = (ex.verdant_wasm_studio_load_blank_stage() >>> 0) > 0;
 
-    // Fetch compiled Realm GLB (with fallback to legacy frontiers-world.glb for vaelmor)
-    const realmGlbUrl = resolvePublicUrl(realm.glbUrl);
-    let glbResp = await fetch(realmGlbUrl);
-    if (!glbResp.ok && realm.slug === 'vaelmor') {
-      glbResp = await fetch(resolvePublicUrl('/verdant/frontiers-world.glb'));
+    // Synthesize binary GLB directly on-demand for procedural UniverseCells, or fetch compiled GLB for canonical realms
+    let glbBytes: Uint8Array;
+    if (realm.isProceduralCell) {
+      glbBytes = buildProceduralCellGlb(realm);
+    } else {
+      const realmGlbUrl = resolvePublicUrl(realm.glbUrl);
+      let glbResp = await fetch(realmGlbUrl).catch(() => null);
+      if ((!glbResp || !glbResp.ok) && realm.slug === 'vaelmor') {
+        glbResp = await fetch(resolvePublicUrl('/verdant/frontiers-world.glb')).catch(() => null);
+      }
+      if (glbResp && glbResp.ok) {
+        const glbBuf = await glbResp.arrayBuffer();
+        glbBytes = new Uint8Array(glbBuf);
+      } else {
+        glbBytes = buildProceduralCellGlb(realm);
+      }
     }
-    if (!glbResp.ok) {
-      throw new Error(`Failed to fetch realm GLB ${realmGlbUrl} (${glbResp.status})`);
-    }
-    const glbBuf = await glbResp.arrayBuffer();
     if (this.disposed) {
       return { tris: 0, verts: 0, atlasTiles: 0, worldKappa: 'disposed', blankOk };
     }
 
-    const glbBytes = new Uint8Array(glbBuf);
     this.stageIo(glbBytes);
     const tris = ex.verdant_wasm_glb_import_io() >>> 0;
     const verts = ex.verdant_wasm_scene_vert_count() >>> 0;
@@ -388,30 +458,38 @@ export class VerdantFrontiersRuntime {
       const aH = ex.verdant_wasm_scene_tex_height() >>> 0;
       if (aPtr && aW && aH) {
         this.renderer.setTex(1, new Uint8Array(mem, aPtr, aW * aH * 4).slice(), aW, aH, te);
-      }
-      for (const [ch, slot] of [
-        [1, 3],
-        [2, 4],
-        [3, 5],
-      ] as const) {
-        const p = ex.verdant_wasm_scene_pbr_tex_ptr(ch) >>> 0;
-        const pw = ex.verdant_wasm_scene_pbr_tex_width(ch) >>> 0;
-        const ph = ex.verdant_wasm_scene_pbr_tex_height(ch) >>> 0;
-        if (p && pw && ph) {
-          this.renderer.setTex(slot, new Uint8Array(mem, p, pw * ph * 4).slice(), pw, ph);
+        for (const [ch, slot] of [
+          [1, 3],
+          [2, 4],
+          [3, 5],
+        ] as const) {
+          const p = ex.verdant_wasm_scene_pbr_tex_ptr(ch) >>> 0;
+          const pw = ex.verdant_wasm_scene_pbr_tex_width(ch) >>> 0;
+          const ph = ex.verdant_wasm_scene_pbr_tex_height(ch) >>> 0;
+          if (p && pw && ph) {
+            this.renderer.setTex(slot, new Uint8Array(mem, p, pw * ph * 4).slice(), pw, ph);
+          } else {
+            this.renderer.setTex(slot, null, 0, 0);
+          }
         }
+      } else {
+        this.renderer.setTex(1, null, 0, 0);
       }
     }
 
-    // Load Poly Haven photographic HDRI sky dome for this Realm into renderer slot 2
-    const skyImg = new Image();
-    skyImg.crossOrigin = 'anonymous';
-    skyImg.onload = () => {
-      if (!this.disposed && this.renderer) {
-        this.renderer.setTex(2, skyImg);
-      }
-    };
-    skyImg.src = resolvePublicUrl(realm.skyUrl);
+    // Load Poly Haven photographic HDRI sky dome for canonical realms; procedural cells use atmospheric biome shader
+    if (realm.skyUrl) {
+      const skyImg = new Image();
+      skyImg.crossOrigin = 'anonymous';
+      skyImg.onload = () => {
+        if (!this.disposed && this.renderer) {
+          this.renderer.setTex(2, skyImg);
+        }
+      };
+      skyImg.src = resolvePublicUrl(realm.skyUrl);
+    } else {
+      this.renderer.setTex(2, null);
+    }
 
     // Register Realm Project Model using exact Verdant camelCase schema
     const enc = new TextEncoder();
@@ -440,8 +518,41 @@ export class VerdantFrontiersRuntime {
       this.status.projectModelsRegistered += 1;
     }
 
+    // Automatically compile & register HD portrait-matched CharacterRig Project Models in verdant-uorc.wasm
+    for (const npc of this.npcs) {
+      const appearance = compileNpcCharacterAppearance(npc);
+      const rigPayload = buildCharacterProjectModelPayload(npc, appearance, realm.slug);
+      this.stageIo(enc.encode(JSON.stringify(rigPayload)));
+      const rigLen = ex.verdant_wasm_import_project_model_io() >>> 0;
+      if (rigLen > 0) {
+        this.status.projectModelsRegistered += 1;
+      }
+    }
+    if (typeof ex.verdant_wasm_record_part_hydration_io === 'function') {
+      this.stageIo(
+        enc.encode(
+          `character-actor|verdant-portrait-compiler|${this.npcs.length} HD portrait-matched character rigs`,
+        ),
+      );
+      ex.verdant_wasm_record_part_hydration_io(3);
+    }
+
+    if (typeof ex.verdant_wasm_stitch_boundary_seal_io === 'function') {
+      this.stageIo(
+        enc.encode(
+          JSON.stringify({
+            cell: realm.cell,
+            slug: realm.slug,
+            triangles: tris,
+            npcs: this.npcs.length,
+          }),
+        ),
+      );
+      ex.verdant_wasm_stitch_boundary_seal_io();
+    }
+
     const atlasTiles = ex.verdant_wasm_glb_atlas_tile_count() >>> 0;
-    const worldKappa = realm.prismCustody?.worldGlbKappa || (await kappa({ slug: realm.slug, tris, verts }));
+    const worldKappa = realm.prismCustody?.worldGlbKappa || (await kappa({ slug: realm.slug, cell: realm.cell, tris, verts }));
     return { tris, verts, atlasTiles, worldKappa, blankOk };
   }
 
@@ -576,6 +687,7 @@ export class VerdantFrontiersRuntime {
     nextNpcs: GameNpc[],
     nextEnemies: EnemyEntity[],
     nextInteractables: WorldInteractable[],
+    spawnOverride?: { x: number; z: number; yaw?: number },
   ): Promise<void> {
     this.activeRealm = realm;
     this.npcs = nextNpcs;
@@ -584,9 +696,14 @@ export class VerdantFrontiersRuntime {
     this.projectiles = [];
     this.slashes = [];
     this.collisionMap = buildRealmCollisionMap(realm, nextInteractables);
+    this.waterTiles = sampleTerrainClippedWaterQuads(realm, 104, 2.5);
+    this.waterPosture = 'dry';
+    this.waterDepth = 0;
+    this.terrainSlope = 0;
 
     this.banners = [];
-    const [sx, rawSz] = realm.spawnPoint;
+    const [rawSx, rawSz] = spawnOverride ? [spawnOverride.x, spawnOverride.z] : realm.spawnPoint;
+    const sx = rawSx;
     const sz = realm.isDungeon ? Math.min(23.5, rawSz) : rawSz;
     const resolvedSpawn = resolveCircleVsWorld(
       sx,
@@ -595,17 +712,33 @@ export class VerdantFrontiersRuntime {
       this.groundAt(sx, sz),
       this.collisionMap,
     );
+    const entryYaw = spawnOverride?.yaw ?? Math.PI;
     this.playerX = resolvedSpawn.x;
     this.playerZ = resolvedSpawn.z;
     this.playerY = this.groundAt(this.playerX, this.playerZ);
+    this.playerVx = 0;
+    this.playerVz = 0;
     this.playerVy = 0;
-    this.playerYaw = Math.PI;
-    this.camYaw = Math.PI;
-    this.camPitch = realm.isDungeon ? 0.24 : 0.34;
+    this.coyoteTimer = 0.12;
+    this.playerYaw = entryYaw;
+    this.camYaw = entryYaw;
+    this.targetCamYaw = entryYaw;
+    this.camPitch = realm.isDungeon ? 0.24 : 0.30;
+    this.targetCamPitch = this.camPitch;
+    this.camDist = realm.isDungeon ? 6.2 : 8.4;
+    this.targetCamDist = this.camDist;
     this.camEye = realm.isDungeon
-      ? [sx, this.playerY + 3.8, Math.min(31.2, sz + 6.4)]
-      : [sx, this.playerY + 5.2, sz + 9.2];
-    this.camTarget = [sx, this.playerY + 2.1, sz - 8.0];
+      ? [sx, this.playerY + 3.6, Math.min(31.2, sz + 6.2)]
+      : [
+          this.playerX - Math.sin(entryYaw) * this.camDist,
+          this.playerY + 4.6,
+          this.playerZ - Math.cos(entryYaw) * this.camDist,
+        ];
+    this.camTarget = [
+      this.playerX + Math.sin(entryYaw) * 5.0,
+      this.playerY + 1.8,
+      this.playerZ + Math.cos(entryYaw) * 5.0,
+    ];
 
     if (this.wasm && this.renderer) {
       const loaded = await this.loadRealmGlbAndSky(realm);
@@ -644,7 +777,8 @@ export class VerdantFrontiersRuntime {
       this.onVerdantReady?.({ ...this.status });
     }
 
-    this.spawnParticles(sx, this.playerY + 1.4, sz, 22, 0xd4a253, 5.5);
+    this.crossingBorder = false;
+    this.spawnParticles(this.playerX, this.playerY + 1.4, this.playerZ, 22, 0xd4a253, 5.5);
     this.pushHudSnapshot();
   }
 
@@ -838,27 +972,95 @@ export class VerdantFrontiersRuntime {
 
   public triggerDodge(): void {
     if (this.phase !== 'playing') return;
-    if (this.dodgeTimer > 0) return;
+    if (this.dodgeTimer > 0.04 || this.hitstopTimer > 0) {
+      this.bufferedAction = 'dodge';
+      this.bufferedActionTimer = 0.18;
+      return;
+    }
     if (this.stamina < 16) {
       this.callbacks.onGearFeedback('Low Stamina — recover breath before dodging.');
       return;
     }
     this.stamina -= 16;
     this.dodgeTimer = 0.28;
-    this.dodgeDirX = Math.sin(this.playerYaw);
-    this.dodgeDirZ = Math.cos(this.playerYaw);
+
+    // Directional dodge: roll cleanly toward held WASD direction (or facing direction if stationary)
+    let inFwd = 0;
+    let inRight = 0;
+    if (this.keys.has('KeyW') || this.keys.has('ArrowUp')) inFwd += 1;
+    if (this.keys.has('KeyS') || this.keys.has('ArrowDown')) inFwd -= 1;
+    if (this.keys.has('KeyD') || this.keys.has('ArrowRight')) inRight += 1;
+    if (this.keys.has('KeyA') || this.keys.has('ArrowLeft')) inRight -= 1;
+
+    const fwdX = Math.sin(this.camYaw);
+    const fwdZ = Math.cos(this.camYaw);
+    const rightX = -fwdZ;
+    const rightZ = fwdX;
+    let dx = fwdX * inFwd + rightX * inRight;
+    let dz = fwdZ * inFwd + rightZ * inRight;
+    const len = Math.hypot(dx, dz);
+    if (len > 0.05) {
+      dx /= len;
+      dz /= len;
+      this.playerYaw = Math.atan2(dx, dz);
+    } else {
+      dx = Math.sin(this.playerYaw);
+      dz = Math.cos(this.playerYaw);
+    }
+    this.dodgeDirX = dx;
+    this.dodgeDirZ = dz;
+    const isSwim = this.waterPosture === 'swimming';
+    const isWade = this.waterPosture === 'wading';
+    const surgeSpeed = isSwim ? 9.6 : isWade ? 10.2 : 12.5;
+    this.playerVx = dx * surgeSpeed;
+    this.playerVz = dz * surgeSpeed;
     this.actionCount += 1;
-    this.callbacks.onAudioEvent({ kind: 'swing' });
+    if (isSwim || isWade) {
+      const wY = this.activeRealm.terrainProfile.waterLevel;
+      this.spawnParticles(this.playerX, wY + 0.25, this.playerZ, 14, 0x8be2f2, 4.4);
+      this.onFootstep?.('water');
+    } else {
+      this.callbacks.onAudioEvent({ kind: 'swing' });
+    }
     this.pushHudSnapshot();
+  }
+
+  public setCameraPose(yaw: number, pitch: number, dist: number): void {
+    this.camYaw = yaw;
+    this.targetCamYaw = yaw;
+    this.camPitch = Math.max(0.08, Math.min(0.84, pitch));
+    this.targetCamPitch = this.camPitch;
+    this.camDist = Math.max(3.4, Math.min(14.0, dist));
+    this.targetCamDist = this.camDist;
+  }
+
+  public setPlayerYaw(yaw: number): void {
+    this.playerYaw = yaw;
   }
 
   public getDebugSnapshot() {
     return {
       realmSlug: this.activeRealm.slug,
+      realmName: this.activeRealm.name,
+      activeCell: this.activeRealm.cell,
+      isProceduralCell: Boolean(this.activeRealm.isProceduralCell),
       isDungeon: Boolean(this.activeRealm.isDungeon),
+      worldTriangles: this.status.worldTriangles,
+      adjacentCells: this.activeRealm.isDungeon
+        ? []
+        : getAdjacentCellsSummary(this.activeRealm.cell[0], this.activeRealm.cell[2]),
       playerX: Number(this.playerX.toFixed(3)),
       playerY: Number(this.playerY.toFixed(3)),
       playerZ: Number(this.playerZ.toFixed(3)),
+      playerYaw: Number(this.playerYaw.toFixed(3)),
+      waterPosture: this.waterPosture,
+      waterDepth: Number(this.waterDepth.toFixed(2)),
+      terrainSlope: Number(this.terrainSlope.toFixed(3)),
+      waterTileCount: this.waterTiles.length,
+      velocity: [Number(this.playerVx.toFixed(2)), Number(this.playerVz.toFixed(2))],
+      cameraYaw: Number(this.camYaw.toFixed(3)),
+      cameraPitch: Number(this.camPitch.toFixed(3)),
+      cameraDist: Number(this.camDist.toFixed(2)),
       activeGear: this.activeGear,
       actionCount: this.actionCount,
       lastActionGear: this.lastActionGear,
@@ -868,6 +1070,19 @@ export class VerdantFrontiersRuntime {
       bannerCount: this.banners.length,
       staticBoxColliders: this.collisionMap.boxes.length,
       staticCircleColliders: this.collisionMap.circles.length,
+      characterRigs: this.npcs.map((n) => {
+        const rig = compileNpcCharacterAppearance(n);
+        return {
+          id: n.id,
+          name: n.name,
+          portraitArchetype: rig.portraitArchetype,
+          garmentStyle: rig.garmentStyle,
+          hairStyle: rig.hairStyle,
+          beardStyle: rig.beardStyle,
+          bareForearms: rig.bareForearms,
+          signatureProp: rig.signatureProp,
+        };
+      }),
       npcs: this.npcs.map((n) => ({ id: n.id, x: n.position[0], z: n.position[1] })),
       enemies: this.enemies.map((e) => ({
         id: e.id,
@@ -881,11 +1096,21 @@ export class VerdantFrontiersRuntime {
 
   public triggerPrimaryAction(): void {
     if (this.phase !== 'playing') return;
+    if (this.hitstopTimer > 0 || this.dodgeTimer > 0.08) {
+      this.bufferedAction = 'primary';
+      this.bufferedActionTimer = 0.18;
+      return;
+    }
     const gear = GEAR_LOADOUT.find((g) => g.id === this.activeGear) ?? GEAR_LOADOUT[0];
     if (this.cooldowns[gear.id] > 0) {
-      this.callbacks.onGearFeedback(
-        `${gear.name} recharging (${this.cooldowns[gear.id].toFixed(1)}s)...`,
-      );
+      if (this.cooldowns[gear.id] <= 0.16) {
+        this.bufferedAction = 'primary';
+        this.bufferedActionTimer = 0.18;
+      } else {
+        this.callbacks.onGearFeedback(
+          `${gear.name} recharging (${this.cooldowns[gear.id].toFixed(1)}s)...`,
+        );
+      }
       return;
     }
     if (this.stamina < gear.staminaCost) {
@@ -898,6 +1123,20 @@ export class VerdantFrontiersRuntime {
     this.actionCount += 1;
     this.lastActionGear = gear.id;
     this.callbacks.onPlayerAction?.(gear.id);
+
+    // Soft melee aim-assist: smoothly turn toward nearest living threat inside strike arc
+    if (gear.id === 'hookblade' || gear.id === 'bellhammer') {
+      const assistYaw = findSoftCombatTargetYaw(
+        this.playerX,
+        this.playerZ,
+        this.playerYaw,
+        this.enemies,
+        gear.id === 'bellhammer' ? 5.6 : 4.8,
+      );
+      if (assistYaw !== null) {
+        this.playerYaw = assistYaw;
+      }
+    }
 
     if (gear.id === 'lantern') {
       const heal = 34;
@@ -924,6 +1163,11 @@ export class VerdantFrontiersRuntime {
     }
 
     if (gear.id === 'compass') {
+      if (this.waterPosture === 'swimming') {
+        this.callbacks.onGearFeedback('Step onto solid ground or shallows to plant a Foundation Banner.');
+        this.pushHudSnapshot();
+        return;
+      }
       const forwardX = this.playerX + Math.sin(this.playerYaw) * 1.85;
       const forwardZ = this.playerZ + Math.cos(this.playerYaw) * 1.85;
       const resolvedBanner = resolveCircleVsWorld(
@@ -940,22 +1184,62 @@ export class VerdantFrontiersRuntime {
       return;
     }
 
+    // Deep-water interaction: heavy weapons are sheathed while swimming -> perform a Hydro-Surge Splash instead!
+    if (this.waterPosture === 'swimming') {
+      const wY = this.activeRealm.terrainProfile.waterLevel;
+      const fx = Math.sin(this.playerYaw);
+      const fz = Math.cos(this.playerYaw);
+      this.playerVx += fx * 5.2;
+      this.playerVz += fz * 5.2;
+      this.spawnParticles(this.playerX + fx * 0.6, wY + 0.25, this.playerZ + fz * 0.6, 18, 0x7be0f4, 5.2);
+      this.slashes.push({
+        active: true,
+        x: this.playerX,
+        y: wY + 0.05,
+        z: this.playerZ,
+        yaw: this.playerYaw,
+        age: 0,
+        duration: 0.42,
+        isRadial: true,
+        r: 0.42,
+        g: 0.88,
+        b: 0.96,
+      });
+      this.onFootstep?.('water');
+      this.callbacks.onGearFeedback('Heavy weapons sheathed in deep water — surging through the current!');
+      this.pushHudSnapshot();
+      return;
+    }
+
     // Combat strike (Hookblade cleave or 174 Hz Bell-Hammer radial shockwave)
     this.attackSwing = 1.0;
     const isRadial = gear.id === 'bellhammer';
+    const inWater = this.waterPosture === 'wading';
     this.slashes.push({
       active: true,
       x: this.playerX,
-      y: this.playerY,
+      y: inWater ? this.activeRealm.terrainProfile.waterLevel + 0.08 : this.playerY,
       z: this.playerZ,
       yaw: this.playerYaw,
       age: 0,
-      duration: isRadial ? 0.42 : 0.24,
+      duration: isRadial ? 0.44 : 0.26,
       isRadial,
-      r: isRadial ? 0.96 : 0.98,
-      g: isRadial ? 0.68 : 0.84,
-      b: isRadial ? 0.28 : 0.38,
+      r: inWater ? 0.46 : isRadial ? 0.96 : 0.98,
+      g: inWater ? 0.88 : isRadial ? 0.68 : 0.84,
+      b: inWater ? 0.94 : isRadial ? 0.28 : 0.38,
     });
+
+    if (inWater) {
+      this.spawnParticles(
+        this.playerX,
+        this.activeRealm.terrainProfile.waterLevel + 0.2,
+        this.playerZ,
+        isRadial ? 22 : 12,
+        0x7edef2,
+        isRadial ? 6.2 : 4.4,
+      );
+      this.onFootstep?.('water');
+    }
 
     if (isRadial) {
       this.callbacks.onAudioEvent({ kind: 'bell', hz: 174 });
@@ -1064,7 +1348,23 @@ export class VerdantFrontiersRuntime {
   public teleportPlayer(x: number, z: number): void {
     this.playerX = x;
     this.playerZ = z;
-    this.playerY = this.groundAt(x, z);
+    const tp = this.activeRealm.terrainProfile;
+    const terrainY = realmTerrainHeightAt(this.activeRealm, x, z);
+    const surfaceY = this.groundAt(x, z);
+    const onBridge =
+      tp.hasBridge &&
+      Math.abs(x) <= 2.95 &&
+      z >= tp.bridgeZMin &&
+      z <= tp.bridgeZMax;
+    const waterState = this.activeRealm.isDungeon
+      ? evaluateWaterImmersion(surfaceY, -999, false, this.simTime)
+      : evaluateWaterImmersion(terrainY, tp.waterLevel, onBridge, this.simTime);
+    this.waterPosture = waterState.posture;
+    this.waterDepth = waterState.depth;
+    this.terrainSlope = this.activeRealm.isDungeon
+      ? 0
+      : sampleTerrainSlope((sx, sz) => realmTerrainHeightAt(this.activeRealm, sx, sz), x, z).slope;
+    this.playerY = waterState.posture === 'swimming' ? waterState.swimFloatY : surfaceY;
     this.playerVy = 0;
     this.pushHudSnapshot();
   }
@@ -1103,15 +1403,23 @@ export class VerdantFrontiersRuntime {
     this.playerX = sx;
     this.playerZ = sz;
     this.playerY = this.groundAt(sx, sz);
+    this.playerVx = 0;
+    this.playerVz = 0;
+    this.playerVy = 0;
+    this.coyoteTimer = 0.12;
     this.playerYaw = Math.PI;
     this.camYaw = Math.PI;
-    this.camPitch = 0.34;
+    this.targetCamYaw = Math.PI;
+    this.camPitch = 0.30;
+    this.targetCamPitch = 0.30;
+    this.camDist = this.activeRealm.isDungeon ? 6.2 : 8.4;
+    this.targetCamDist = this.camDist;
     this.phase = 'playing';
     this.pushHudSnapshot();
   }
 
   // ---------------------------------------------------------------------------
-  // Input Handlers
+  // Input Handlers (Fluid Action-RPG Controls: Velocity, Coyote Jump, Buffer, Zoom, Orbit)
   // ---------------------------------------------------------------------------
   private onKeyDown = (e: KeyboardEvent): void => {
     if (this.phase !== 'playing') return;
@@ -1126,11 +1434,26 @@ export class VerdantFrontiersRuntime {
     else if (code === 'Digit4') this.selectGear('compass');
     else if (code === 'KeyE' || code === 'Enter') this.triggerInteract();
     else if (code === 'KeyF') this.triggerPrimaryAction();
-    else if (code === 'Space') {
+    else if (code === 'KeyC') {
+      // Smoothly re-center camera behind the Waywright
+      this.targetCamYaw = this.playerYaw;
+    } else if (code === 'Equal' || code === 'NumpadAdd') {
+      this.targetCamDist = Math.max(3.8, this.targetCamDist - 1.1);
+    } else if (code === 'Minus' || code === 'NumpadSubtract') {
+      this.targetCamDist = Math.min(13.5, this.targetCamDist + 1.1);
+    } else if (code === 'Space') {
       e.preventDefault();
-      const ground = this.groundAt(this.playerX, this.playerZ);
-      if (this.playerY <= ground + 0.08) {
-        this.playerVy = 7.4;
+      if (this.waterPosture === 'swimming') {
+        // Surface breach leap to vault smoothly onto riverbanks or piers!
+        this.playerVy = 6.4;
+        this.coyoteTimer = 0;
+        const wY = this.activeRealm.terrainProfile.waterLevel;
+        this.spawnParticles(this.playerX, wY + 0.2, this.playerZ, 12, 0x8be2f2, 4.2);
+        this.onFootstep?.('water');
+        this.callbacks.onAudioEvent({ kind: 'jump' });
+      } else if (this.coyoteTimer > 0) {
+        this.playerVy = this.waterPosture === 'wading' ? 6.4 : 7.6;
+        this.coyoteTimer = 0;
         this.callbacks.onAudioEvent({ kind: 'jump' });
       }
     } else if (code === 'ShiftLeft' || code === 'ShiftRight') {
@@ -1145,12 +1468,14 @@ export class VerdantFrontiersRuntime {
   private onBlur = (): void => {
     this.keys.clear();
     this.dragging = false;
+    this.dragButton = -1;
   };
 
   private onVisibility = (): void => {
     if (document.hidden) {
       this.keys.clear();
       this.dragging = false;
+      this.dragButton = -1;
     } else {
       this.lastNow = performance.now();
     }
@@ -1160,18 +1485,29 @@ export class VerdantFrontiersRuntime {
     this.resizeCanvas();
   };
 
+  private onWheel = (e: WheelEvent): void => {
+    if (this.phase !== 'playing') return;
+    e.preventDefault();
+    const delta = Math.sign(e.deltaY) * Math.min(1.4, Math.max(0.45, Math.abs(e.deltaY) * 0.008));
+    this.targetCamDist = Math.max(3.8, Math.min(13.5, this.targetCamDist + delta));
+  };
+
   private onPointerDown = (e: PointerEvent): void => {
     if (this.phase !== 'playing') return;
-    if (e.button === 0) {
+    if (e.button === 1) {
+      e.preventDefault();
+      this.targetCamYaw = this.playerYaw;
+      return;
+    }
+    if (e.button === 0 || e.button === 2) {
       this.dragging = true;
+      this.dragButton = e.button;
       this.lastPointerX = e.clientX;
       this.lastPointerY = e.clientY;
       this.pointerDownX = e.clientX;
       this.pointerDownY = e.clientY;
       this.pointerDownAt = performance.now();
       this.pointerMovedDist = 0;
-    } else if (e.button === 2) {
-      this.triggerPrimaryAction();
     }
   };
 
@@ -1182,17 +1518,20 @@ export class VerdantFrontiersRuntime {
     this.pointerMovedDist += Math.hypot(dx, dy);
     this.lastPointerX = e.clientX;
     this.lastPointerY = e.clientY;
-    this.camYaw -= dx * 0.0055;
-    this.camPitch = Math.max(0.14, Math.min(0.82, this.camPitch + dy * 0.004));
+    this.targetCamYaw -= dx * 0.0062;
+    this.targetCamPitch = Math.max(0.09, Math.min(0.84, this.targetCamPitch + dy * 0.0046));
   };
 
   private onPointerUp = (e: PointerEvent): void => {
-    if (e.button === 0 && this.dragging) {
+    if (!this.dragging) return;
+    if (e.button === this.dragButton) {
+      const wasLeft = this.dragButton === 0;
       this.dragging = false;
+      this.dragButton = -1;
       const totalDist = Math.hypot(e.clientX - this.pointerDownX, e.clientY - this.pointerDownY);
       const elapsed = performance.now() - this.pointerDownAt;
-      // Crisp left-click on the 3D world canvas (not a camera drag) executes the equipped gear action!
-      if (totalDist < 6 && this.pointerMovedDist < 8 && elapsed < 320 && this.phase === 'playing') {
+      // Crisp left-click on the 3D world canvas (not an orbit drag) executes the equipped gear action!
+      if (wasLeft && totalDist < 6 && this.pointerMovedDist < 8 && elapsed < 320 && this.phase === 'playing') {
         this.triggerPrimaryAction();
       }
     }
@@ -1261,6 +1600,7 @@ export class VerdantFrontiersRuntime {
       proximity: this.findNearestPrompt(),
       nearbyEnemies,
       defeatedCount: this.defeatedCount,
+      waterPosture: this.waterPosture,
     });
   }
 
@@ -1278,11 +1618,26 @@ export class VerdantFrontiersRuntime {
       this.attackSwing = Math.max(0, this.attackSwing - dt * 3.8);
     }
 
-    // Cooldowns & stamina regeneration
+    const tp = this.activeRealm.terrainProfile;
+    const prevWaterPosture = this.waterPosture;
+    const curTerrainY = realmTerrainHeightAt(this.activeRealm, this.playerX, this.playerZ);
+    const onBridgeNow = this.isOnBridge(this.playerX, this.playerZ, this.playerY);
+    const waterState = this.activeRealm.isDungeon
+      ? evaluateWaterImmersion(curTerrainY, -999, true, this.simTime)
+      : evaluateWaterImmersion(curTerrainY, tp.waterLevel, onBridgeNow, this.simTime);
+    this.waterPosture = waterState.posture;
+    this.waterDepth = waterState.depth;
+
+    if (prevWaterPosture === 'dry' && this.waterPosture !== 'dry') {
+      this.spawnParticles(this.playerX, tp.waterLevel + 0.2, this.playerZ, 14, 0x8be2f2, 4.2);
+      this.onFootstep?.('water');
+    }
+
+    // Cooldowns & stamina regeneration (modulated gently when wading/swimming)
     for (const k of ['hookblade', 'bellhammer', 'lantern', 'compass'] as GearSlotId[]) {
       if (this.cooldowns[k] > 0) this.cooldowns[k] = Math.max(0, this.cooldowns[k] - dt);
     }
-    const regenRate = 24 * (1 + this.staminaRegenBonusPct / 100);
+    const regenRate = 24 * (1 + this.staminaRegenBonusPct / 100) * waterState.staminaRegenMultiplier;
     this.stamina = Math.min(this.maxStamina, this.stamina + regenRate * dt);
 
     // Step particles & slash rings
@@ -1316,9 +1671,28 @@ export class VerdantFrontiersRuntime {
 
     if (this.phase !== 'playing') return;
 
-    // Camera keyboard yaw (Q / E)
-    if (this.keys.has('KeyQ')) this.camYaw += 1.9 * dt;
-    if (this.keys.has('KeyR')) this.camYaw -= 1.9 * dt;
+    // Drain 180ms action input buffer so clicks/dodges pressed mid-recovery fire cleanly
+    if (this.bufferedActionTimer > 0) {
+      this.bufferedActionTimer = Math.max(0, this.bufferedActionTimer - dt);
+      if (this.bufferedActionTimer <= 0) {
+        this.bufferedAction = null;
+      } else if (this.dodgeTimer <= 0.04 && this.hitstopTimer <= 0) {
+        const queued = this.bufferedAction;
+        if (queued === 'dodge') {
+          this.bufferedAction = null;
+          this.bufferedActionTimer = 0;
+          this.triggerDodge();
+        } else if (queued === 'primary' && this.cooldowns[this.activeGear] <= 0) {
+          this.bufferedAction = null;
+          this.bufferedActionTimer = 0;
+          this.triggerPrimaryAction();
+        }
+      }
+    }
+
+    // Camera keyboard yaw (Q / R) + smooth damping toward target orbit & zoom
+    if (this.keys.has('KeyQ')) this.targetCamYaw += 2.2 * dt;
+    if (this.keys.has('KeyR')) this.targetCamYaw -= 2.2 * dt;
 
     // Movement vector relative to camera heading
     let inFwd = 0;
@@ -1328,40 +1702,73 @@ export class VerdantFrontiersRuntime {
     if (this.keys.has('KeyD') || this.keys.has('ArrowRight')) inRight += 1;
     if (this.keys.has('KeyA') || this.keys.has('ArrowLeft')) inRight -= 1;
 
-    const fwdX = Math.sin(this.camYaw);
-    const fwdZ = Math.cos(this.camYaw);
-    const rightX = -fwdZ;
-    const rightZ = fwdX;
+    // Gentle auto-follow camera curve when strafing freely (never fights manual mouse drag)
+    if (!this.dragging && inRight !== 0 && inFwd >= 0) {
+      this.targetCamYaw -= inRight * 0.42 * dt;
+    }
 
-    let moveX = fwdX * inFwd + rightX * inRight;
-    let moveZ = fwdZ * inFwd + rightZ * inRight;
-    const moveLen = Math.hypot(moveX, moveZ);
+    const camSmooth = 1 - Math.exp(-15.0 * dt);
+    this.camYaw += shortestAngleDelta(this.camYaw, this.targetCamYaw) * camSmooth;
+    this.camPitch += (this.targetCamPitch - this.camPitch) * camSmooth;
+    this.camDist += (this.targetCamDist - this.camDist) * (1 - Math.exp(-12.0 * dt));
 
     const prevX = this.playerX;
+    const prevZ = this.playerZ;
+    let candX = prevX;
+    let candZ = prevZ;
     if (this.dodgeTimer > 0) {
       this.dodgeTimer = Math.max(0, this.dodgeTimer - dt);
-      const dodgeSpeed = 14.5;
-      this.playerX += this.dodgeDirX * dodgeSpeed * dt;
-      this.playerZ += this.dodgeDirZ * dodgeSpeed * dt;
+      const dodgeSpeed = 14.2 * waterState.dodgeScale;
+      this.playerVx = this.dodgeDirX * dodgeSpeed;
+      this.playerVz = this.dodgeDirZ * dodgeSpeed;
+      candX = prevX + this.playerVx * dt;
+      candZ = prevZ + this.playerVz * dt;
       this.playerSpeed = dodgeSpeed;
-    } else if (moveLen > 0.01) {
-      moveX /= moveLen;
-      moveZ /= moveLen;
-      const speed = 8.4;
-      this.playerX += moveX * speed * dt;
-      this.playerZ += moveZ * speed * dt;
-      this.playerSpeed = speed;
-      const targetYaw = Math.atan2(moveX, moveZ);
-      let diff = targetYaw - this.playerYaw;
-      while (diff > Math.PI) diff -= Math.PI * 2;
-      while (diff < -Math.PI) diff += Math.PI * 2;
-      this.playerYaw += diff * Math.min(1, dt * 12);
     } else {
-      this.playerSpeed = 0;
+      const move = stepVelocityMovement({
+        inForward: inFwd,
+        inRight,
+        camYaw: this.camYaw,
+        vx: this.playerVx,
+        vz: this.playerVz,
+        playerYaw: this.playerYaw,
+        maxSpeed: 8.6 * waterState.speedMultiplier,
+        accelRate: 16.5 * waterState.turnResponsiveness,
+        decelRate: waterState.posture === 'swimming' ? 6.5 : 14.5,
+        turnRate: 14.0 * waterState.turnResponsiveness,
+        dt,
+      });
+      this.playerVx = move.vx;
+      this.playerVz = move.vz;
+      this.playerSpeed = move.speed;
+      this.playerYaw = move.playerYaw;
+      candX = prevX + this.playerVx * dt;
+      candZ = prevZ + this.playerVz * dt;
+    }
+
+    // Integrated mountain range slope climbing & sheer cliff deflection (walkable foothills vs solid crags)
+    if (!this.activeRealm.isDungeon && !onBridgeNow) {
+      const slopeRes = resolveTerrainSlopeStep(
+        (x, z) => this.groundAt(x, z),
+        prevX,
+        prevZ,
+        candX,
+        candZ,
+      );
+      this.playerX = slopeRes.x;
+      this.playerZ = slopeRes.z;
+      this.terrainSlope = slopeRes.slope;
+      if (slopeRes.blockedByCliff) {
+        this.playerVx *= 0.45;
+        this.playerVz *= 0.45;
+      }
+    } else {
+      this.playerX = candX;
+      this.playerZ = candZ;
+      this.terrainSlope = 0;
     }
 
     // Parabolic Causeway Bridge stone parapet guardrails when active realm has a bridge
-    const tp = this.activeRealm.terrainProfile;
     if (
       tp.hasBridge &&
       this.playerZ > tp.bridgeZMin - 0.4 &&
@@ -1385,41 +1792,90 @@ export class VerdantFrontiersRuntime {
     this.playerX = staticPlayer.x;
     this.playerZ = staticPlayer.z;
 
-    // Clamp to playable bounds (vaulted 3D dungeon chambers vs vast 224m overworld frontier)
+    // Playable bounds: vaulted 3D dungeon chambers vs boundless open UniverseCell border crossing
     if (this.activeRealm.isDungeon) {
       this.playerZ = Math.max(-35.0, Math.min(31.5, this.playerZ));
       const xLim = this.playerZ > 18.0 || this.playerZ < -13.0 ? 9.6 : 19.5;
       this.playerX = Math.max(-xLim, Math.min(xLim, this.playerX));
-    } else {
-      const maxR = Math.max(54, (this.activeRealm.worldHalfExtent || 112) - 10);
-      const pr = Math.hypot(this.playerX, this.playerZ);
-      if (pr > maxR) {
-        this.playerX = (this.playerX / pr) * maxR;
-        this.playerZ = (this.playerZ / pr) * maxR;
+    } else if (!this.crossingBorder && this.onCrossFrontierBorder) {
+      const [cx, cy, cz] = this.activeRealm.cell;
+      const clampLateral = (v: number) => Math.max(-72, Math.min(72, v));
+      if (this.playerX > CELL_BORDER_TRIGGER) {
+        this.crossingBorder = true;
+        this.onCrossFrontierBorder('E', [cx + 1, cy, cz], [-86, clampLateral(this.playerZ)], this.playerYaw);
+      } else if (this.playerX < -CELL_BORDER_TRIGGER) {
+        this.crossingBorder = true;
+        this.onCrossFrontierBorder('W', [cx - 1, cy, cz], [86, clampLateral(this.playerZ)], this.playerYaw);
+      } else if (this.playerZ < -CELL_BORDER_TRIGGER) {
+        this.crossingBorder = true;
+        this.onCrossFrontierBorder('N', [cx, cy, cz - 1], [clampLateral(this.playerX), 86], this.playerYaw);
+      } else if (this.playerZ > CELL_BORDER_TRIGGER) {
+        this.crossingBorder = true;
+        this.onCrossFrontierBorder('S', [cx, cy, cz + 1], [clampLateral(this.playerX), -86], this.playerYaw);
       }
     }
 
-    // Gravity & surface height following (smooth across bridge deck & parametric terrain)
+    // Re-evaluate water immersion at post-step position for smooth vertical buoyancy vs gravity
+    const postTerrainY = realmTerrainHeightAt(this.activeRealm, this.playerX, this.playerZ);
+    const postOnBridge = this.isOnBridge(this.playerX, this.playerZ, this.playerY);
+    const postWater = this.activeRealm.isDungeon
+      ? evaluateWaterImmersion(postTerrainY, -999, true, this.simTime)
+      : evaluateWaterImmersion(postTerrainY, tp.waterLevel, postOnBridge, this.simTime);
+    this.waterPosture = postWater.posture;
+    this.waterDepth = postWater.depth;
+
     const floor = this.groundAt(this.playerX, this.playerZ);
-    this.playerVy -= 20.0 * dt;
-    this.playerY += this.playerVy * dt;
-    const grounded = this.playerY <= floor + 0.06;
-    if (this.playerY < floor) {
-      this.playerY = floor;
-      this.playerVy = 0;
+    let grounded = false;
+    if (postWater.posture === 'swimming') {
+      // Buoyant swimming float: smoothly settle at waterline unless mid-breach leap
+      if (this.playerVy > 0.2) {
+        this.playerVy -= 18.0 * dt;
+        this.playerY += this.playerVy * dt;
+        if (this.playerY <= postWater.swimFloatY) {
+          this.playerY = postWater.swimFloatY;
+          this.playerVy = 0;
+        }
+      } else {
+        const buoyBlend = 1 - Math.exp(-9.5 * dt);
+        this.playerY += (postWater.swimFloatY - this.playerY) * buoyBlend;
+        this.playerVy = 0;
+      }
+      if (this.playerY < floor) {
+        this.playerY = floor;
+      }
+      grounded = true;
+      this.coyoteTimer = 0.12;
+    } else {
+      // Gravity & surface height following (with 120ms coyote jump grace window)
+      this.playerVy -= 20.0 * dt;
+      this.playerY += this.playerVy * dt;
+      grounded = this.playerY <= floor + 0.06;
+      if (this.playerY < floor) {
+        this.playerY = floor;
+        this.playerVy = 0;
+      }
+      this.coyoteTimer = grounded ? 0.12 : Math.max(0, this.coyoteTimer - dt);
     }
 
-    // Environmental footstep foley cadence
-    if (grounded && this.playerSpeed > 1.5 && this.dodgeTimer <= 0) {
+    // Environmental footstep & aquatic swimming/wading foley + water splash droplets
+    if (grounded && this.playerSpeed > 1.1 && this.dodgeTimer <= 0) {
       this.footstepTimer += dt;
-      if (this.footstepTimer >= 0.37) {
+      const cadence = this.waterPosture === 'swimming' ? 0.56 : this.waterPosture === 'wading' ? 0.44 : 0.37;
+      if (this.footstepTimer >= cadence) {
         this.footstepTimer = 0;
         const onStone =
           this.activeRealm.isDungeon ||
           (tp.hasBridge && Math.abs(this.playerX) < tp.bridgeHalfWidth + 0.5 && this.playerZ > tp.bridgeZMin - 2 && this.playerZ < tp.bridgeZMax + 2) ||
           Math.hypot(this.playerX, this.playerZ + 12) < 14;
-        const nearWater = !this.activeRealm.isDungeon && this.playerY < tp.waterLevel + 0.55;
-        this.onFootstep?.(nearWater ? 'water' : onStone ? 'stone' : 'earth');
+        const inWater = !this.activeRealm.isDungeon && this.waterPosture !== 'dry';
+        this.onFootstep?.(inWater ? 'water' : onStone ? 'stone' : 'earth');
+      }
+      if (!this.activeRealm.isDungeon && this.waterPosture !== 'dry') {
+        this.waterSplashTimer += dt;
+        if (this.waterSplashTimer >= 0.24) {
+          this.waterSplashTimer = 0;
+          this.spawnParticles(this.playerX, tp.waterLevel + 0.12, this.playerZ, 4, 0x8be2f2, 2.4);
+        }
       }
     } else {
       this.footstepTimer = Math.min(this.footstepTimer, 0.22);
@@ -1481,6 +1937,15 @@ export class VerdantFrontiersRuntime {
     for (const e of this.enemies) {
       if (e.state === 'ko' || e.hp <= 0) continue;
       const eY = this.groundAt(e.x, e.z);
+      // Prevent enemies from clipping into sheer cliff walls or marching effortlessly through deep water
+      if (!this.activeRealm.isDungeon) {
+        const eSlope = sampleTerrainSlope((x, z) => this.groundAt(x, z), e.x, e.z);
+        if (!eSlope.climbable) {
+          const gl = Math.hypot(eSlope.gradX, eSlope.gradZ) || 1;
+          e.x -= (eSlope.gradX / gl) * 0.25;
+          e.z -= (eSlope.gradZ / gl) * 0.25;
+        }
+      }
       const resE = resolveCircleVsWorld(
         e.x,
         e.z,
@@ -1516,30 +1981,47 @@ export class VerdantFrontiersRuntime {
       }
     }
 
-    // Smooth third-person follow camera (with ground clearance, dungeon wall/ceiling clamping & trauma shake)
+    // Ray-marched third-person spring-arm camera (wall/pillar occlusion avoidance + zoom + Verdant WASM sync)
     const isDg = Boolean(this.activeRealm.isDungeon);
-    const dist = isDg ? 6.6 : 9.2;
-    const effPitch = isDg ? Math.min(this.camPitch, 0.38) : this.camPitch;
-    let desX = this.playerX - Math.sin(this.camYaw) * Math.cos(effPitch) * dist;
-    let desZ = this.playerZ - Math.cos(this.camYaw) * Math.cos(effPitch) * dist;
-    if (isDg) {
-      desZ = Math.max(-34.0, Math.min(31.6, desZ));
-      const camXLim = desZ > 18.2 || desZ < -13.2 ? 9.0 : 18.4;
-      desX = Math.max(-camXLim, Math.min(camXLim, desX));
+    const desiredDist = isDg ? Math.min(this.camDist, 7.6) : this.camDist;
+    const anchorY = this.playerY + 1.58;
+    const spring = resolveSpringArmCamera({
+      anchorX: this.playerX,
+      anchorY,
+      anchorZ: this.playerZ,
+      camYaw: this.camYaw,
+      camPitch: this.camPitch,
+      desiredDist,
+      isDungeon: isDg,
+      collisionMap: this.collisionMap,
+      groundAt: (x, z) => this.groundAt(x, z),
+    });
+
+    // Feed live anchor & pose intent into Verdant Engine WASM Camera API
+    if (this.wasm) {
+      if (typeof this.wasm.verdant_wasm_camera_set_anchor === 'function') {
+        this.wasm.verdant_wasm_camera_set_anchor(this.playerX, anchorY, this.playerZ, 0);
+      }
+      if (typeof this.wasm.verdant_wasm_camera_set_pose_intent === 'function') {
+        this.wasm.verdant_wasm_camera_set_pose_intent(
+          this.camYaw,
+          this.camPitch,
+          spring.resolvedDist,
+        );
+      }
     }
-    const floorCam = this.groundAt(desX, desZ);
-    let desY = Math.max(floorCam + 1.85, -0.15, this.playerY + 2.25 + Math.sin(effPitch) * dist);
-    if (isDg) {
-      desY = Math.min(11.6, desY);
-    }
+
     const shake = this.cameraTrauma * this.cameraTrauma * 0.42;
-    const alpha = 1 - Math.exp(-9.0 * dt);
-    this.camEye[0] += (desX + (Math.random() - 0.5) * shake - this.camEye[0]) * alpha;
-    this.camEye[1] += (desY + (Math.random() - 0.5) * shake - this.camEye[1]) * alpha;
-    this.camEye[2] += (desZ - this.camEye[2]) * alpha;
-    this.camTarget[0] = this.playerX + Math.sin(this.camYaw) * 4.2;
-    this.camTarget[1] = this.playerY + 2.15;
-    this.camTarget[2] = this.playerZ + Math.cos(this.camYaw) * 4.2;
+    const alpha = 1 - Math.exp(-(spring.obstructed ? 18.0 : 12.5) * dt);
+    this.camEye[0] += (spring.eyeX + (Math.random() - 0.5) * shake - this.camEye[0]) * alpha;
+    this.camEye[1] += (spring.eyeY + (Math.random() - 0.5) * shake - this.camEye[1]) * alpha;
+    this.camEye[2] += (spring.eyeZ - this.camEye[2]) * alpha;
+
+    // Look ahead slightly when zoomed out, and focus crisply at head/chest height when zoomed in
+    const lookLead = Math.max(0.8, (spring.resolvedDist - 3.6) * 0.42);
+    this.camTarget[0] = this.playerX + Math.sin(this.camYaw) * lookLead;
+    this.camTarget[1] = this.playerY + 1.56 + Math.min(0.45, (spring.resolvedDist - 4.0) * 0.06);
+    this.camTarget[2] = this.playerZ + Math.cos(this.camYaw) * lookLead;
 
     // Feed live spatial listener pose to Verdant Wasm binaural engine -> AudioWorklet!
     if (this.wasm && this.onSpatialAudio) {
@@ -1628,6 +2110,8 @@ export class VerdantFrontiersRuntime {
       highlightInteractableId: prox?.kind === 'interactable' ? prox.id : null,
       heightAt: (x, z) => this.groundAt(x, z),
       waterLevel: this.activeRealm.terrainProfile.waterLevel,
+      waterTiles: this.waterTiles,
+      playerWaterPosture: this.waterPosture,
       gorgeZ: this.activeRealm.terrainProfile.gorgeZ,
       gorgeWaveAmp: this.activeRealm.terrainProfile.gorgeWaveAmp,
       showMagmaSeams:
@@ -1705,6 +2189,7 @@ export class VerdantFrontiersRuntime {
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
     window.removeEventListener('pointermove', this.onPointerMove);
     window.removeEventListener('pointerup', this.onPointerUp);
+    this.canvas.removeEventListener('wheel', this.onWheel);
     this.canvas.removeEventListener('contextmenu', this.onContextMenu);
     if (this.canvas.parentNode === this.container) {
       this.container.removeChild(this.canvas);

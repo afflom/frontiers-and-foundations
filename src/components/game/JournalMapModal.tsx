@@ -28,6 +28,7 @@ import {
   SOUNDTRACK_CATALOG,
   type RealmSoundtrackSpec,
 } from '../../verdant/verdantScoreSchema';
+import { sampleMacroClimate } from '../../verdant/verdantUniverseGenerator';
 import type { VerdantAudioState } from '../../verdant/verdantAudioEngine';
 
 export type AtlasTab = 'chronicle' | 'map' | 'dungeons' | 'forge' | 'guilds' | 'codex';
@@ -67,6 +68,7 @@ interface JournalMapModalProps {
   onSeekEmergentQuest: () => void;
   onFastTravel: (regionId: RegionId, x: number, z: number, label: string) => void;
   onTravelToRealm: (realm: FrontiersRealmSpec) => void;
+  onTravelToCell?: (cx: number, cz: number) => void;
   onGenerateRealm: (name: string, theme: RealmThemeId, brief: string) => void;
   onGenerateDungeon: (
     name: string,
@@ -172,6 +174,7 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
   onSeekEmergentQuest,
   onFastTravel,
   onTravelToRealm,
+  onTravelToCell,
   onGenerateRealm,
   onGenerateDungeon,
   onComposeScore,
@@ -450,9 +453,12 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
                         />
                         <text
                           x={mc(rp.x)}
-                          y={mc(rp.z) - 9}
+                          y={mc(rp.z) - 10}
                           textAnchor="middle"
                           fill="#a9e6fa"
+                          stroke="#0d1014"
+                          strokeWidth="3"
+                          paintOrder="stroke"
                           fontSize="9"
                         >
                           {rp.name}
@@ -528,18 +534,98 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
                 </div>
               </div>
 
-              {/* Right Column: Federated Meridian Realms & Live Realm Synthesis */}
+              {/* Right Column: Boundless Meridian Cell Grid + Chartered Realms & Live Synthesis */}
               <div className="space-y-3 min-w-0">
                 <div>
                   <h2 className="font-display text-base font-bold text-[#f3efe6]">
-                    Federated Meridian Atlas
+                    Boundless Meridian Atlas
                   </h2>
                   <p className="text-xs text-[#9ca7b5] mt-0.5">
-                    Portal between chartered Frontier Realms across the Stitch meridian network, or chart and compile a brand-new 3D Realm on demand.
+                    Walk past any N / S / E / W frontier gate (±96m) to cross seamlessly into uncharted cells, or click any coordinate below to synthesize &amp; explore via Verdant.
                   </p>
                 </div>
 
-                <div className="max-h-[280px] overflow-y-auto pr-1 space-y-1.5">
+                {/* Interactive 5x5 Boundless UniverseCell Grid centered on active cell */}
+                {onTravelToCell && (
+                  <div
+                    data-testid="boundless-meridian-grid"
+                    className="p-3 rounded-sm bg-[#0f151d] border border-[#d4a253]/35 space-y-2"
+                  >
+                    <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.14em]">
+                      <span className="font-display font-bold text-[#d4a253]">
+                        Continuous Universe Grid · Centered ({activeRealm.cell[0]}, {activeRealm.cell[2]})
+                      </span>
+                      <span className="font-mono text-[#7fd1b6]">
+                        {overworldRealms.length} Charted · Endless Beyond
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {[-2, -1, 0, 1, 2].map((dz) =>
+                        [-2, -1, 0, 1, 2].map((dx) => {
+                          const gx = activeRealm.cell[0] + dx;
+                          const gz = activeRealm.cell[2] + dz;
+                          const isHere = !activeRealm.isDungeon && dx === 0 && dz === 0;
+                          const charted = overworldRealms.find(
+                            (r) => r.cell[0] === gx && r.cell[2] === gz,
+                          );
+                          const climate = sampleMacroClimate(gx, gz);
+                          const theme = charted?.theme ?? climate.theme;
+                          const dotColor: Record<RealmThemeId, string> = {
+                            'citadel-highlands': '#9eb08a',
+                            'sunken-aqueducts': '#5ea38c',
+                            'obsidian-crucible': '#d96b43',
+                            'pelagic-spires': '#52b4d9',
+                            'amber-steppe': '#d9a452',
+                            'glacial-spire': '#a6d2f0',
+                          };
+                          return (
+                            <button
+                              key={`${gx},${gz}`}
+                              type="button"
+                              data-cell-coord={`${gx},${gz}`}
+                              disabled={isHere || travelingRealm || generatingRealm}
+                              onClick={() => onTravelToCell(gx, gz)}
+                              title={
+                                charted
+                                  ? `${charted.name} — Cell (${gx}, 0, ${gz})`
+                                  : `Synthesize Uncharted ${climate.biomeTitle} — Cell (${gx}, 0, ${gz})`
+                              }
+                              className={`px-1.5 py-2 rounded-sm border text-left transition-colors ${
+                                isHere
+                                  ? 'bg-[#2a2215] border-[#d4a253] text-[#f8ecd2] cursor-default'
+                                  : charted
+                                    ? 'bg-[#17202b] hover:bg-[#223040] border-[#5ea38c]/45 text-[#e6edf5] cursor-pointer'
+                                    : 'bg-[#111720] hover:bg-[#1a2431] border-white/10 hover:border-[#d4a253]/50 text-[#9aa7b6] cursor-pointer'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="font-mono text-[9px] tabular-nums">
+                                  {gx},{gz}
+                                </span>
+                                <span
+                                  className="w-2 h-2 rounded-full shrink-0"
+                                  style={{ backgroundColor: dotColor[theme] }}
+                                />
+                              </div>
+                              <p className="font-display text-[9px] font-bold truncate mt-1">
+                                {isHere
+                                  ? 'You'
+                                  : charted
+                                    ? charted.name.replace(/^The\s+/i, '')
+                                    : climate.biomeTitle.split(' ')[0]}
+                              </p>
+                              <p className="text-[8px] uppercase tracking-[0.08em] opacity-75 truncate">
+                                {isHere ? 'Active' : charted ? 'Charted' : 'Uncharted'}
+                              </p>
+                            </button>
+                          );
+                        }),
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="max-h-[210px] overflow-y-auto pr-1 space-y-1.5">
                   {overworldRealms.map((realm) => {
                     const isCurrent = realm.slug === activeRealm.slug;
                     const catalogCount =

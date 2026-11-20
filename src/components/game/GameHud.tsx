@@ -24,6 +24,11 @@ interface GameHudProps {
   muted: boolean;
   activeTrackTitle?: string;
   toastMessage: string | null;
+  frontierBanner?: {
+    name: string;
+    subtitle: string;
+    cell: [number, number, number];
+  } | null;
   onActivateGear: (gear: GearSlotId) => void;
   onTriggerAction: () => void;
   onTriggerDodge: () => void;
@@ -115,6 +120,7 @@ export const GameHud: React.FC<GameHudProps> = ({
   muted,
   activeTrackTitle,
   toastMessage,
+  frontierBanner,
   onActivateGear,
   onTriggerAction,
   onTriggerDodge,
@@ -235,7 +241,9 @@ export const GameHud: React.FC<GameHudProps> = ({
           <div className="mt-2 flex items-center gap-2">
             <div className="h-1.5 flex-1 bg-[#1e2530] rounded-[2px] overflow-hidden">
               <div
-                className="h-full bg-[#5ea38c] transition-all duration-100"
+                className={`h-full transition-all duration-100 ${
+                  hud.waterPosture === 'swimming' ? 'bg-[#52c7e0]' : 'bg-[#5ea38c]'
+                }`}
                 style={{ width: `${stamPct}%` }}
               />
             </div>
@@ -243,16 +251,31 @@ export const GameHud: React.FC<GameHudProps> = ({
               {Math.round(hud.stamina)}
             </span>
           </div>
+          {hud.waterPosture && hud.waterPosture !== 'dry' && (
+            <div
+              data-testid="water-posture-indicator"
+              className="mt-1.5 flex items-center justify-between text-[10px] uppercase tracking-[0.14em] text-[#7ad8eb] border-t border-white/8 pt-1"
+            >
+              <span>{hud.waterPosture === 'swimming' ? 'Swimming' : 'Wading'}</span>
+              <span className="font-mono text-[9px] text-[#9ecad4]">
+                {hud.waterPosture === 'swimming' ? 'Space: Breach · Shift: Surge' : 'Water Drag'}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Region + Renown */}
         <div className="bg-[#11151b]/86 border border-white/12 rounded-sm px-3.5 py-2 flex items-center justify-between gap-3 shadow-[0_6px_18px_rgba(0,0,0,0.4)]">
           <div className="min-w-0">
-            {activeRealm?.isDungeon && (
+            {activeRealm?.isDungeon ? (
               <p className="text-[9px] font-mono uppercase tracking-[0.14em] text-[#52d6f4] font-semibold">
                 Tier {activeRealm.dungeonTier ?? 1} · 3D Dungeon Delve
               </p>
-            )}
+            ) : activeRealm ? (
+              <p className="text-[9px] font-mono uppercase tracking-[0.14em] text-[#7fd1b6] font-semibold truncate">
+                {activeRealm.name} · Cell ({activeRealm.cell[0]}, {activeRealm.cell[2]})
+              </p>
+            ) : null}
             <p className="font-display text-xs font-bold tracking-[0.06em] text-[#ece8df] truncate">
               {hud.region.name}
             </p>
@@ -509,8 +532,24 @@ export const GameHud: React.FC<GameHudProps> = ({
         </div>
       )}
 
+      {/* Fleeting Frontier Discovery Banner on UniverseCell Crossing */}
+      {frontierBanner && (
+        <div
+          data-testid="frontier-discovery-banner"
+          className="fixed top-14 left-1/2 -translate-x-1/2 px-6 py-2.5 rounded-sm bg-[#10151c]/94 border-y border-[#d4a253]/65 text-center shadow-[0_12px_36px_rgba(0,0,0,0.68)]"
+        >
+          <p className="text-[10px] font-mono uppercase tracking-[0.22em] text-[#7fd1b6]">
+            Frontier Discovered · Cell ({frontierBanner.cell.join(', ')})
+          </p>
+          <p className="font-display text-base sm:text-lg font-bold tracking-[0.06em] text-[#f6eedc] mt-0.5">
+            {frontierBanner.name}
+          </p>
+          <p className="text-[11px] text-[#b4bfcd] mt-0.5">{frontierBanner.subtitle}</p>
+        </div>
+      )}
+
       {/* Fleeting Toast Notification */}
-      {toastMessage && (
+      {toastMessage && !frontierBanner && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 max-w-md px-4 py-2 rounded-sm bg-[#141920]/94 border border-[#d4a253]/50 text-[#f3ebd8] text-xs font-medium tracking-wide shadow-[0_10px_28px_rgba(0,0,0,0.55)] text-center">
           {toastMessage}
         </div>
@@ -700,13 +739,16 @@ export const GameHud: React.FC<GameHudProps> = ({
             className="h-12 sm:h-13 px-3 rounded-[2px] bg-[#2a2216] hover:bg-[#3a2f1d] active:scale-95 border border-[#d4a253]/60 text-[#f4e5c3] flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer min-w-[78px]"
           >
             <span className="font-display text-[11px] font-bold uppercase tracking-[0.08em] leading-none">
-              {activeGearDef.id === 'hookblade'
-                ? 'Strike'
-                : activeGearDef.id === 'bellhammer'
-                  ? 'Smash'
-                  : activeGearDef.id === 'lantern'
-                    ? 'Mend'
-                    : 'Banner'}
+              {hud.waterPosture === 'swimming' &&
+              (activeGearDef.id === 'hookblade' || activeGearDef.id === 'bellhammer')
+                ? 'Surge'
+                : activeGearDef.id === 'hookblade'
+                  ? 'Strike'
+                  : activeGearDef.id === 'bellhammer'
+                    ? 'Smash'
+                    : activeGearDef.id === 'lantern'
+                      ? 'Mend'
+                      : 'Banner'}
             </span>
             <span className="font-mono text-[9px] text-[#d4a253] leading-none">
               {(hud.cooldowns[activeGearDef.id] ?? 0) > 0.05
@@ -723,11 +765,11 @@ export const GameHud: React.FC<GameHudProps> = ({
               e.currentTarget.blur();
               onTriggerDodge();
             }}
-            title="Evasive Dodge Dash [Shift]"
+            title={hud.waterPosture === 'swimming' ? 'Swim Surge Burst [Shift]' : 'Evasive Dodge Dash [Shift]'}
             className="h-12 sm:h-13 px-2.5 rounded-[2px] bg-[#162229] hover:bg-[#20313b] active:scale-95 border border-[#5ea38c]/45 text-[#d7ebe3] flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
           >
             <span className="font-display text-[11px] font-bold uppercase tracking-[0.08em] leading-none">
-              Dodge
+              {hud.waterPosture === 'swimming' ? 'Surge' : 'Dodge'}
             </span>
             <span className="font-mono text-[9px] text-[#7fd1b6] leading-none">Shift</span>
           </button>

@@ -34,10 +34,12 @@
   "soundtrack": {
     "id": "score-vaelmor",
     "title": "Overture of the Shattered Meridian",
-    "composerNote": "Heroic Celtic-Nordic Dorian orchestral suite: interwoven harp arpeggios, noble French horn themes, highland wooden flute, and warm bowed strings.",
+    "composerNote": "Heroic 4/4 Dorian frontier suite: Celtic harp cascades, noble French horn fanfares, wooden flute, and pizzicato pulse.",
     "realmSlug": "vaelmor",
     "isDungeon": false,
     "mode": "dorian",
+    "meter": "4/4",
+    "category": "exploration",
     "rootMidi": 50,
     "bpm": 88,
     "chordProgression": [
@@ -92,6 +94,80 @@
         "velocity": 0
       }
     ],
+    "sectionBMelody": [
+      {
+        "degree": 11,
+        "lengthSteps": 3,
+        "velocity": 0.86
+      },
+      {
+        "degree": 10,
+        "lengthSteps": 1,
+        "velocity": 0.72
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.8
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 2,
+        "velocity": 0.76
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 3,
+        "velocity": 0.84
+      },
+      {
+        "degree": 6,
+        "lengthSteps": 1,
+        "velocity": 0.68
+      },
+      {
+        "degree": 4,
+        "lengthSteps": 4,
+        "velocity": 0.78
+      }
+    ],
+    "sectionCMelody": [
+      {
+        "degree": 4,
+        "lengthSteps": 2,
+        "velocity": 0.74
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 2,
+        "velocity": 0.82
+      },
+      {
+        "degree": 11,
+        "lengthSteps": 2,
+        "velocity": 0.9
+      },
+      {
+        "degree": 14,
+        "lengthSteps": 4,
+        "velocity": 0.92
+      },
+      {
+        "degree": 13,
+        "lengthSteps": 2,
+        "velocity": 0.78
+      },
+      {
+        "degree": 11,
+        "lengthSteps": 2,
+        "velocity": 0.8
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.75
+      }
+    ],
     "harpArpeggio": [
       0,
       4,
@@ -110,16 +186,39 @@
       2,
       4
     ],
+    "bassPattern": [
+      0,
+      null,
+      null,
+      4,
+      0,
+      null,
+      2,
+      null
+    ],
+    "dulcimerPattern": [
+      null,
+      7,
+      null,
+      11,
+      9,
+      null,
+      7,
+      4
+    ],
     "instrumentation": {
       "harp": 0.88,
       "strings": 0.82,
-      "flute": 0.82,
-      "horn": 0.76,
+      "flute": 0.84,
+      "horn": 0.78,
       "percussion": 0.48,
-      "modalBells": 0.64
+      "modalBells": 0.64,
+      "dulcimer": 0.62,
+      "pizzicato": 0.72,
+      "reed": 0.56
     },
     "foleyProfile": "highland-wind",
-    "reverbDecaySec": 3.2,
+    "reverbDecaySec": 3.1,
     "workletTuning": {
       "fundamentalHz": 174,
       "rt60Ms": 2150,
@@ -637,12 +736,12 @@
   "interactables": [],
   "enemies": [],
   "prismCustody": {
-    "worldGlbKappa": "sha256:32d42fe4011b4328f731816b2572c64eecd62f3f799604bca315598eb829cea3",
+    "worldGlbKappa": "sha256:05b17f931ef926a0b61c8b697d426fa915ae4715d6d84f42bc8b1f5dba748b75",
     "vdntKappa": "sha256:c47ece7b6f4e2d18103841e063d512a722537987ef31f8a13f8dd6f6fd594d2e",
     "skyKappa": "sha256:a5883ec7ae9ef22ee45d65969e7ec0711ec5e8b8ba94cc8b2fd52d82a37f61b9",
-    "triangles": 27983,
-    "vertices": 45024,
-    "glbBytes": 2690216,
+    "triangles": 31400,
+    "vertices": 51573,
+    "glbBytes": 2955520,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 18,
     "importedCatalogAssets": [

@@ -1010,7 +1010,7 @@ export async function compileRealmWithVerdant(
     // =========================================================================
     // 3B. VAST 224m x 224m OPEN-WORLD FRONTIER REALM BUILDER
     // =========================================================================
-    const GRID_N = 84;
+    const GRID_N = 96;
     const WORLD_HALF = spec.worldHalfExtent || 112;
     const STEP = (WORLD_HALF * 2) / GRID_N;
 
@@ -1031,8 +1031,11 @@ export async function compileRealmWithVerdant(
         const n10 = terrainNormalAt(spec, x1, z0);
         const n11 = terrainNormalAt(spec, x1, z1);
         const n01 = terrainNormalAt(spec, x0, z1);
+        const avgY = (y00 + y10 + y11 + y01) * 0.25;
+        const avgNy = (n00[1] + n10[1] + n11[1] + n01[1]) * 0.25;
 
-        const onCausewayRoad = Math.abs(xm) < 3.6 && ((zm > 12 && zm < 28) || (zm > -58 && zm < -2.5));
+        const onCausewayRoad = Math.abs(xm) < 3.6 && ((zm > 12 && zm < 92) || (zm > -92 && zm < -2.5));
+        const onEwFrontierRoad = Math.abs(zm) < 3.4 && Math.abs(xm) > 14 && Math.abs(xm) < 92 && avgY > spec.terrainProfile.waterLevel + 0.35;
         const onCitadelPlaza = Math.hypot(xm, zm + 16) < 11.0;
         const onSouthPlaza = Math.hypot(xm, zm - 17) < 7.2;
         const onWestRoad = Math.abs(zm + 5.5 + Math.sin(xm * 0.1) * 3.0) < 2.4 && xm < -2 && xm > -56;
@@ -1044,9 +1047,12 @@ export async function compileRealmWithVerdant(
         const onWestCircle = Math.hypot(xm + 54, zm + 22) < 9.5;
         const onEastCamp = Math.hypot(xm - 54, zm - 10) < 8.5;
         const onNorthWatch = Math.hypot(xm, zm + 56) < 8.5;
-
-        const target =
+        // Steep mountain cliff strata & high alpine ridges wear natural granite/basalt/snow mineral strata
+        // (never castle brick masonry!)
+        const isAlpineRock = avgY > 8.6 || (avgY > 3.6 && avgNy < 0.85);
+        const onRoadOrPlaza =
           onCausewayRoad ||
+          onEwFrontierRoad ||
           onCitadelPlaza ||
           onSouthPlaza ||
           onWestRoad ||
@@ -1055,14 +1061,44 @@ export async function compileRealmWithVerdant(
           onDungeonPath ||
           onWestCircle ||
           onEastCamp ||
-          onNorthWatch
-            ? cobbleBucket
+          onNorthWatch;
+
+        const target = onRoadOrPlaza
+          ? cobbleBucket
+          : isAlpineRock
+            ? accentBucket
             : terrainBucket;
 
-        const i0 = pushVertex(target, x0, y00, z0, n00[0], n00[1], n00[2], 0.02, 0.02);
-        const i1 = pushVertex(target, x0, y01, z1, n01[0], n01[1], n01[2], 0.02, 0.98);
-        const i2 = pushVertex(target, x1, y11, z1, n11[0], n11[1], n11[2], 0.98, 0.98);
-        const i3 = pushVertex(target, x1, y10, z0, n10[0], n10[1], n10[2], 0.98, 0.02);
+        const alpineRgb = (vy: number, vny: number): [number, number, number] => {
+          const snowT = Math.max(0, Math.min(1, (vy - 11.2) / 5.2)) * Math.max(0, Math.min(1, (vny - 0.55) / 0.35));
+          const rockBase: [number, number, number] =
+            spec.theme === 'obsidian-crucible'
+              ? [0.22, 0.20, 0.21]
+              : spec.theme === 'amber-steppe'
+                ? [0.54, 0.42, 0.30]
+                : spec.theme === 'glacial-spire'
+                  ? [0.46, 0.54, 0.62]
+                  : [0.38, 0.40, 0.43];
+          const strataVar = Math.sin(vy * 1.45) * 0.04;
+          const sr = spec.theme === 'obsidian-crucible' ? 0.62 : 0.86;
+          const sg = spec.theme === 'obsidian-crucible' ? 0.52 : 0.89;
+          const sb = spec.theme === 'obsidian-crucible' ? 0.48 : 0.93;
+          return [
+            rockBase[0] * (1 - snowT) + sr * snowT + strataVar,
+            rockBase[1] * (1 - snowT) + sg * snowT + strataVar,
+            rockBase[2] * (1 - snowT) + sb * snowT + strataVar,
+          ];
+        };
+
+        const c0 = target === accentBucket ? alpineRgb(y00, n00[1]) : ([1, 1, 1] as [number, number, number]);
+        const c1 = target === accentBucket ? alpineRgb(y01, n01[1]) : ([1, 1, 1] as [number, number, number]);
+        const c2 = target === accentBucket ? alpineRgb(y11, n11[1]) : ([1, 1, 1] as [number, number, number]);
+        const c3 = target === accentBucket ? alpineRgb(y10, n10[1]) : ([1, 1, 1] as [number, number, number]);
+
+        const i0 = pushVertex(target, x0, y00, z0, n00[0], n00[1], n00[2], 0.02, 0.02, c0[0], c0[1], c0[2]);
+        const i1 = pushVertex(target, x0, y01, z1, n01[0], n01[1], n01[2], 0.02, 0.98, c1[0], c1[1], c1[2]);
+        const i2 = pushVertex(target, x1, y11, z1, n11[0], n11[1], n11[2], 0.98, 0.98, c2[0], c2[1], c2[2]);
+        const i3 = pushVertex(target, x1, y10, z0, n10[0], n10[1], n10[2], 0.98, 0.02, c3[0], c3[1], c3[2]);
         target.idx.push(i0, i1, i2, i0, i2, i3);
       }
     }
@@ -1262,7 +1298,8 @@ export async function compileRealmWithVerdant(
     ];
     for (const [tx, tz] of treeSpots) {
       const ty = realmTerrainHeightAt(spec, tx, tz);
-      if (ty < spec.terrainProfile.waterLevel - 0.1) continue;
+      const tNorm = terrainNormalAt(spec, tx, tz);
+      if (ty < spec.terrainProfile.waterLevel + 0.25 || tNorm[1] < 0.82) continue;
       const hScale = 0.85 + rand() * 0.72;
       const isEastBiome = tx > 12 && tz < 10;
       if (spec.theme === 'obsidian-crucible') {
@@ -1318,54 +1355,25 @@ export async function compileRealmWithVerdant(
       addCone(accentBucket, tx + (rand() - 0.5) * 0.4, ty + trunkH * 1.1, tz + (rand() - 0.5) * 0.4, rBase * 0.52, 2.1 * hScale, 8, c3[0], c3[1], c3[2]);
     }
 
-    // Coastal Arch, Timber Wharf & Sea-Stacks
+    // Coastal Arch, Grounded Timber Wharf (with pilings into cove bed) & Sea-Stacks
     const slY = realmTerrainHeightAt(spec, 24.5, 22.0);
     addTiledBox(stoneBucket, 22.8, slY + 2.2, 23.8, 1.5, 5.2, 1.5, 2.2);
     addTiledBox(stoneBucket, 26.2, slY + 2.2, 23.8, 1.5, 5.2, 1.5, 2.2);
     addTiledBox(stoneBucket, 24.5, slY + 4.9, 23.8, 5.2, 1.2, 1.7, 2.2);
-    const pierY = Math.max(0.2, realmTerrainHeightAt(spec, 19.5, 22.5));
+    const pierY = Math.max(spec.terrainProfile.waterLevel + 0.55, realmTerrainHeightAt(spec, 19.5, 22.5));
     addTiledBox(timberBucket, 20.5, pierY + 0.2, 24.0, 2.6, 0.35, 6.2, 2.4, 0.35);
+    for (const [px, pz] of [[19.4, 21.8], [21.6, 21.8], [19.4, 26.2], [21.6, 26.2]]) {
+      const bedY = realmTerrainHeightAt(spec, px, pz) - 0.6;
+      const hP = Math.max(0.8, pierY + 0.2 - bedY);
+      addCylinder(timberBucket, px, bedY, pz, 0.18, 0.16, hP, 6);
+    }
     for (const [sx, sz, sr, sh] of [[33, 28, 2.4, 7.8], [37, 32, 3.1, 11.4], [29, 34, 2.0, 6.2], [39, 24, 2.6, 9.0]]) {
       const sy = realmTerrainHeightAt(spec, sx, sz) - 1.5;
       addCylinder(accentBucket, sx, sy, sz, sr, sr * 0.72, sh, 6, 0.15, 0.18, 0.22);
       addCone(accentBucket, sx, sy + sh, sz, sr * 0.72, sh * 0.22, 6, 0.20, 0.25, 0.30);
     }
-
-    // Grand Horizon Mountain Massifs at Outer 104..116m Perimeter
-    const mBase =
-      spec.theme === 'obsidian-crucible'
-        ? [0.28, 0.21, 0.22]
-        : spec.theme === 'sunken-aqueducts'
-          ? [0.28, 0.38, 0.36]
-          : spec.theme === 'glacial-spire'
-            ? [0.36, 0.46, 0.58]
-            : spec.theme === 'amber-steppe'
-              ? [0.54, 0.40, 0.28]
-              : [0.34, 0.36, 0.44];
-    const mRidge =
-      spec.theme === 'obsidian-crucible'
-        ? [0.54, 0.36, 0.30]
-        : spec.theme === 'sunken-aqueducts'
-          ? [0.48, 0.56, 0.50]
-          : spec.theme === 'glacial-spire'
-            ? [0.82, 0.90, 0.96]
-            : spec.theme === 'amber-steppe'
-              ? [0.76, 0.58, 0.38]
-              : [0.58, 0.54, 0.58];
-
-    for (let i = 0; i < 20; i++) {
-      const ang = (i / 20) * Math.PI * 2 + 0.14;
-      const tx = -Math.sin(ang), tz = Math.cos(ang);
-      const dist = 104 + (i % 3) * 5.0;
-      const cx = Math.cos(ang) * dist, cz = Math.sin(ang) * dist;
-      const by = realmTerrainHeightAt(spec, cx, cz) - 4.0;
-      const mh = 18.0 + (i % 4) * 5.0;
-      const mr = 18.5 + (i % 3) * 4.0;
-      addCylinder(accentBucket, cx, by, cz, mr, mr * 0.34, mh * 0.72, 9, mBase[0], mBase[1], mBase[2], false);
-      addCone(accentBucket, cx, by + mh * 0.72, cz, mr * 0.34, mh * 0.28, 9, mRidge[0], mRidge[1], mRidge[2]);
-      addCylinder(accentBucket, cx + tx * 10.5, by - 0.8, cz + tz * 10.5, mr * 0.68, mr * 0.24, mh * 0.54, 8, mBase[0] * 1.08, mBase[1] * 1.06, mBase[2] * 1.08, false);
-      addCone(accentBucket, cx + tx * 10.5, by - 0.8 + mh * 0.54, cz + tz * 10.5, mr * 0.24, mh * 0.22, 8, mRidge[0], mRidge[1], mRidge[2]);
-    }
+    // Mountain ranges are now sculpted directly into the continuous terrain mesh (realmTerrainHeightAt)
+    // with zero floating perimeter cone meshes, allowing players to walk around or climb up into them!
   }
 
   // 4. IMPORT & CUSTOMIZE REAL EXTERNAL POLY HAVEN CC0 3D MODELS INTO THIS REALM!

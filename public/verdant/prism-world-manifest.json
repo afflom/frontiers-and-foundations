@@ -1,8 +1,8 @@
 {
   "title": "Frontiers and Foundations",
   "setting": "The Federated Meridian Universe",
-  "generatedAt": "2026-11-20T03:09:39.297Z",
-  "universeKappa": "sha256:dc115a6adcfc4ac9c45242fee9360bff432650583758ada5b9b4819993da2e9f",
+  "generatedAt": "2026-11-20T17:25:19.747Z",
+  "universeKappa": "sha256:abc89a4c62d7c8857b32af63628ff5a34b664242cdc40b175bf7069c978bde3e",
   "overworldRealmsCount": 6,
   "dungeonsCount": 6,
   "engine": {
@@ -18,9 +18,9 @@
     "glbUrl": "/verdant/frontiers-world.glb",
     "vdntUrl": "/verdant/frontiers-world.vdnt",
     "skyUrl": "/verdant/sky-vaelmor.jpg",
-    "glbBytes": 2690216,
-    "triangles": 27983,
-    "vertices": 45024,
+    "glbBytes": 2955520,
+    "triangles": 31400,
+    "vertices": 51573,
     "atlasTileCount": 4,
     "importedCatalogAssets": [
       "gothic_statue",
@@ -39,7 +39,7 @@
     ]
   },
   "prismCustody": {
-    "worldGlbKappa": "sha256:32d42fe4011b4328f731816b2572c64eecd62f3f799604bca315598eb829cea3",
+    "worldGlbKappa": "sha256:05b17f931ef926a0b61c8b697d426fa915ae4715d6d84f42bc8b1f5dba748b75",
     "vdntKappa": "sha256:c47ece7b6f4e2d18103841e063d512a722537987ef31f8a13f8dd6f6fd594d2e",
     "skyKappa": "sha256:a5883ec7ae9ef22ee45d65969e7ec0711ec5e8b8ba94cc8b2fd52d82a37f61b9",
     "stitchShards": {
@@ -83,12 +83,12 @@
       "skyUrl": "/verdant/realms/vaelmor/sky.jpg",
       "realmJsonUrl": "/verdant/realms/vaelmor/realm.json",
       "custody": {
-        "worldGlbKappa": "sha256:32d42fe4011b4328f731816b2572c64eecd62f3f799604bca315598eb829cea3",
+        "worldGlbKappa": "sha256:05b17f931ef926a0b61c8b697d426fa915ae4715d6d84f42bc8b1f5dba748b75",
         "vdntKappa": "sha256:c47ece7b6f4e2d18103841e063d512a722537987ef31f8a13f8dd6f6fd594d2e",
         "skyKappa": "sha256:a5883ec7ae9ef22ee45d65969e7ec0711ec5e8b8ba94cc8b2fd52d82a37f61b9",
-        "triangles": 27983,
-        "vertices": 45024,
-        "glbBytes": 2690216,
+        "triangles": 31400,
+        "vertices": 51573,
+        "glbBytes": 2955520,
         "atlasTileCount": 4,
         "importedCatalogModelsCount": 18,
         "importedCatalogAssets": [
@@ -142,12 +142,12 @@
       "skyUrl": "/verdant/realms/oakhaven/sky.jpg",
       "realmJsonUrl": "/verdant/realms/oakhaven/realm.json",
       "custody": {
-        "worldGlbKappa": "sha256:3ec3afed1f14c3ff63ab36c898eb1840b2bff6a429bb3c5cffc004810c34fdf5",
+        "worldGlbKappa": "sha256:11a4ec5d93133afc22e89fc8e0ca987b5c4819f373b9ffb87c2278d1e94e1b18",
         "vdntKappa": "sha256:df283020479d187b8961c9aaa535b4a8332b987d5ded484ae77a2b7f2e4730ff",
         "skyKappa": "sha256:2e88d477f0c18f7ee923fdda872e0d4a42aa27b54cdd3588fd5358f0b3bf2690",
-        "triangles": 25708,
-        "vertices": 44477,
-        "glbBytes": 2553132,
+        "triangles": 29215,
+        "vertices": 51268,
+        "glbBytes": 2824640,
         "atlasTileCount": 4,
         "importedCatalogModelsCount": 13,
         "importedCatalogAssets": [
@@ -196,12 +196,12 @@
       "skyUrl": "/verdant/realms/cinderfall/sky.jpg",
       "realmJsonUrl": "/verdant/realms/cinderfall/realm.json",
       "custody": {
-        "worldGlbKappa": "sha256:9102d22121eb0dc2566febe0a300496edcdd951d62ac02334fba149024464b10",
+        "worldGlbKappa": "sha256:0eac26a461d4a16657c1538d9c5db2cef25eae4749f7a5ac58bd2434e50184a7",
         "vdntKappa": "sha256:0029cbb616637f120310159e2f8aa3c846d7ec0b643b607fce20e48395c8b179",
         "skyKappa": "sha256:928dc0f22532d523e8753500cf57e9c0e84c0b505837556e9c60e390dbe1ada8",
-        "triangles": 24324,
-        "vertices": 41487,
-        "glbBytes": 2448212,
+        "triangles": 27780,
+        "vertices": 48119,
+        "glbBytes": 2714452,
         "atlasTileCount": 4,
         "importedCatalogModelsCount": 12,
         "importedCatalogAssets": [
@@ -251,12 +251,12 @@
       "skyUrl": "/verdant/realms/glasswater/sky.jpg",
       "realmJsonUrl": "/verdant/realms/glasswater/realm.json",
       "custody": {
-        "worldGlbKappa": "sha256:3252c06436039193ccb3c74ebd0e71e6a136c00255623ad81f58057e0e968cca",
+        "worldGlbKappa": "sha256:2b2682692ca479282b4efded4fce8f6c66a8e472287249b35f5be05d93a89445",
         "vdntKappa": "sha256:4518735f5128254169577b7c1420476ba9d54f634bc069901368f13ff955e200",
         "skyKappa": "sha256:a296aabd2c26c36279c678c0ca2752f83a1f7e564d47d531755af11975c756c5",
-        "triangles": 23964,
-        "vertices": 42419,
-        "glbBytes": 2565704,
+        "triangles": 27528,
+        "vertices": 49355,
+        "glbBytes": 2841728,
         "atlasTileCount": 4,
         "importedCatalogModelsCount": 11,
         "importedCatalogAssets": [
@@ -306,12 +306,12 @@
       "skyUrl": "/verdant/realms/kar-veth/sky.jpg",
       "realmJsonUrl": "/verdant/realms/kar-veth/realm.json",
       "custody": {
-        "worldGlbKappa": "sha256:fa50cabb220285a73ac2c86e0b86c758c59340981629fc64cb024aec3b35871f",
+        "worldGlbKappa": "sha256:1c6f036cc58b67ceb7dc84428983b2d64b6ede10f9a65fee2924636e768cadec",
         "vdntKappa": "sha256:6594313b15425d44e94c40b83de345bacf3d7852a186de53c860befdcd1f59de",
         "skyKappa": "sha256:b6b8ed9b069f5d9e46547d87aa7c6c50aecde988e5e23307cc0887e18a298543",
-        "triangles": 24623,
-        "vertices": 42723,
-        "glbBytes": 2569704,
+        "triangles": 28135,
+        "vertices": 49501,
+        "glbBytes": 2843344,
         "atlasTileCount": 4,
         "importedCatalogModelsCount": 11,
         "importedCatalogAssets": [
@@ -361,12 +361,12 @@
       "skyUrl": "/verdant/realms/borealis/sky.jpg",
       "realmJsonUrl": "/verdant/realms/borealis/realm.json",
       "custody": {
-        "worldGlbKappa": "sha256:b7319905ff6ec65972886ad4855c3ce74efd07e0bc4073881648aadac61b48f3",
+        "worldGlbKappa": "sha256:d11f3c8be77fd30d24907883a49d41d2b51169cd1d6f3a888677ae7b0c420e70",
         "vdntKappa": "sha256:a394e95595b7ba11d7629d538680aa8bd0529703826da2cdabe9e772fc7a6e56",
         "skyKappa": "sha256:e3e66cf54f9b64916fe6d2f870e79b0ed6a3038f58880736bb79784cb023348e",
-        "triangles": 23896,
-        "vertices": 42324,
-        "glbBytes": 2539824,
+        "triangles": 27292,
+        "vertices": 48812,
+        "glbBytes": 2808152,
         "atlasTileCount": 4,
         "importedCatalogModelsCount": 11,
         "importedCatalogAssets": [
@@ -515,7 +515,7 @@
       "worldSpanMeters": 92,
       "soundtrackTitle": "Echoes of The Crucible Core Depths",
       "soundtrackMode": "phrygian-dominant",
-      "soundtrackBpm": 96,
+      "soundtrackBpm": 88,
       "glbUrl": "/verdant/realms/cinderfall-magma-delve/world.glb",
       "vdntUrl": "/verdant/realms/cinderfall-magma-delve/world.vdnt",
       "skyUrl": "/verdant/realms/cinderfall-magma-delve/sky.jpg",

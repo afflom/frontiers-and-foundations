@@ -34,10 +34,12 @@
   "soundtrack": {
     "id": "score-cinderfall",
     "title": "Anvil Chorus of the Caldera",
-    "composerNote": "Phrygian Dominant forge symphony: driving frame-drum cadence, noble low brass horns, and metallic anvil bell overtones.",
+    "composerNote": "Phrygian Dominant 4/4 forge symphony: driving frame-drum cadence, noble low brass horns, and metallic anvil bell overtones.",
     "realmSlug": "cinderfall",
     "isDungeon": false,
     "mode": "phrygian-dominant",
+    "meter": "4/4",
+    "category": "exploration",
     "rootMidi": 48,
     "bpm": 102,
     "chordProgression": [
@@ -87,6 +89,43 @@
         "velocity": 0
       }
     ],
+    "sectionBMelody": [
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.88
+      },
+      {
+        "degree": 11,
+        "lengthSteps": 2,
+        "velocity": 0.92
+      },
+      {
+        "degree": 12,
+        "lengthSteps": 2,
+        "velocity": 0.94
+      },
+      {
+        "degree": 11,
+        "lengthSteps": 2,
+        "velocity": 0.82
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 3,
+        "velocity": 0.86
+      },
+      {
+        "degree": 8,
+        "lengthSteps": 1,
+        "velocity": 0.74
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 4,
+        "velocity": 0.84
+      }
+    ],
     "harpArpeggio": [
       0,
       4,
@@ -105,13 +144,36 @@
       0,
       null
     ],
+    "bassPattern": [
+      0,
+      null,
+      0,
+      1,
+      0,
+      null,
+      4,
+      1
+    ],
+    "dulcimerPattern": [
+      7,
+      8,
+      null,
+      9,
+      8,
+      7,
+      null,
+      4
+    ],
     "instrumentation": {
-      "harp": 0.52,
+      "harp": 0.56,
       "strings": 0.84,
-      "flute": 0.32,
+      "flute": 0.34,
       "horn": 0.94,
       "percussion": 0.88,
-      "modalBells": 0.82
+      "modalBells": 0.86,
+      "dulcimer": 0.68,
+      "pizzicato": 0.82,
+      "reed": 0.62
     },
     "foleyProfile": "caldera-forge",
     "reverbDecaySec": 2.8,
@@ -821,12 +883,12 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:9102d22121eb0dc2566febe0a300496edcdd951d62ac02334fba149024464b10",
+    "worldGlbKappa": "sha256:0eac26a461d4a16657c1538d9c5db2cef25eae4749f7a5ac58bd2434e50184a7",
     "vdntKappa": "sha256:0029cbb616637f120310159e2f8aa3c846d7ec0b643b607fce20e48395c8b179",
     "skyKappa": "sha256:928dc0f22532d523e8753500cf57e9c0e84c0b505837556e9c60e390dbe1ada8",
-    "triangles": 24324,
-    "vertices": 41487,
-    "glbBytes": 2448212,
+    "triangles": 27780,
+    "vertices": 48119,
+    "glbBytes": 2714452,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 12,
     "importedCatalogAssets": [

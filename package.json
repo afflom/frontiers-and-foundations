@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "tsx --test src/utils/publicUrl.test.ts src/verdant/verdantCollision.test.ts src/verdant/verdantIntegration.test.ts src/game/rpgLogic.test.ts src/game/multiplayerLogic.test.ts"
+    "test": "tsx --test src/utils/publicUrl.test.ts src/verdant/verdantCharacterCompiler.test.ts src/verdant/verdantEnvironmentPhysics.test.ts src/verdant/verdantUniverseGenerator.test.ts src/verdant/verdantCollision.test.ts src/verdant/verdantIntegration.test.ts src/game/rpgLogic.test.ts src/game/multiplayerLogic.test.ts"
   },
   "dependencies": {
     "@google/genai": "^3.6.1",

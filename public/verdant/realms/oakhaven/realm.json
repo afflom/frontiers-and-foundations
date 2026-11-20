@@ -34,10 +34,12 @@
   "soundtrack": {
     "id": "score-oakhaven",
     "title": "Hymn of the Emerald Sluice",
-    "composerNote": "Lydian pastoral suite: sparkling plucked harp cascades over warm viola swells and breathy highland wooden flute melodies.",
+    "composerNote": "Lydian pastoral 4/4 suite: sparkling harp cascades, breathy flute phrasing, and shimmering modal water chimes.",
     "realmSlug": "oakhaven",
     "isDungeon": false,
     "mode": "lydian",
+    "meter": "4/4",
+    "category": "exploration",
     "rootMidi": 53,
     "bpm": 86,
     "chordProgression": [
@@ -54,7 +56,7 @@
       {
         "degree": 7,
         "lengthSteps": 2,
-        "velocity": 0.72
+        "velocity": 0.74
       },
       {
         "degree": 9,
@@ -64,12 +66,12 @@
       {
         "degree": 11,
         "lengthSteps": 3,
-        "velocity": 0.85
+        "velocity": 0.86
       },
       {
         "degree": 10,
         "lengthSteps": 1,
-        "velocity": 0.62
+        "velocity": 0.64
       },
       {
         "degree": 9,
@@ -92,6 +94,38 @@
         "velocity": 0.7
       }
     ],
+    "sectionBMelody": [
+      {
+        "degree": 10,
+        "lengthSteps": 3,
+        "velocity": 0.8
+      },
+      {
+        "degree": 11,
+        "lengthSteps": 1,
+        "velocity": 0.72
+      },
+      {
+        "degree": 14,
+        "lengthSteps": 4,
+        "velocity": 0.86
+      },
+      {
+        "degree": 11,
+        "lengthSteps": 2,
+        "velocity": 0.74
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.72
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 4,
+        "velocity": 0.76
+      }
+    ],
     "harpArpeggio": [
       0,
       2,
@@ -110,13 +144,36 @@
       4,
       2
     ],
+    "bassPattern": [
+      0,
+      null,
+      null,
+      null,
+      4,
+      null,
+      2,
+      null
+    ],
+    "dulcimerPattern": [
+      null,
+      10,
+      11,
+      null,
+      9,
+      null,
+      7,
+      10
+    ],
     "instrumentation": {
-      "harp": 0.92,
-      "strings": 0.74,
-      "flute": 0.88,
+      "harp": 0.94,
+      "strings": 0.76,
+      "flute": 0.9,
       "horn": 0.36,
       "percussion": 0.34,
-      "modalBells": 0.55
+      "modalBells": 0.62,
+      "dulcimer": 0.76,
+      "pizzicato": 0.58,
+      "reed": 0.68
     },
     "foleyProfile": "aqueduct-water",
     "reverbDecaySec": 3.1,
@@ -943,12 +1000,12 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:3ec3afed1f14c3ff63ab36c898eb1840b2bff6a429bb3c5cffc004810c34fdf5",
+    "worldGlbKappa": "sha256:11a4ec5d93133afc22e89fc8e0ca987b5c4819f373b9ffb87c2278d1e94e1b18",
     "vdntKappa": "sha256:df283020479d187b8961c9aaa535b4a8332b987d5ded484ae77a2b7f2e4730ff",
     "skyKappa": "sha256:2e88d477f0c18f7ee923fdda872e0d4a42aa27b54cdd3588fd5358f0b3bf2690",
-    "triangles": 25708,
-    "vertices": 44477,
-    "glbBytes": 2553132,
+    "triangles": 29215,
+    "vertices": 51268,
+    "glbBytes": 2824640,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 13,
     "importedCatalogAssets": [

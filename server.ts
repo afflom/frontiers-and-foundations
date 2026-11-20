@@ -405,6 +405,64 @@ async function startServer() {
     }
   });
 
+  // Automated Verdant HD World & Portrait-Matched Character Refinement Pass
+  app.post('/api/verdant/refine-hd', async (req, res) => {
+    try {
+      const { realmSlug } = req.body ?? {};
+      const result = await verdantMcp.handleToolCall(
+        'verdant_refine_world_hd',
+        typeof realmSlug === 'string' && realmSlug.trim() ? { realmSlug: realmSlug.trim() } : {},
+        createGeminiClient(),
+      );
+      res.json({ ok: true, result });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Verdant HD refinement failed.';
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
+  // Boundless Procedural UniverseCell Synthesizer (continuous border terrain + WASM-verified GLB + synthesized NPCs)
+  app.get('/api/verdant/cell/:cx/:cz', async (req, res) => {
+    try {
+      const cx = Math.trunc(Number(req.params.cx));
+      const cz = Math.trunc(Number(req.params.cz));
+      if (!Number.isFinite(cx) || !Number.isFinite(cz)) {
+        res.status(400).json({ ok: false, error: 'Cell coordinates cx and cz must be integers.' });
+        return;
+      }
+      const result = await verdantMcp.handleToolCall(
+        'verdant_synthesize_universe_cell',
+        { cx, cz },
+        createGeminiClient(),
+      );
+      res.json({ ok: true, result });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to synthesize UniverseCell.';
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
+  // Procedural Differentiated Character Synthesizer (complete characteristics + 1:1 SVG portrait + WASM rig registration)
+  app.post('/api/verdant/characters/synthesize', async (req, res) => {
+    try {
+      const { theme, realmName, roleHint, seed } = req.body ?? {};
+      const result = await verdantMcp.handleToolCall(
+        'verdant_synthesize_character',
+        {
+          ...(typeof theme === 'string' ? { theme } : {}),
+          ...(typeof realmName === 'string' ? { realmName } : {}),
+          ...(typeof roleHint === 'string' ? { roleHint } : {}),
+          ...(typeof seed === 'number' ? { seed } : {}),
+        },
+        createGeminiClient(),
+      );
+      res.json({ ok: true, result });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to synthesize Verdant character.';
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
   // Live External CC0 3D Asset Catalog Search (Poly Haven models / textures / HDRIs)
   app.get('/api/verdant/catalog/search', async (req, res) => {
     try {

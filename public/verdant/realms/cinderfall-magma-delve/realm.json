@@ -39,95 +39,124 @@
   "soundtrack": {
     "id": "score-cinderfall-magma-delve",
     "title": "Echoes of The Crucible Core Depths",
-    "composerNote": "Cavernous chamber score: deep hall reverb, plucked harp ostinato, dark bowed cello suspensions, and resonant subterranean bells.",
+    "composerNote": "Haunting 3/4 Phrygian Dominant dungeon waltz: echoing reed lament, deep pizzicato pulse, and vaulted stone resonance.",
     "realmSlug": "cinderfall-magma-delve",
     "isDungeon": true,
     "mode": "phrygian-dominant",
+    "meter": "3/4",
+    "category": "dungeon",
     "rootMidi": 45,
-    "bpm": 96,
+    "bpm": 88,
     "chordProgression": [
       0,
-      5,
-      3,
-      4,
-      0,
+      1,
       6,
+      0,
+      3,
+      1,
       4,
       0
     ],
     "melodyMotif": [
       {
         "degree": 7,
-        "lengthSteps": 3,
-        "velocity": 0.72
-      },
-      {
-        "degree": null,
-        "lengthSteps": 1,
-        "velocity": 0
-      },
-      {
-        "degree": 9,
         "lengthSteps": 2,
         "velocity": 0.78
       },
       {
         "degree": 8,
         "lengthSteps": 2,
-        "velocity": 0.66
+        "velocity": 0.82
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.86
       },
       {
         "degree": 7,
-        "lengthSteps": 4,
-        "velocity": 0.74
-      },
-      {
-        "degree": 6,
-        "lengthSteps": 2,
-        "velocity": 0.62
+        "lengthSteps": 3,
+        "velocity": 0.76
       },
       {
         "degree": 4,
+        "lengthSteps": 3,
+        "velocity": 0.74
+      }
+    ],
+    "sectionBMelody": [
+      {
+        "degree": 11,
         "lengthSteps": 2,
-        "velocity": 0.7
+        "velocity": 0.84
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.8
+      },
+      {
+        "degree": 8,
+        "lengthSteps": 2,
+        "velocity": 0.82
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 6,
+        "velocity": 0.86
       }
     ],
     "harpArpeggio": [
       0,
       4,
       7,
-      9,
+      8,
       7,
       4,
-      2,
+      1,
       4,
+      7,
+      9,
+      7,
+      1
+    ],
+    "bassPattern": [
       0,
-      5,
-      7,
-      11,
-      9,
-      7,
+      null,
+      1,
+      null,
       4,
       null
     ],
+    "dulcimerPattern": [
+      7,
+      8,
+      null,
+      9,
+      8,
+      4
+    ],
     "instrumentation": {
-      "harp": 0.78,
-      "strings": 0.82,
-      "flute": 0.42,
-      "horn": 0.65,
-      "percussion": 0.68,
-      "modalBells": 0.72
+      "harp": 0.76,
+      "strings": 0.88,
+      "flute": 0.4,
+      "horn": 0.84,
+      "percussion": 0.72,
+      "modalBells": 0.86,
+      "dulcimer": 0.7,
+      "pizzicato": 0.84,
+      "reed": 0.88
     },
     "foleyProfile": "dungeon-cavern",
-    "reverbDecaySec": 4.4,
+    "reverbDecaySec": 4.5,
     "workletTuning": {
-      "fundamentalHz": 220,
-      "rt60Ms": 3200,
+      "fundamentalHz": 110,
+      "rt60Ms": 3300,
       "modeNumers": [
         100,
-        276,
-        540,
-        893
+        294,
+        568,
+        920
       ],
       "modeDenom": 100
     }

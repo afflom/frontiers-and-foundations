@@ -34,10 +34,12 @@
   "soundtrack": {
     "id": "score-glasswater",
     "title": "Sextant Winds of Glasswater",
-    "composerNote": "Mixolydian maritime anthem: rolling harp waves, soaring wooden whistle lines, and open-fifth sea-horn calls.",
+    "composerNote": "Mixolydian 4/4 maritime anthem: rolling harp waves, soaring wooden whistle lines, and open-fifth sea-horn calls.",
     "realmSlug": "glasswater",
     "isDungeon": false,
     "mode": "mixolydian",
+    "meter": "4/4",
+    "category": "exploration",
     "rootMidi": 55,
     "bpm": 94,
     "chordProgression": [
@@ -92,6 +94,38 @@
         "velocity": 0
       }
     ],
+    "sectionBMelody": [
+      {
+        "degree": 11,
+        "lengthSteps": 2,
+        "velocity": 0.86
+      },
+      {
+        "degree": 13,
+        "lengthSteps": 2,
+        "velocity": 0.88
+      },
+      {
+        "degree": 14,
+        "lengthSteps": 4,
+        "velocity": 0.92
+      },
+      {
+        "degree": 13,
+        "lengthSteps": 2,
+        "velocity": 0.8
+      },
+      {
+        "degree": 11,
+        "lengthSteps": 2,
+        "velocity": 0.82
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 4,
+        "velocity": 0.78
+      }
+    ],
     "harpArpeggio": [
       0,
       4,
@@ -110,13 +144,36 @@
       2,
       4
     ],
+    "bassPattern": [
+      0,
+      null,
+      null,
+      4,
+      6,
+      null,
+      3,
+      null
+    ],
+    "dulcimerPattern": [
+      null,
+      7,
+      11,
+      null,
+      10,
+      9,
+      null,
+      7
+    ],
     "instrumentation": {
-      "harp": 0.88,
-      "strings": 0.72,
-      "flute": 0.92,
-      "horn": 0.66,
-      "percussion": 0.54,
-      "modalBells": 0.48
+      "harp": 0.9,
+      "strings": 0.74,
+      "flute": 0.94,
+      "horn": 0.68,
+      "percussion": 0.56,
+      "modalBells": 0.52,
+      "dulcimer": 0.78,
+      "pizzicato": 0.72,
+      "reed": 0.74
     },
     "foleyProfile": "ocean-surf",
     "reverbDecaySec": 3.3,
@@ -776,12 +833,12 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:3252c06436039193ccb3c74ebd0e71e6a136c00255623ad81f58057e0e968cca",
+    "worldGlbKappa": "sha256:2b2682692ca479282b4efded4fce8f6c66a8e472287249b35f5be05d93a89445",
     "vdntKappa": "sha256:4518735f5128254169577b7c1420476ba9d54f634bc069901368f13ff955e200",
     "skyKappa": "sha256:a296aabd2c26c36279c678c0ca2752f83a1f7e564d47d531755af11975c756c5",
-    "triangles": 23964,
-    "vertices": 42419,
-    "glbBytes": 2565704,
+    "triangles": 27528,
+    "vertices": 49355,
+    "glbBytes": 2841728,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 11,
     "importedCatalogAssets": [

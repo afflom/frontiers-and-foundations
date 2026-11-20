@@ -292,7 +292,11 @@ export function buildRealmCollisionMap(
       spec.theme === 'obsidian-crucible' || spec.theme === 'amber-steppe' ? 1.25 : 0.65;
     for (const [tx, tz] of OVERWORLD_TREE_SPOTS) {
       const ty = realmTerrainHeightAt(spec, tx, tz);
-      if (ty < spec.terrainProfile.waterLevel - 0.1) continue;
+      const tSlope = Math.hypot(
+        (realmTerrainHeightAt(spec, tx + 1, tz) - realmTerrainHeightAt(spec, tx - 1, tz)) * 0.5,
+        (realmTerrainHeightAt(spec, tx, tz + 1) - realmTerrainHeightAt(spec, tx, tz - 1)) * 0.5,
+      );
+      if (ty < spec.terrainProfile.waterLevel + 0.25 || tSlope > 0.52) continue;
       circles.push({
         x: tx,
         z: tz,

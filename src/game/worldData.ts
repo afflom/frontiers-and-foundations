@@ -1,4 +1,5 @@
 import { resolvePublicUrl } from '../utils/publicUrl';
+import type { VerdantCharacterAppearance } from '../verdant/verdantCharacterTypes';
 
 export type GamePhase = 'title' | 'playing' | 'paused' | 'victory' | 'gameover';
 
@@ -64,6 +65,7 @@ export interface GameNpc {
   speechCadence: string;
   beliefs: string[];
   choices: DialogueChoice[];
+  appearance?: VerdantCharacterAppearance;
 }
 
 export type QuestObjectiveKind =

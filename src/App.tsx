@@ -30,6 +30,10 @@ import {
   type FrontiersRealmSpec,
   type RealmThemeId,
 } from './verdant/realmModelSchema';
+import {
+  synthesizeProceduralDungeon,
+  synthesizeUniverseCell,
+} from './verdant/verdantUniverseGenerator';
 import { VerdantSpatialAudio, type VerdantAudioState } from './verdant/verdantAudioEngine';
 import {
   getPlaylistForRealm,
@@ -206,6 +210,12 @@ export default function App() {
   const [dungeonGenError, setDungeonGenError] = useState<string | null>(null);
   const [composingScore, setComposingScore] = useState<boolean>(false);
   const [audioState, setAudioState] = useState<VerdantAudioState | null>(null);
+  const [frontierBanner, setFrontierBanner] = useState<{
+    name: string;
+    subtitle: string;
+    cell: [number, number, number];
+  } | null>(null);
+  const frontierBannerTimerRef = useRef<number | null>(null);
   const [realmPlaylist, setRealmPlaylist] = useState<RealmSoundtrackSpec[]>(() =>
     getPlaylistForRealm(
       CANONICAL_REALM_SPECS[0].theme,
@@ -222,7 +232,13 @@ export default function App() {
   victoryShownRef.current = victoryShown;
   const realmsRef = useRef(realms);
   realmsRef.current = realms;
-  const handleTravelToRealmRef = useRef<((realm: FrontiersRealmSpec) => Promise<void>) | null>(null);
+  const handleTravelToRealmRef = useRef<
+    ((realm: FrontiersRealmSpec, spawnOverride?: { x: number; z: number; yaw?: number }) => Promise<void>) | null
+  >(null);
+  const handleTravelToCellRef = useRef<
+    ((cx: number, cz: number, spawnOverride?: { x: number; z: number; yaw?: number }) => Promise<void>) | null
+  >(null);
+  const activeRealmRef = useRef<FrontiersRealmSpec>(CANONICAL_REALM_SPECS[0]);
   const addedBannerIdsRef = useRef<Set<string>>(new Set((savedOnBoot?.banners ?? []).map((b) => b.id)));
 
   const showToast = useCallback((msg: string) => {
@@ -438,9 +454,15 @@ export default function App() {
         },
         onActivateInteractable: (item: WorldInteractable) => {
           if (item.kind === 'dungeon-portal' || item.kind === 'dungeon-exit') {
-            const target = item.targetRealmSlug
+            let target = item.targetRealmSlug
               ? realmsRef.current.find((r) => r.slug === item.targetRealmSlug)
               : null;
+            if (!target && item.kind === 'dungeon-portal' && activeRealmRef.current.isProceduralCell) {
+              target = synthesizeProceduralDungeon(activeRealmRef.current);
+              setRealms((prev) =>
+                prev.some((r) => r.slug === target!.slug) ? prev : [...prev, target!],
+              );
+            }
             if (target && handleTravelToRealmRef.current) {
               audio.playPortalTravel(item.kind === 'dungeon-portal');
               void handleTravelToRealmRef.current(target);
@@ -554,6 +576,15 @@ export default function App() {
         onFootstep: (surface) => {
           audio.playFootstep(surface);
         },
+        onCrossFrontierBorder: (_dir, nextCell, entryPos, entryYaw) => {
+          if (handleTravelToCellRef.current) {
+            void handleTravelToCellRef.current(nextCell[0], nextCell[2], {
+              x: entryPos[0],
+              z: entryPos[1],
+              yaw: entryYaw,
+            });
+          }
+        },
       },
     );
 
@@ -623,6 +654,9 @@ export default function App() {
 
     return () => {
       if (toastTimerRef.current !== null) window.clearTimeout(toastTimerRef.current);
+      if (frontierBannerTimerRef.current !== null) {
+        window.clearTimeout(frontierBannerTimerRef.current);
+      }
       realm.dispose();
       realmRef.current = null;
       audio.dispose();
@@ -972,9 +1006,24 @@ export default function App() {
     () => realms.find((r) => r.slug === activeRealmSlug) ?? realms[0] ?? CANONICAL_REALM_SPECS[0],
     [realms, activeRealmSlug],
   );
+  activeRealmRef.current = activeRealm;
+
+  const showFrontierDiscoveryBanner = useCallback((realm: FrontiersRealmSpec) => {
+    setFrontierBanner({
+      name: realm.name,
+      subtitle: realm.subtitle,
+      cell: realm.cell,
+    });
+    if (frontierBannerTimerRef.current !== null) {
+      window.clearTimeout(frontierBannerTimerRef.current);
+    }
+    frontierBannerTimerRef.current = window.setTimeout(() => {
+      setFrontierBanner(null);
+    }, 3600);
+  }, []);
 
   const handleTravelToRealm = useCallback(
-    async (realm: FrontiersRealmSpec) => {
+    async (realm: FrontiersRealmSpec, spawnOverride?: { x: number; z: number; yaw?: number }) => {
       if (!engineRef.current) return;
       setTravelingRealm(true);
       setRealmGenError(null);
@@ -988,7 +1037,13 @@ export default function App() {
           ? INITIAL_INTERACTABLES.map((i) => ({ ...i }))
           : realm.interactables.map((i) => ({ ...i }));
 
-        await engineRef.current.loadRealm(realm, nextNpcs, nextEnemies, nextInteractables);
+        await engineRef.current.loadRealm(
+          realm,
+          nextNpcs,
+          nextEnemies,
+          nextInteractables,
+          spawnOverride,
+        );
 
         setActiveRealmSlug(realm.slug);
         setActiveNpcs(nextNpcs);
@@ -1018,6 +1073,7 @@ export default function App() {
           setRealmPlaylist(audioRef.current.getPlaylist());
         }
         setAtlasTab(null);
+        showFrontierDiscoveryBanner(realm);
         showToast(
           realm.isDungeon
             ? `Descended into ${realm.name} — Tier ${realm.dungeonTier ?? 1} 3D Delve`
@@ -1032,9 +1088,24 @@ export default function App() {
         setTravelingRealm(false);
       }
     },
-    [showToast],
+    [showFrontierDiscoveryBanner, showToast],
   );
   handleTravelToRealmRef.current = handleTravelToRealm;
+
+  const handleTravelToCell = useCallback(
+    async (cx: number, cz: number, spawnOverride?: { x: number; z: number; yaw?: number }) => {
+      const existing = realmsRef.current.find(
+        (r) => !r.isDungeon && r.cell[0] === cx && r.cell[2] === cz,
+      );
+      const target = existing ?? synthesizeUniverseCell(cx, cz);
+      if (!existing) {
+        setRealms((prev) => (prev.some((r) => r.slug === target.slug) ? prev : [...prev, target]));
+      }
+      await handleTravelToRealm(target, spawnOverride);
+    },
+    [handleTravelToRealm],
+  );
+  handleTravelToCellRef.current = handleTravelToCell;
 
   const handleGenerateRealm = useCallback(
     async (name: string, theme: RealmThemeId, brief: string) => {
@@ -1194,6 +1265,7 @@ export default function App() {
           muted={muted}
           activeTrackTitle={audioState?.scoreTitle ?? activeRealm.soundtrack.title}
           toastMessage={toastMessage}
+          frontierBanner={frontierBanner}
           onActivateGear={handleActivateGear}
           onTriggerAction={handleTriggerAction}
           onTriggerDodge={handleTriggerDodge}
@@ -1217,6 +1289,7 @@ export default function App() {
       {phase === 'playing' && activeNpc && (
         <DialogueOverlay
           npc={activeNpc}
+          realmName={activeRealm.name}
           usedMotifs={quests.map((q) => q.motif)}
           onSelectChoice={handleSelectDialogueChoice}
           onClose={() => setActiveNpcId(null)}
@@ -1260,6 +1333,7 @@ export default function App() {
           onSeekEmergentQuest={() => void handleSeekEmergentQuest()}
           onFastTravel={handleFastTravel}
           onTravelToRealm={(realm) => void handleTravelToRealm(realm)}
+          onTravelToCell={(cx, cz) => void handleTravelToCell(cx, cz)}
           onGenerateRealm={(name, theme, brief) => void handleGenerateRealm(name, theme, brief)}
           onGenerateDungeon={(name, style, tier, brief) =>
             void handleGenerateDungeon(name, style, tier, brief)
