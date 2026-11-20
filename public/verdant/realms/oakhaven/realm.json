@@ -1,0 +1,975 @@
+{
+  "id": "realm-oakhaven",
+  "slug": "oakhaven",
+  "name": "The Sunken Aqueducts of Oakhaven",
+  "subtitle": "Cell (-1, 0, 0) · Moss-Draped Viaducts & Silicate Cisterns",
+  "cell": [
+    -1,
+    0,
+    0
+  ],
+  "theme": "sunken-aqueducts",
+  "seed": 1409,
+  "worldHalfExtent": 112,
+  "summary": "Vast flooded multi-tiered limestone aqueducts reclaimed by luminous emerald ferns, spanning hydraulic turbine basins, western cistern ruins, and the Flooded Siphon Catacombs.",
+  "skyAssetId": "autumn_field_puresky",
+  "skyUrl": "/verdant/realms/oakhaven/sky.jpg",
+  "glbUrl": "/verdant/realms/oakhaven/world.glb",
+  "vdntUrl": "/verdant/realms/oakhaven/world.vdnt",
+  "ambientMood": "ironwood",
+  "skyFallbackRgb": [
+    0.38,
+    0.5,
+    0.46
+  ],
+  "fogRgb": [
+    0.52,
+    0.58,
+    0.5
+  ],
+  "spawnPoint": [
+    0,
+    20.5
+  ],
+  "soundtrack": {
+    "id": "score-oakhaven",
+    "title": "Hymn of the Emerald Sluice",
+    "composerNote": "Lydian pastoral suite: sparkling plucked harp cascades over warm viola swells and breathy highland wooden flute melodies.",
+    "realmSlug": "oakhaven",
+    "isDungeon": false,
+    "mode": "lydian",
+    "rootMidi": 53,
+    "bpm": 86,
+    "chordProgression": [
+      0,
+      1,
+      4,
+      0,
+      5,
+      3,
+      1,
+      4
+    ],
+    "melodyMotif": [
+      {
+        "degree": 7,
+        "lengthSteps": 2,
+        "velocity": 0.72
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.78
+      },
+      {
+        "degree": 11,
+        "lengthSteps": 3,
+        "velocity": 0.85
+      },
+      {
+        "degree": 10,
+        "lengthSteps": 1,
+        "velocity": 0.62
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.74
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 2,
+        "velocity": 0.68
+      },
+      {
+        "degree": null,
+        "lengthSteps": 2,
+        "velocity": 0
+      },
+      {
+        "degree": 6,
+        "lengthSteps": 2,
+        "velocity": 0.7
+      }
+    ],
+    "harpArpeggio": [
+      0,
+      2,
+      4,
+      7,
+      9,
+      7,
+      4,
+      2,
+      0,
+      4,
+      7,
+      11,
+      9,
+      7,
+      4,
+      2
+    ],
+    "instrumentation": {
+      "harp": 0.92,
+      "strings": 0.74,
+      "flute": 0.88,
+      "horn": 0.36,
+      "percussion": 0.34,
+      "modalBells": 0.55
+    },
+    "foleyProfile": "aqueduct-water",
+    "reverbDecaySec": 3.1,
+    "workletTuning": {
+      "fundamentalHz": 175,
+      "rt60Ms": 2100,
+      "modeNumers": [
+        100,
+        250,
+        480,
+        790
+      ],
+      "modeDenom": 100
+    }
+  },
+  "dungeonEntrances": [
+    {
+      "id": "ent-oakhaven-cistern",
+      "dungeonSlug": "oakhaven-cistern-labyrinth",
+      "name": "The Flooded Siphon Catacombs",
+      "subtitle": "Tier II Hydraulic Labyrinth · Beneath Crown Cistern",
+      "position": [
+        -14,
+        -34
+      ],
+      "tier": 2,
+      "style": "sunken-cistern"
+    }
+  ],
+  "materials": {
+    "terrain": "brown_mud_leaves_01",
+    "masonry": "brick_moss_001",
+    "road": "cobblestone_02",
+    "timber": "brown_planks_05"
+  },
+  "terrainProfile": {
+    "macroAmp": 2.3,
+    "macroFreq": 0.048,
+    "gorgeDepth": 5.2,
+    "gorgeZ": 4.5,
+    "gorgeWaveAmp": 3.6,
+    "citadelLift": 3.4,
+    "citadelZ": -17,
+    "coastDip": 2.8,
+    "rimStart": 92,
+    "rimHeight": 3,
+    "waterLevel": -0.65,
+    "hasBridge": true,
+    "bridgeDeckY": 1.6,
+    "bridgeZMin": -3.4,
+    "bridgeZMax": 13.4,
+    "bridgeHalfWidth": 2.9
+  },
+  "importedCatalogProps": [
+    {
+      "id": "oak-statue-1",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Aqueduct Lock-Saint W",
+      "position": [
+        -5.8,
+        -10.5
+      ],
+      "targetHeight": 3.8,
+      "yaw": 0.3,
+      "tintRgb": [
+        0.42,
+        0.5,
+        0.4
+      ],
+      "maxTriangles": 480
+    },
+    {
+      "id": "oak-statue-2",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Aqueduct Lock-Saint E",
+      "position": [
+        5.8,
+        -10.5
+      ],
+      "targetHeight": 3.8,
+      "yaw": -0.3,
+      "tintRgb": [
+        0.42,
+        0.5,
+        0.4
+      ],
+      "maxTriangles": 480
+    },
+    {
+      "id": "oak-fern-1",
+      "assetId": "fern_02",
+      "source": "polyhaven",
+      "label": "Cistern Frond W",
+      "position": [
+        -6.5,
+        14.5
+      ],
+      "targetHeight": 1.7,
+      "yaw": 0.2,
+      "tintRgb": [
+        0.22,
+        0.52,
+        0.25
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "oak-fern-2",
+      "assetId": "fern_02",
+      "source": "polyhaven",
+      "label": "Cistern Frond E",
+      "position": [
+        6.8,
+        13.8
+      ],
+      "targetHeight": 1.85,
+      "yaw": 1.9,
+      "tintRgb": [
+        0.2,
+        0.48,
+        0.24
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "oak-fern-3",
+      "assetId": "fern_02",
+      "source": "polyhaven",
+      "label": "Aqueduct Moss Fern",
+      "position": [
+        14.5,
+        -4.5
+      ],
+      "targetHeight": 1.9,
+      "yaw": 0.9,
+      "tintRgb": [
+        0.25,
+        0.55,
+        0.27
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "oak-pot-1",
+      "assetId": "ceramic_pot",
+      "source": "polyhaven",
+      "label": "Silicate Filtration Urn",
+      "position": [
+        -4.2,
+        16.5
+      ],
+      "targetHeight": 1.15,
+      "yaw": 0.5,
+      "tintRgb": [
+        0.64,
+        0.46,
+        0.32
+      ],
+      "maxTriangles": 300
+    },
+    {
+      "id": "oak-pot-2",
+      "assetId": "antique_ceramic_vase_01",
+      "source": "polyhaven",
+      "label": "Rain-Gauge Amphora",
+      "position": [
+        4.6,
+        16
+      ],
+      "targetHeight": 1.25,
+      "yaw": 2.1,
+      "tintRgb": [
+        0.6,
+        0.44,
+        0.3
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "oak-barrel-1",
+      "assetId": "Barrel_01",
+      "source": "polyhaven",
+      "label": "Sluice Lime Barrel",
+      "position": [
+        -7.2,
+        17.5
+      ],
+      "targetHeight": 1.1,
+      "yaw": 1.1,
+      "tintRgb": [
+        0.48,
+        0.35,
+        0.22
+      ],
+      "maxTriangles": 300
+    },
+    {
+      "id": "oak-rock-1",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Mossy Limestone Outcrop",
+      "position": [
+        -14,
+        -5
+      ],
+      "targetHeight": 3.2,
+      "yaw": 1.3,
+      "tintRgb": [
+        0.36,
+        0.42,
+        0.34
+      ],
+      "maxTriangles": 420
+    },
+    {
+      "id": "oak-table-1",
+      "assetId": "WoodenTable_02",
+      "source": "polyhaven",
+      "label": "Hydraulic Survey Bench",
+      "position": [
+        -5.8,
+        17.2
+      ],
+      "targetHeight": 1,
+      "yaw": 0.1,
+      "tintRgb": [
+        0.44,
+        0.33,
+        0.21
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "oak-lantern-1",
+      "assetId": "Lantern_01",
+      "source": "polyhaven",
+      "label": "Siphon Gate Lamp",
+      "position": [
+        -11.5,
+        -31.5
+      ],
+      "targetHeight": 1.3,
+      "yaw": 0.2,
+      "tintRgb": [
+        0.46,
+        0.82,
+        0.62
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "oak-west-boulder",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Fen Monolith Stone",
+      "position": [
+        -52,
+        -20
+      ],
+      "targetHeight": 3.4,
+      "yaw": 0.8,
+      "tintRgb": [
+        0.35,
+        0.44,
+        0.34
+      ],
+      "maxTriangles": 400
+    },
+    {
+      "id": "oak-east-fern",
+      "assetId": "fern_02",
+      "source": "polyhaven",
+      "label": "Highland Spore Fern",
+      "position": [
+        51,
+        9
+      ],
+      "targetHeight": 2.1,
+      "yaw": 1.2,
+      "tintRgb": [
+        0.22,
+        0.56,
+        0.3
+      ],
+      "maxTriangles": 340
+    }
+  ],
+  "regions": [
+    {
+      "id": "high-causeway",
+      "name": "Oakhaven Crown Cistern",
+      "subtitle": "Great Moss Aqueduct & Sluice Keep",
+      "center": [
+        0,
+        -14
+      ],
+      "radius": 18,
+      "ambientMood": "ironwood"
+    },
+    {
+      "id": "ashen-kiln",
+      "name": "Silt-Wheel Mill",
+      "subtitle": "Western Hydraulic Turbine Basin",
+      "center": [
+        -25,
+        -6
+      ],
+      "radius": 18,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "ironwood-reaches",
+      "name": "Emerald Fern Terrace",
+      "subtitle": "Bioluminescent Root Conduit",
+      "center": [
+        25,
+        -6
+      ],
+      "radius": 18,
+      "ambientMood": "ironwood"
+    },
+    {
+      "id": "salt-loom",
+      "name": "Spillway Fen",
+      "subtitle": "Flooded Archway Delta",
+      "center": [
+        24,
+        24
+      ],
+      "radius": 20,
+      "ambientMood": "coast"
+    },
+    {
+      "id": "southern-terrace",
+      "name": "Oakhaven Lock Gate",
+      "subtitle": "Western Meridian Entry",
+      "center": [
+        0,
+        19
+      ],
+      "radius": 16,
+      "ambientMood": "ironwood"
+    },
+    {
+      "id": "northern-watch",
+      "name": "Siphon Catacomb Overlook",
+      "subtitle": "Flooded Siphon Vault Entrance",
+      "center": [
+        -6,
+        -46
+      ],
+      "radius": 24,
+      "ambientMood": "ironwood"
+    },
+    {
+      "id": "western-ruins",
+      "name": "Old Reservoir Ring",
+      "subtitle": "Collapsed Artesian Cisterns",
+      "center": [
+        -54,
+        -22
+      ],
+      "radius": 24,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "eastern-ridge",
+      "name": "Moss-Arch Overlook",
+      "subtitle": "Upper Watershed Timber Camp",
+      "center": [
+        54,
+        10
+      ],
+      "radius": 24,
+      "ambientMood": "ironwood"
+    }
+  ],
+  "fastTravelPoints": [
+    {
+      "regionId": "southern-terrace",
+      "name": "Oakhaven Lock Gate",
+      "x": 0,
+      "z": 17.5
+    },
+    {
+      "regionId": "high-causeway",
+      "name": "Oakhaven Crown Cistern",
+      "x": 0,
+      "z": -8.5
+    },
+    {
+      "regionId": "northern-watch",
+      "name": "Siphon Catacomb Portal",
+      "x": -14,
+      "z": -29.5
+    },
+    {
+      "regionId": "ashen-kiln",
+      "name": "Silt-Wheel Mill",
+      "x": -20,
+      "z": -5
+    },
+    {
+      "regionId": "western-ruins",
+      "name": "Old Reservoir Ring",
+      "x": -49,
+      "z": -18
+    },
+    {
+      "regionId": "eastern-ridge",
+      "name": "Moss-Arch Overlook",
+      "x": 48,
+      "z": 10
+    }
+  ],
+  "npcs": [
+    {
+      "id": "npc-maren",
+      "name": "Lock-Keeper Maren Holt",
+      "title": "Chief Hydraulic Engineer",
+      "guildId": "guild-causeway",
+      "guildName": "Oakhaven Sluice Guild",
+      "regionId": "southern-terrace",
+      "portraitUrl": "/src/assets/images/ff_npc_orenna_1795129454002.jpg",
+      "position": [
+        -3.2,
+        15.6
+      ],
+      "cloakHex": 4160357,
+      "trimHex": 13935187,
+      "greeting": "Step lightly across the mossy sluice, Waywright. The Crown Cistern dropped four palms overnight—and the Flooded Siphon Catacombs north of the keep have begun vibrating.",
+      "cognitiveDrive": "Maintain clean artesian head pressure across Oakhaven without draining the fern terraces.",
+      "concealedSecret": "She diverted a hidden siphon toward the dry eastern villages against Citadel toll decrees.",
+      "speechCadence": "Calm, practical, measured in water levels and masonry joints.",
+      "beliefs": [
+        "Water belongs to the watershed before any charter tax.",
+        "Moss binds mortar longer than iron clamps if kept wet."
+      ],
+      "choices": [
+        {
+          "id": "maren-1",
+          "label": "Where is the aqueduct losing head pressure?",
+          "reply": "Sound the Sunken Sluice Arch on the bridge with your Bell-Hammer, then explore the Siphon Catacombs northwest of the Crown Cistern.",
+          "thought": "Checking whether the Waywright notices the eastern overflow diversion.",
+          "renownGain": 25,
+          "advancesQuestId": "quest-oak-sluice"
+        },
+        {
+          "id": "maren-2",
+          "label": "Why does the fern moss glow emerald after dusk?",
+          "reply": "Dissolved feldspar from the upper watershed feeds its spores. Harvest nodules along the Fern Terrace and our mortar seals underwater.",
+          "thought": "Hoping this Waywright values ecological repair over salvage tolls.",
+          "renownGain": 20
+        }
+      ]
+    },
+    {
+      "id": "npc-haldor",
+      "name": "Sluice-Wright Haldor",
+      "title": "Turbine Brass-Turner",
+      "guildId": "guild-kiln",
+      "guildName": "Oakhaven Sluice Guild",
+      "regionId": "ashen-kiln",
+      "portraitUrl": "/src/assets/images/ff_npc_tarsik_1795130893764.jpg",
+      "position": [
+        -22.5,
+        -5.2
+      ],
+      "cloakHex": 6051144,
+      "trimHex": 7714974,
+      "greeting": "Hear that rhythmic clack? A limestone wedge jammed the Silt-Wheel bronze impeller. Strike the Spillway Bell once you scatter the Shardcasters.",
+      "cognitiveDrive": "Keep Oakhaven grain mills turning cleanly on spring melt.",
+      "concealedSecret": "He smelts salvaged aqueduct coins into corrosion-proof bearings.",
+      "speechCadence": "Brisk workshop cadence, taps rhythmically on bronze calipers.",
+      "beliefs": [
+        "A balanced wheel outlives three kings."
+      ],
+      "choices": [
+        {
+          "id": "haldor-1",
+          "label": "I will calibrate the Silt-Wheel and strike the Spillway Bell.",
+          "reply": "Fine work! Strike true at 174 Hz so the sluice valves seat flush.",
+          "thought": "Quietly tucking away his tray of shaved bronze mintings.",
+          "renownGain": 25
+        }
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": "quest-oak-sluice",
+      "title": "The Sunken Sluice of Oakhaven",
+      "giverNpcId": "npc-maren",
+      "guildId": "guild-causeway",
+      "regionId": "high-causeway",
+      "summary": "Inspect Oakhaven’s flooded aqueduct piers, sound the Sunken Sluice Arch, and attune the Crown Cistern Waystone.",
+      "motif": "hydraulic siphon masonry",
+      "renownReward": 165,
+      "status": "active",
+      "objectives": [
+        {
+          "id": "obj-oak-1",
+          "description": "Speak with Lock-Keeper Maren Holt",
+          "kind": "talk-npc",
+          "targetId": "npc-maren",
+          "targetCoords": [
+            -3.2,
+            15.6
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        },
+        {
+          "id": "obj-oak-2",
+          "description": "Sound the Sunken Sluice Arch [Bell-Hammer]",
+          "kind": "ring-bell",
+          "targetId": "int-oak-pier",
+          "targetCoords": [
+            0,
+            5.2
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        },
+        {
+          "id": "obj-oak-3",
+          "description": "Attune the Crown Cistern Waystone",
+          "kind": "calibrate-beacon",
+          "targetId": "int-oak-waystone",
+          "targetCoords": [
+            0,
+            -10.5
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        }
+      ]
+    },
+    {
+      "id": "quest-oak-harvest",
+      "title": "Spore-Lime of the Fern Terrace",
+      "giverNpcId": "npc-haldor",
+      "guildId": "guild-tideloom",
+      "regionId": "ironwood-reaches",
+      "summary": "Gather aquatic silicate moss nodules along the Emerald Fern Terrace and drive off Fen Stalkers threatening the outer reservoir.",
+      "motif": "aquatic moss filtration",
+      "renownReward": 175,
+      "status": "active",
+      "objectives": [
+        {
+          "id": "obj-oak-4",
+          "description": "Harvest Silicate Spore Nodules",
+          "kind": "collect-relics",
+          "targetId": "silicate-relic",
+          "targetCoords": [
+            22,
+            -6
+          ],
+          "requiredCount": 2,
+          "currentCount": 0
+        },
+        {
+          "id": "obj-oak-5",
+          "description": "Vanquish Fen Stalkers",
+          "kind": "defeat-archetype",
+          "targetId": "stalker",
+          "targetCoords": [
+            -14,
+            -7
+          ],
+          "requiredCount": 2,
+          "currentCount": 0
+        }
+      ]
+    }
+  ],
+  "interactables": [
+    {
+      "id": "int-oak-pier",
+      "kind": "resonance-pier",
+      "name": "Sunken Sluice Arch",
+      "promptVerb": "Sound Sluice [Bell-Hammer]",
+      "regionId": "high-causeway",
+      "position": [
+        0,
+        5.2
+      ],
+      "requiredGear": "bellhammer",
+      "activated": false
+    },
+    {
+      "id": "int-oak-waystone",
+      "kind": "waystone-beacon",
+      "name": "Crown Cistern Waystone",
+      "promptVerb": "Attune Cistern Waystone",
+      "regionId": "high-causeway",
+      "position": [
+        0,
+        -10.5
+      ],
+      "activated": false
+    },
+    {
+      "id": "int-oak-bell",
+      "kind": "forge-bell",
+      "name": "Silt-Wheel Resonance Bell",
+      "promptVerb": "Ring Spillway Bell [Bell-Hammer]",
+      "regionId": "ashen-kiln",
+      "position": [
+        -25,
+        -8
+      ],
+      "requiredGear": "bellhammer",
+      "activated": false
+    },
+    {
+      "id": "int-oak-moss-1",
+      "kind": "silicate-relic",
+      "name": "Aquatic Silicate Nodule",
+      "promptVerb": "Harvest Silicate Nodule",
+      "regionId": "ironwood-reaches",
+      "position": [
+        21,
+        -7
+      ],
+      "activated": false
+    },
+    {
+      "id": "int-oak-moss-2",
+      "kind": "silicate-relic",
+      "name": "Cistern Spore Cluster",
+      "promptVerb": "Harvest Spore Cluster",
+      "regionId": "ironwood-reaches",
+      "position": [
+        26,
+        -3
+      ],
+      "activated": false
+    },
+    {
+      "id": "int-oak-dungeon",
+      "kind": "dungeon-portal",
+      "name": "The Flooded Siphon Catacombs",
+      "promptVerb": "Descend into Siphon Catacombs",
+      "regionId": "northern-watch",
+      "position": [
+        -14,
+        -34
+      ],
+      "activated": false,
+      "targetRealmSlug": "oakhaven-cistern-labyrinth"
+    },
+    {
+      "id": "int-oak-chest",
+      "kind": "vault-chest",
+      "name": "Reservoir Sluice Coffer",
+      "promptVerb": "Unseal Sluice Coffer",
+      "regionId": "western-ruins",
+      "position": [
+        -54,
+        -22
+      ],
+      "activated": false
+    }
+  ],
+  "enemies": [
+    {
+      "id": "oak-e1",
+      "archetype": "stalker",
+      "name": "Fen Root-Stalker",
+      "x": -13,
+      "z": -7,
+      "homeX": -13,
+      "homeZ": -7,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 62,
+      "maxHp": 62,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "oak-e2",
+      "archetype": "stalker",
+      "name": "Sluice Crawler",
+      "x": 12,
+      "z": -9,
+      "homeX": 12,
+      "homeZ": -9,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 62,
+      "maxHp": 62,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "oak-e3",
+      "archetype": "shardcaster",
+      "name": "Cistern Prism-Weaver",
+      "x": -22,
+      "z": -11,
+      "homeX": -22,
+      "homeZ": -11,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 56,
+      "maxHp": 56,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 12,
+      "moveSpeed": 4.5,
+      "aggroRadius": 17,
+      "preferredRange": 9.5,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "oak-e4",
+      "archetype": "colossus",
+      "name": "Moss-Bound Aqueduct Golem",
+      "x": 24,
+      "z": 15,
+      "homeX": 24,
+      "homeZ": 15,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 165,
+      "maxHp": 165,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 26,
+      "attackRadius": 4.4,
+      "moveSpeed": 3.3,
+      "aggroRadius": 20,
+      "preferredRange": 3.6,
+      "telegraphDuration": 0.95,
+      "hasAttackToken": false
+    },
+    {
+      "id": "oak-e5",
+      "archetype": "stalker",
+      "name": "Reservoir Stalker",
+      "x": -46,
+      "z": -19,
+      "homeX": -46,
+      "homeZ": -19,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 68,
+      "maxHp": 68,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "oak-e6",
+      "archetype": "shardcaster",
+      "name": "Spillway Arc-Channeler",
+      "x": 46,
+      "z": 8,
+      "homeX": 46,
+      "homeZ": 8,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 64,
+      "maxHp": 64,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 12,
+      "moveSpeed": 4.5,
+      "aggroRadius": 17,
+      "preferredRange": 9.5,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    }
+  ],
+  "prismCustody": {
+    "worldGlbKappa": "sha256:3ec3afed1f14c3ff63ab36c898eb1840b2bff6a429bb3c5cffc004810c34fdf5",
+    "vdntKappa": "sha256:df283020479d187b8961c9aaa535b4a8332b987d5ded484ae77a2b7f2e4730ff",
+    "skyKappa": "sha256:2e88d477f0c18f7ee923fdda872e0d4a42aa27b54cdd3588fd5358f0b3bf2690",
+    "triangles": 25708,
+    "vertices": 44477,
+    "glbBytes": 2553132,
+    "atlasTileCount": 4,
+    "importedCatalogModelsCount": 13,
+    "importedCatalogAssets": [
+      "gothic_statue",
+      "fern_02",
+      "ceramic_pot",
+      "antique_ceramic_vase_01",
+      "Barrel_01",
+      "boulder_01",
+      "WoodenTable_02",
+      "Lantern_01"
+    ],
+    "projectModelsRegistered": 10,
+    "cognitiveKnowledgeIngested": 11,
+    "operatorAdmitted": true,
+    "stitchRecoveryVerified": true,
+    "stitchShardSizes": [
+      1153,
+      1153,
+      1153
+    ],
+    "observerPartsHydrated": 8
+  }
+}

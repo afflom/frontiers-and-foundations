@@ -1,0 +1,674 @@
+{
+  "id": "realm-vaelmor",
+  "slug": "vaelmor",
+  "name": "The Shattered Meridian of Vaelmor",
+  "subtitle": "Cell (0, 0, 0) · High Basalt Citadel & Outer Frontier Reaches",
+  "cell": [
+    0,
+    0,
+    0
+  ],
+  "theme": "citadel-highlands",
+  "seed": 7777,
+  "worldHalfExtent": 112,
+  "summary": "The vast chartered heart of the Meridian: twin parabolic basalt arches spanning the river gorge, flanked by the Ashen Kiln Foundry, Amber Ironwood Reaches, Northern Watch Spire, Western Monolith Ruins, and the Sunken Meridian Vault.",
+  "skyAssetId": "belfast_sunset_puresky",
+  "skyUrl": "/verdant/realms/vaelmor/sky.jpg",
+  "glbUrl": "/verdant/realms/vaelmor/world.glb",
+  "vdntUrl": "/verdant/realms/vaelmor/world.vdnt",
+  "ambientMood": "causeway",
+  "skyFallbackRgb": [
+    0.34,
+    0.44,
+    0.56
+  ],
+  "fogRgb": [
+    0.58,
+    0.52,
+    0.44
+  ],
+  "spawnPoint": [
+    0,
+    21.5
+  ],
+  "soundtrack": {
+    "id": "score-vaelmor",
+    "title": "Overture of the Shattered Meridian",
+    "composerNote": "Heroic Celtic-Nordic Dorian orchestral suite: interwoven harp arpeggios, noble French horn themes, highland wooden flute, and warm bowed strings.",
+    "realmSlug": "vaelmor",
+    "isDungeon": false,
+    "mode": "dorian",
+    "rootMidi": 50,
+    "bpm": 88,
+    "chordProgression": [
+      0,
+      6,
+      3,
+      4,
+      0,
+      2,
+      6,
+      4
+    ],
+    "melodyMotif": [
+      {
+        "degree": 7,
+        "lengthSteps": 2,
+        "velocity": 0.8
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.84
+      },
+      {
+        "degree": 11,
+        "lengthSteps": 3,
+        "velocity": 0.88
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 1,
+        "velocity": 0.68
+      },
+      {
+        "degree": 8,
+        "lengthSteps": 2,
+        "velocity": 0.76
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 2,
+        "velocity": 0.74
+      },
+      {
+        "degree": 6,
+        "lengthSteps": 2,
+        "velocity": 0.7
+      },
+      {
+        "degree": null,
+        "lengthSteps": 2,
+        "velocity": 0
+      }
+    ],
+    "harpArpeggio": [
+      0,
+      4,
+      7,
+      9,
+      11,
+      9,
+      7,
+      4,
+      0,
+      2,
+      6,
+      9,
+      7,
+      4,
+      2,
+      4
+    ],
+    "instrumentation": {
+      "harp": 0.88,
+      "strings": 0.82,
+      "flute": 0.82,
+      "horn": 0.76,
+      "percussion": 0.48,
+      "modalBells": 0.64
+    },
+    "foleyProfile": "highland-wind",
+    "reverbDecaySec": 3.2,
+    "workletTuning": {
+      "fundamentalHz": 174,
+      "rt60Ms": 2150,
+      "modeNumers": [
+        100,
+        276,
+        540,
+        893
+      ],
+      "modeDenom": 100
+    }
+  },
+  "dungeonEntrances": [
+    {
+      "id": "ent-vaelmor-vault",
+      "dungeonSlug": "vault-of-vaelmor",
+      "name": "The Sunken Meridian Vault",
+      "subtitle": "Tier I Acoustic Catacomb · Beneath High Basalt Citadel",
+      "position": [
+        -14,
+        -34
+      ],
+      "tier": 1,
+      "style": "catacomb-vault"
+    }
+  ],
+  "materials": {
+    "terrain": "aerial_grass_rock",
+    "masonry": "castle_brick_01",
+    "road": "mossy_cobblestone",
+    "timber": "dark_wooden_planks"
+  },
+  "terrainProfile": {
+    "macroAmp": 2.8,
+    "macroFreq": 0.052,
+    "gorgeDepth": 4.8,
+    "gorgeZ": 5,
+    "gorgeWaveAmp": 3.4,
+    "citadelLift": 3.9,
+    "citadelZ": -18,
+    "coastDip": 2.5,
+    "rimStart": 92,
+    "rimHeight": 3.2,
+    "waterLevel": -0.95,
+    "hasBridge": true,
+    "bridgeDeckY": 1.55,
+    "bridgeZMin": -3.4,
+    "bridgeZMax": 13.4,
+    "bridgeHalfWidth": 2.85
+  },
+  "importedCatalogProps": [
+    {
+      "id": "vaelmor-statue-w",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Citadel Sentinel West",
+      "position": [
+        -5.4,
+        -10.2
+      ],
+      "targetHeight": 3.6,
+      "yaw": 0.25,
+      "tintRgb": [
+        0.52,
+        0.51,
+        0.49
+      ],
+      "maxTriangles": 520
+    },
+    {
+      "id": "vaelmor-statue-e",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Citadel Sentinel East",
+      "position": [
+        5.4,
+        -10.2
+      ],
+      "targetHeight": 3.6,
+      "yaw": -0.25,
+      "tintRgb": [
+        0.52,
+        0.51,
+        0.49
+      ],
+      "maxTriangles": 520
+    },
+    {
+      "id": "vaelmor-barrel-1",
+      "assetId": "Barrel_01",
+      "source": "polyhaven",
+      "label": "Surveyor Cask",
+      "position": [
+        -4.6,
+        17.6
+      ],
+      "targetHeight": 1.1,
+      "yaw": 0.4,
+      "tintRgb": [
+        0.52,
+        0.36,
+        0.22
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vaelmor-barrel-2",
+      "assetId": "Barrel_02",
+      "source": "polyhaven",
+      "label": "Resin Cask",
+      "position": [
+        -5.5,
+        18.2
+      ],
+      "targetHeight": 1.05,
+      "yaw": 1.7,
+      "tintRgb": [
+        0.46,
+        0.32,
+        0.2
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vaelmor-table-1",
+      "assetId": "WoodenTable_02",
+      "source": "polyhaven",
+      "label": "Charter Drafting Table",
+      "position": [
+        -6.4,
+        16.6
+      ],
+      "targetHeight": 1.05,
+      "yaw": 0,
+      "tintRgb": [
+        0.48,
+        0.34,
+        0.22
+      ],
+      "maxTriangles": 360
+    },
+    {
+      "id": "vaelmor-crate-1",
+      "assetId": "old_military_crate",
+      "source": "polyhaven",
+      "label": "Causeway Supply Crate",
+      "position": [
+        5.8,
+        16.2
+      ],
+      "targetHeight": 1,
+      "yaw": 0.5,
+      "tintRgb": [
+        0.44,
+        0.4,
+        0.32
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vaelmor-shield-1",
+      "assetId": "kite_shield",
+      "source": "polyhaven",
+      "label": "Waywright Heraldic Shield",
+      "position": [
+        -4.4,
+        14.8
+      ],
+      "yOffset": 1.4,
+      "targetHeight": 1.35,
+      "yaw": 0,
+      "tintRgb": [
+        0.76,
+        0.62,
+        0.32
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vaelmor-pot-1",
+      "assetId": "brass_pot_01",
+      "source": "polyhaven",
+      "label": "Foundry Crucible",
+      "position": [
+        -23.4,
+        -5.2
+      ],
+      "targetHeight": 1.2,
+      "yaw": 0.8,
+      "tintRgb": [
+        0.78,
+        0.58,
+        0.26
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vaelmor-lantern-1",
+      "assetId": "Lantern_01",
+      "source": "polyhaven",
+      "label": "Kiln Resonance Lamp",
+      "position": [
+        -24.8,
+        -6.8
+      ],
+      "targetHeight": 1.15,
+      "yaw": 0.2,
+      "tintRgb": [
+        0.85,
+        0.64,
+        0.28
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vaelmor-rock-1",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Gorge Basalt Tor W",
+      "position": [
+        -10.5,
+        7.2
+      ],
+      "targetHeight": 2.8,
+      "yaw": 0.6,
+      "tintRgb": [
+        0.34,
+        0.35,
+        0.38
+      ],
+      "maxTriangles": 420
+    },
+    {
+      "id": "vaelmor-rock-2",
+      "assetId": "moon_rock_01",
+      "source": "polyhaven",
+      "label": "Gorge Basalt Tor E",
+      "position": [
+        11.2,
+        6.4
+      ],
+      "targetHeight": 3.1,
+      "yaw": 2.1,
+      "tintRgb": [
+        0.32,
+        0.34,
+        0.37
+      ],
+      "maxTriangles": 420
+    },
+    {
+      "id": "vaelmor-fern-1",
+      "assetId": "fern_02",
+      "source": "polyhaven",
+      "label": "Ironwood Fern Cluster",
+      "position": [
+        19.4,
+        -6.4
+      ],
+      "targetHeight": 1.5,
+      "yaw": 0.7,
+      "tintRgb": [
+        0.24,
+        0.48,
+        0.24
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vaelmor-vault-guard-w",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Vault Keeper West",
+      "position": [
+        -17.4,
+        -32.2
+      ],
+      "targetHeight": 3.8,
+      "yaw": 0.35,
+      "tintRgb": [
+        0.44,
+        0.46,
+        0.5
+      ],
+      "maxTriangles": 480
+    },
+    {
+      "id": "vaelmor-vault-guard-e",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Vault Keeper East",
+      "position": [
+        -10.6,
+        -32.2
+      ],
+      "targetHeight": 3.8,
+      "yaw": -0.35,
+      "tintRgb": [
+        0.44,
+        0.46,
+        0.5
+      ],
+      "maxTriangles": 480
+    },
+    {
+      "id": "vaelmor-north-estoc",
+      "assetId": "antique_estoc",
+      "source": "polyhaven",
+      "label": "Northern Watch Monument Blade",
+      "position": [
+        0,
+        -56.5
+      ],
+      "yOffset": 1.2,
+      "targetHeight": 2.6,
+      "yaw": 0.2,
+      "tintRgb": [
+        0.82,
+        0.76,
+        0.64
+      ],
+      "maxTriangles": 360
+    },
+    {
+      "id": "vaelmor-west-vase",
+      "assetId": "antique_ceramic_vase_01",
+      "source": "polyhaven",
+      "label": "Monolith Offering Urn",
+      "position": [
+        -51.5,
+        -20.5
+      ],
+      "targetHeight": 1.45,
+      "yaw": 0.9,
+      "tintRgb": [
+        0.64,
+        0.52,
+        0.38
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vaelmor-east-camp-table",
+      "assetId": "WoodenTable_02",
+      "source": "polyhaven",
+      "label": "Eastern Caravan Table",
+      "position": [
+        51.5,
+        11.5
+      ],
+      "targetHeight": 1.05,
+      "yaw": 0.4,
+      "tintRgb": [
+        0.52,
+        0.36,
+        0.22
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vaelmor-east-boulder",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Ridge Monolith Boulder",
+      "position": [
+        48,
+        -14
+      ],
+      "targetHeight": 3.6,
+      "yaw": 1.5,
+      "tintRgb": [
+        0.36,
+        0.35,
+        0.38
+      ],
+      "maxTriangles": 420
+    }
+  ],
+  "regions": [
+    {
+      "id": "high-causeway",
+      "name": "High Basalt Citadel",
+      "subtitle": "Chartered Archway & Northern Plaza",
+      "center": [
+        0,
+        -14
+      ],
+      "radius": 18,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "ashen-kiln",
+      "name": "Ashen Kiln Foundry",
+      "subtitle": "Geothermal Bell Basin",
+      "center": [
+        -26,
+        -6
+      ],
+      "radius": 18,
+      "ambientMood": "foundry"
+    },
+    {
+      "id": "ironwood-reaches",
+      "name": "Amber Ironwood Reaches",
+      "subtitle": "Bioluminescent Silicate Canopy",
+      "center": [
+        26,
+        -6
+      ],
+      "radius": 18,
+      "ambientMood": "ironwood"
+    },
+    {
+      "id": "salt-loom",
+      "name": "Salt Loom Coast",
+      "subtitle": "Obsidian Sea-Stacks & Tidal Pier",
+      "center": [
+        26,
+        26
+      ],
+      "radius": 20,
+      "ambientMood": "coast"
+    },
+    {
+      "id": "southern-terrace",
+      "name": "Southern Causeway",
+      "subtitle": "Frontier Gateway",
+      "center": [
+        0,
+        20
+      ],
+      "radius": 16,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "northern-watch",
+      "name": "Northern Watch & Vault Approach",
+      "subtitle": "Sunken Meridian Vault & Watchtower Ridge",
+      "center": [
+        -6,
+        -46
+      ],
+      "radius": 24,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "western-ruins",
+      "name": "Western Monolith Circle",
+      "subtitle": "Pre-Charter Standing Stones",
+      "center": [
+        -54,
+        -22
+      ],
+      "radius": 24,
+      "ambientMood": "foundry"
+    },
+    {
+      "id": "eastern-ridge",
+      "name": "Eastern Caravan Ridge",
+      "subtitle": "Timber Overlook & Frontier Reliquary",
+      "center": [
+        54,
+        10
+      ],
+      "radius": 24,
+      "ambientMood": "ironwood"
+    }
+  ],
+  "fastTravelPoints": [
+    {
+      "regionId": "southern-terrace",
+      "name": "Southern Causeway Gate",
+      "x": 0,
+      "z": 17.5
+    },
+    {
+      "regionId": "high-causeway",
+      "name": "High Basalt Citadel",
+      "x": 0,
+      "z": -8.5
+    },
+    {
+      "regionId": "northern-watch",
+      "name": "Sunken Meridian Vault Gate",
+      "x": -14,
+      "z": -29.5
+    },
+    {
+      "regionId": "ashen-kiln",
+      "name": "Ashen Kiln Foundry",
+      "x": -20.5,
+      "z": -4.5
+    },
+    {
+      "regionId": "ironwood-reaches",
+      "name": "Amber Ironwood Reaches",
+      "x": 20.5,
+      "z": -5
+    },
+    {
+      "regionId": "western-ruins",
+      "name": "Western Monolith Circle",
+      "x": -49,
+      "z": -18
+    },
+    {
+      "regionId": "eastern-ridge",
+      "name": "Eastern Caravan Ridge",
+      "x": 48,
+      "z": 10
+    }
+  ],
+  "npcs": [],
+  "quests": [],
+  "interactables": [],
+  "enemies": [],
+  "prismCustody": {
+    "worldGlbKappa": "sha256:32d42fe4011b4328f731816b2572c64eecd62f3f799604bca315598eb829cea3",
+    "vdntKappa": "sha256:c47ece7b6f4e2d18103841e063d512a722537987ef31f8a13f8dd6f6fd594d2e",
+    "skyKappa": "sha256:a5883ec7ae9ef22ee45d65969e7ec0711ec5e8b8ba94cc8b2fd52d82a37f61b9",
+    "triangles": 27983,
+    "vertices": 45024,
+    "glbBytes": 2690216,
+    "atlasTileCount": 4,
+    "importedCatalogModelsCount": 18,
+    "importedCatalogAssets": [
+      "gothic_statue",
+      "Barrel_01",
+      "Barrel_02",
+      "WoodenTable_02",
+      "old_military_crate",
+      "kite_shield",
+      "brass_pot_01",
+      "Lantern_01",
+      "boulder_01",
+      "moon_rock_01",
+      "fern_02",
+      "antique_estoc",
+      "antique_ceramic_vase_01"
+    ],
+    "projectModelsRegistered": 15,
+    "cognitiveKnowledgeIngested": 9,
+    "operatorAdmitted": true,
+    "stitchRecoveryVerified": true,
+    "stitchShardSizes": [
+      1156,
+      1156,
+      1156
+    ],
+    "observerPartsHydrated": 8
+  }
+}

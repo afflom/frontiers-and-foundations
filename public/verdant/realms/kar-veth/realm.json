@@ -1,0 +1,809 @@
+{
+  "id": "realm-kar-veth",
+  "slug": "kar-veth",
+  "name": "The Amber Monoliths of Kar-Veth",
+  "subtitle": "Cell (0, 0, 1) · Sandstone Wind-Harps & Caravan Steppe",
+  "cell": [
+    0,
+    0,
+    1
+  ],
+  "theme": "amber-steppe",
+  "seed": 6823,
+  "worldHalfExtent": 112,
+  "summary": "Sun-gilded sandstone canyons where bronze wind-harps sing across terraced caravan citadels, monolith circles, and the subterranean Resonance Hall of Kar-Veth.",
+  "skyAssetId": "grasslands_sunset",
+  "skyUrl": "/verdant/realms/kar-veth/sky.jpg",
+  "glbUrl": "/verdant/realms/kar-veth/world.glb",
+  "vdntUrl": "/verdant/realms/kar-veth/world.vdnt",
+  "ambientMood": "ironwood",
+  "skyFallbackRgb": [
+    0.52,
+    0.44,
+    0.34
+  ],
+  "fogRgb": [
+    0.68,
+    0.56,
+    0.42
+  ],
+  "spawnPoint": [
+    0,
+    21
+  ],
+  "soundtrack": {
+    "id": "score-kar-veth",
+    "title": "Wind-Harps of Kar-Veth",
+    "composerNote": "Sunlit Pentatonic frontier ballad: resonant harp strums, warm caravan frame-drums, and open horizon flute motifs.",
+    "realmSlug": "kar-veth",
+    "isDungeon": false,
+    "mode": "pentatonic-major",
+    "rootMidi": 52,
+    "bpm": 92,
+    "chordProgression": [
+      0,
+      3,
+      4,
+      2,
+      0,
+      4,
+      3,
+      0
+    ],
+    "melodyMotif": [
+      {
+        "degree": 5,
+        "lengthSteps": 2,
+        "velocity": 0.76
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 2,
+        "velocity": 0.82
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 3,
+        "velocity": 0.88
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 1,
+        "velocity": 0.68
+      },
+      {
+        "degree": 6,
+        "lengthSteps": 2,
+        "velocity": 0.74
+      },
+      {
+        "degree": 5,
+        "lengthSteps": 2,
+        "velocity": 0.7
+      },
+      {
+        "degree": 4,
+        "lengthSteps": 2,
+        "velocity": 0.66
+      },
+      {
+        "degree": null,
+        "lengthSteps": 2,
+        "velocity": 0
+      }
+    ],
+    "harpArpeggio": [
+      0,
+      2,
+      4,
+      5,
+      7,
+      5,
+      4,
+      2,
+      0,
+      3,
+      5,
+      7,
+      9,
+      7,
+      5,
+      4
+    ],
+    "instrumentation": {
+      "harp": 0.94,
+      "strings": 0.7,
+      "flute": 0.84,
+      "horn": 0.62,
+      "percussion": 0.62,
+      "modalBells": 0.74
+    },
+    "foleyProfile": "steppe-chimes",
+    "reverbDecaySec": 3,
+    "workletTuning": {
+      "fundamentalHz": 165,
+      "rt60Ms": 2050,
+      "modeNumers": [
+        100,
+        240,
+        470,
+        760
+      ],
+      "modeDenom": 100
+    }
+  },
+  "dungeonEntrances": [
+    {
+      "id": "ent-karveth-tomb",
+      "dungeonSlug": "karveth-echo-tomb",
+      "name": "The Resonance Hall of Kar-Veth",
+      "subtitle": "Tier III Sandstone Acoustic Vault · Beneath Sun-Terrace Keep",
+      "position": [
+        -14,
+        -34
+      ],
+      "tier": 3,
+      "style": "catacomb-vault"
+    }
+  ],
+  "materials": {
+    "terrain": "aerial_sand",
+    "masonry": "large_sandstone_blocks_01",
+    "road": "cobblestone_01",
+    "timber": "brown_planks_03"
+  },
+  "terrainProfile": {
+    "macroAmp": 2.6,
+    "macroFreq": 0.044,
+    "gorgeDepth": 4.5,
+    "gorgeZ": 5,
+    "gorgeWaveAmp": 3,
+    "citadelLift": 4.2,
+    "citadelZ": -18,
+    "coastDip": 1.8,
+    "rimStart": 94,
+    "rimHeight": 2.9,
+    "waterLevel": -1.2,
+    "hasBridge": true,
+    "bridgeDeckY": 1.6,
+    "bridgeZMin": -3.4,
+    "bridgeZMax": 13.4,
+    "bridgeHalfWidth": 2.9
+  },
+  "importedCatalogProps": [
+    {
+      "id": "kv-statue-1",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Steppe Choir Sentinel W",
+      "position": [
+        -5.6,
+        -10.4
+      ],
+      "targetHeight": 3.8,
+      "yaw": 0.2,
+      "tintRgb": [
+        0.74,
+        0.62,
+        0.44
+      ],
+      "maxTriangles": 480
+    },
+    {
+      "id": "kv-statue-2",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Steppe Choir Sentinel E",
+      "position": [
+        5.6,
+        -10.4
+      ],
+      "targetHeight": 3.8,
+      "yaw": -0.2,
+      "tintRgb": [
+        0.74,
+        0.62,
+        0.44
+      ],
+      "maxTriangles": 480
+    },
+    {
+      "id": "kv-table-1",
+      "assetId": "WoodenTable_02",
+      "source": "polyhaven",
+      "label": "Caravan Astrolabe Table",
+      "position": [
+        -6.2,
+        16.5
+      ],
+      "targetHeight": 1.05,
+      "yaw": 0.1,
+      "tintRgb": [
+        0.58,
+        0.42,
+        0.26
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "kv-crate-1",
+      "assetId": "old_military_crate",
+      "source": "polyhaven",
+      "label": "Spice & Brass Supply Crate",
+      "position": [
+        5.6,
+        16.4
+      ],
+      "targetHeight": 1.05,
+      "yaw": 0.6,
+      "tintRgb": [
+        0.56,
+        0.46,
+        0.34
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "kv-vase-1",
+      "assetId": "brass_vase_01",
+      "source": "polyhaven",
+      "label": "Wind-Harp Resonator Urn",
+      "position": [
+        -4.2,
+        14.4
+      ],
+      "targetHeight": 1.35,
+      "yaw": 0.2,
+      "tintRgb": [
+        0.88,
+        0.68,
+        0.32
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "kv-vase-2",
+      "assetId": "antique_ceramic_vase_01",
+      "source": "polyhaven",
+      "label": "Steppe Ochre Vessel",
+      "position": [
+        4.4,
+        14.4
+      ],
+      "targetHeight": 1.35,
+      "yaw": 1.5,
+      "tintRgb": [
+        0.76,
+        0.52,
+        0.34
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "kv-estoc-1",
+      "assetId": "antique_estoc",
+      "source": "polyhaven",
+      "label": "Charter Waymarker Blade",
+      "position": [
+        0,
+        -13
+      ],
+      "yOffset": 1.2,
+      "targetHeight": 2.5,
+      "yaw": 0.3,
+      "tintRgb": [
+        0.86,
+        0.78,
+        0.6
+      ],
+      "maxTriangles": 360
+    },
+    {
+      "id": "kv-rock-1",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Amber Canyon Boulder W",
+      "position": [
+        -11,
+        8.2
+      ],
+      "targetHeight": 3.4,
+      "yaw": 0.7,
+      "tintRgb": [
+        0.64,
+        0.5,
+        0.34
+      ],
+      "maxTriangles": 420
+    },
+    {
+      "id": "kv-rock-2",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Amber Canyon Boulder E",
+      "position": [
+        12,
+        7.6
+      ],
+      "targetHeight": 3.6,
+      "yaw": 2,
+      "tintRgb": [
+        0.62,
+        0.48,
+        0.32
+      ],
+      "maxTriangles": 420
+    },
+    {
+      "id": "kv-lantern-1",
+      "assetId": "brass_diya_lantern",
+      "source": "polyhaven",
+      "label": "Caravan Sun-Lamp",
+      "position": [
+        -23.8,
+        -6.4
+      ],
+      "targetHeight": 1.3,
+      "yaw": 0.5,
+      "tintRgb": [
+        0.9,
+        0.68,
+        0.28
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "kv-barrel-1",
+      "assetId": "Barrel_02",
+      "source": "polyhaven",
+      "label": "Water Cistern Cask",
+      "position": [
+        50.5,
+        10.5
+      ],
+      "targetHeight": 1.15,
+      "yaw": 0.8,
+      "tintRgb": [
+        0.54,
+        0.38,
+        0.24
+      ],
+      "maxTriangles": 320
+    }
+  ],
+  "regions": [
+    {
+      "id": "high-causeway",
+      "name": "Sun-Terrace Ziggurat",
+      "subtitle": "Sandstone Choir & Caravan Keep",
+      "center": [
+        0,
+        -14
+      ],
+      "radius": 18,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "ashen-kiln",
+      "name": "Bronze Wind-Harp Basin",
+      "subtitle": "Acoustic Canyon Amphitheater",
+      "center": [
+        -25,
+        -6
+      ],
+      "radius": 18,
+      "ambientMood": "foundry"
+    },
+    {
+      "id": "ironwood-reaches",
+      "name": "Ochre Pillar Groves",
+      "subtitle": "Wind-Carved Sandstone Hoodoos",
+      "center": [
+        25,
+        -6
+      ],
+      "radius": 18,
+      "ambientMood": "ironwood"
+    },
+    {
+      "id": "salt-loom",
+      "name": "Mirage Salt Flats",
+      "subtitle": "Dry Crystalline Basin",
+      "center": [
+        24,
+        24
+      ],
+      "radius": 20,
+      "ambientMood": "coast"
+    },
+    {
+      "id": "southern-terrace",
+      "name": "Kar-Veth Caravan Gate",
+      "subtitle": "Southern Steppe Approach",
+      "center": [
+        0,
+        19
+      ],
+      "radius": 16,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "northern-watch",
+      "name": "Echo Tomb Escarpment",
+      "subtitle": "Resonance Hall Descent",
+      "center": [
+        -6,
+        -46
+      ],
+      "radius": 24,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "western-ruins",
+      "name": "Whispering Monolith Ring",
+      "subtitle": "Harmonic Stone Circle",
+      "center": [
+        -54,
+        -22
+      ],
+      "radius": 24,
+      "ambientMood": "foundry"
+    },
+    {
+      "id": "eastern-ridge",
+      "name": "Saffron Ridge Outpost",
+      "subtitle": "Highland Caravan Depot",
+      "center": [
+        54,
+        10
+      ],
+      "radius": 24,
+      "ambientMood": "ironwood"
+    }
+  ],
+  "fastTravelPoints": [
+    {
+      "regionId": "southern-terrace",
+      "name": "Kar-Veth Caravan Gate",
+      "x": 0,
+      "z": 17.5
+    },
+    {
+      "regionId": "high-causeway",
+      "name": "Sun-Terrace Ziggurat",
+      "x": 0,
+      "z": -8.5
+    },
+    {
+      "regionId": "northern-watch",
+      "name": "Resonance Hall Portal",
+      "x": -14,
+      "z": -29.5
+    },
+    {
+      "regionId": "western-ruins",
+      "name": "Whispering Monolith Ring",
+      "x": -49,
+      "z": -18
+    },
+    {
+      "regionId": "eastern-ridge",
+      "name": "Saffron Ridge Outpost",
+      "x": 48,
+      "z": 10
+    }
+  ],
+  "npcs": [
+    {
+      "id": "npc-zara",
+      "name": "Cantor Zara Al-Keth",
+      "title": "Wind-Harp Acoustic Master",
+      "guildId": "guild-causeway",
+      "guildName": "Kar-Veth Caravan Compact",
+      "regionId": "southern-terrace",
+      "portraitUrl": "/src/assets/images/ff_npc_kaelen_1795129454573.jpg",
+      "position": [
+        -3.2,
+        15.6
+      ],
+      "cloakHex": 10184235,
+      "trimHex": 15780468,
+      "greeting": "Welcome to the amber canyons, Waywright. When the trade winds blow north, Kar-Veth’s monoliths sing caravan bearings for twenty leagues—unless sand-stalkers fracture the tuning pins.",
+      "cognitiveDrive": "Preserve the acoustic wind-harp network guiding merchants safely across the dry steppe.",
+      "concealedSecret": "She discovered that the Resonance Hall beneath the Ziggurat amplifies voices across Meridian Cells.",
+      "speechCadence": "Warm, rhythmic, pauses to listen to wind gusts.",
+      "beliefs": [
+        "A road heard in a sandstorm saves more lives than a wall."
+      ],
+      "choices": [
+        {
+          "id": "zara-1",
+          "label": "How can I retune the Wind-Harp network?",
+          "reply": "Sound the Caravan Bridge Pier with your Bell-Hammer, attune the Sun-Terrace Waystone, and descend into the Resonance Hall northwest of the Ziggurat.",
+          "thought": "Wondering if the Waywright will recognize the Meridian acoustic relay inside the vault.",
+          "renownGain": 30,
+          "advancesQuestId": "quest-karveth-harps"
+        }
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": "quest-karveth-harps",
+      "title": "Chords of the Amber Monoliths",
+      "giverNpcId": "npc-zara",
+      "guildId": "guild-causeway",
+      "regionId": "high-causeway",
+      "summary": "Restore Kar-Veth’s acoustic caravan bearings by sounding the Sandstone Causeway Pier, ringing the Wind-Harp Basin Bell, and clearing Mirage Colossi.",
+      "motif": "aeolian wind-harp acoustics",
+      "renownReward": 220,
+      "status": "active",
+      "objectives": [
+        {
+          "id": "obj-kv-1",
+          "description": "Speak with Cantor Zara Al-Keth",
+          "kind": "talk-npc",
+          "targetId": "npc-zara",
+          "targetCoords": [
+            -3.2,
+            15.6
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        },
+        {
+          "id": "obj-kv-2",
+          "description": "Sound the Sandstone Causeway Pier [Bell-Hammer]",
+          "kind": "ring-bell",
+          "targetId": "int-kv-pier",
+          "targetCoords": [
+            0,
+            5.2
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        },
+        {
+          "id": "obj-kv-3",
+          "description": "Attune the Sun-Terrace Waystone",
+          "kind": "calibrate-beacon",
+          "targetId": "int-kv-waystone",
+          "targetCoords": [
+            0,
+            -10.5
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        }
+      ]
+    }
+  ],
+  "interactables": [
+    {
+      "id": "int-kv-pier",
+      "kind": "resonance-pier",
+      "name": "Sandstone Causeway Pier",
+      "promptVerb": "Sound Pier [Bell-Hammer]",
+      "regionId": "high-causeway",
+      "position": [
+        0,
+        5.2
+      ],
+      "requiredGear": "bellhammer",
+      "activated": false
+    },
+    {
+      "id": "int-kv-waystone",
+      "kind": "waystone-beacon",
+      "name": "Sun-Terrace Waystone",
+      "promptVerb": "Attune Sun-Terrace Waystone",
+      "regionId": "high-causeway",
+      "position": [
+        0,
+        -10.5
+      ],
+      "activated": false
+    },
+    {
+      "id": "int-kv-bell",
+      "kind": "forge-bell",
+      "name": "Wind-Harp Basin Bell",
+      "promptVerb": "Ring Wind-Harp Bell [Bell-Hammer]",
+      "regionId": "ashen-kiln",
+      "position": [
+        -25,
+        -8
+      ],
+      "requiredGear": "bellhammer",
+      "activated": false
+    },
+    {
+      "id": "int-kv-dungeon",
+      "kind": "dungeon-portal",
+      "name": "The Resonance Hall of Kar-Veth",
+      "promptVerb": "Descend into Resonance Hall",
+      "regionId": "northern-watch",
+      "position": [
+        -14,
+        -34
+      ],
+      "activated": false,
+      "targetRealmSlug": "karveth-echo-tomb"
+    },
+    {
+      "id": "int-kv-chest",
+      "kind": "vault-chest",
+      "name": "Saffron Caravan Strongbox",
+      "promptVerb": "Unseal Caravan Strongbox",
+      "regionId": "eastern-ridge",
+      "position": [
+        54,
+        10
+      ],
+      "activated": false
+    }
+  ],
+  "enemies": [
+    {
+      "id": "kv-e1",
+      "archetype": "stalker",
+      "name": "Dune-Shale Stalker",
+      "x": -12,
+      "z": -8,
+      "homeX": -12,
+      "homeZ": -8,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 70,
+      "maxHp": 70,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "kv-e2",
+      "archetype": "shardcaster",
+      "name": "Mirage Prism-Singer",
+      "x": 15,
+      "z": -9,
+      "homeX": 15,
+      "homeZ": -9,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 64,
+      "maxHp": 64,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 12,
+      "moveSpeed": 4.5,
+      "aggroRadius": 17,
+      "preferredRange": 9.5,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "kv-e3",
+      "archetype": "colossus",
+      "name": "Sandstone Choir Colossus",
+      "x": 22,
+      "z": 16,
+      "homeX": 22,
+      "homeZ": 16,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 195,
+      "maxHp": 195,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 26,
+      "attackRadius": 4.4,
+      "moveSpeed": 3.3,
+      "aggroRadius": 20,
+      "preferredRange": 3.6,
+      "telegraphDuration": 0.95,
+      "hasAttackToken": false
+    },
+    {
+      "id": "kv-e4",
+      "archetype": "stalker",
+      "name": "Canyon Wind-Runner",
+      "x": -48,
+      "z": -20,
+      "homeX": -48,
+      "homeZ": -20,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 74,
+      "maxHp": 74,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "kv-e5",
+      "archetype": "shardcaster",
+      "name": "Steppe Glass-Caster",
+      "x": 46,
+      "z": 8,
+      "homeX": 46,
+      "homeZ": 8,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 68,
+      "maxHp": 68,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 12,
+      "moveSpeed": 4.5,
+      "aggroRadius": 17,
+      "preferredRange": 9.5,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    }
+  ],
+  "prismCustody": {
+    "worldGlbKappa": "sha256:fa50cabb220285a73ac2c86e0b86c758c59340981629fc64cb024aec3b35871f",
+    "vdntKappa": "sha256:6594313b15425d44e94c40b83de345bacf3d7852a186de53c860befdcd1f59de",
+    "skyKappa": "sha256:b6b8ed9b069f5d9e46547d87aa7c6c50aecde988e5e23307cc0887e18a298543",
+    "triangles": 24623,
+    "vertices": 42723,
+    "glbBytes": 2569704,
+    "atlasTileCount": 4,
+    "importedCatalogModelsCount": 11,
+    "importedCatalogAssets": [
+      "gothic_statue",
+      "WoodenTable_02",
+      "old_military_crate",
+      "brass_vase_01",
+      "antique_ceramic_vase_01",
+      "antique_estoc",
+      "boulder_01",
+      "brass_diya_lantern",
+      "Barrel_02"
+    ],
+    "projectModelsRegistered": 11,
+    "cognitiveKnowledgeIngested": 10,
+    "operatorAdmitted": true,
+    "stitchRecoveryVerified": true,
+    "stitchShardSizes": [
+      1157,
+      1157,
+      1157
+    ],
+    "observerPartsHydrated": 8
+  }
+}

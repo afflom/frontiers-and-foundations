@@ -1,0 +1,804 @@
+{
+  "id": "realm-borealis",
+  "slug": "borealis",
+  "name": "The Frostglass Bastion of Borealis",
+  "subtitle": "Cell (-1, 0, -1) · Alpine Glacial Spires & Aurora Watch",
+  "cell": [
+    -1,
+    0,
+    -1
+  ],
+  "theme": "glacial-spire",
+  "seed": 9103,
+  "worldHalfExtent": 112,
+  "summary": "High-altitude snowfields crowned by crystalline ice-spires, dark slate fortresses under starry aurora skies, alpine relay watchtowers, and the Frostglass Choir Crypt.",
+  "skyAssetId": "blaubeuren_night",
+  "skyUrl": "/verdant/realms/borealis/sky.jpg",
+  "glbUrl": "/verdant/realms/borealis/world.glb",
+  "vdntUrl": "/verdant/realms/borealis/world.vdnt",
+  "ambientMood": "causeway",
+  "skyFallbackRgb": [
+    0.16,
+    0.24,
+    0.38
+  ],
+  "fogRgb": [
+    0.28,
+    0.38,
+    0.5
+  ],
+  "spawnPoint": [
+    0,
+    21
+  ],
+  "soundtrack": {
+    "id": "score-borealis",
+    "title": "Aurora Canticle of Borealis",
+    "composerNote": "Crystalline alpine Aeolian-Lydian meditation: shimmering high modal glass-bells, spacious legato strings, and solemn distant horns.",
+    "realmSlug": "borealis",
+    "isDungeon": false,
+    "mode": "aeolian",
+    "rootMidi": 57,
+    "bpm": 78,
+    "chordProgression": [
+      0,
+      5,
+      2,
+      6,
+      3,
+      0,
+      4,
+      0
+    ],
+    "melodyMotif": [
+      {
+        "degree": 7,
+        "lengthSteps": 3,
+        "velocity": 0.74
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 1,
+        "velocity": 0.66
+      },
+      {
+        "degree": 11,
+        "lengthSteps": 4,
+        "velocity": 0.82
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.7
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 2,
+        "velocity": 0.72
+      },
+      {
+        "degree": 6,
+        "lengthSteps": 2,
+        "velocity": 0.64
+      },
+      {
+        "degree": null,
+        "lengthSteps": 2,
+        "velocity": 0
+      }
+    ],
+    "harpArpeggio": [
+      0,
+      4,
+      7,
+      11,
+      9,
+      7,
+      4,
+      null,
+      2,
+      6,
+      9,
+      11,
+      9,
+      6,
+      4,
+      null
+    ],
+    "instrumentation": {
+      "harp": 0.86,
+      "strings": 0.9,
+      "flute": 0.72,
+      "horn": 0.68,
+      "percussion": 0.28,
+      "modalBells": 0.92
+    },
+    "foleyProfile": "glacial-aurora",
+    "reverbDecaySec": 4.1,
+    "workletTuning": {
+      "fundamentalHz": 220,
+      "rt60Ms": 2900,
+      "modeNumers": [
+        100,
+        256,
+        512,
+        845
+      ],
+      "modeDenom": 100
+    }
+  },
+  "dungeonEntrances": [
+    {
+      "id": "ent-borealis-crypt",
+      "dungeonSlug": "borealis-frostglass-crypt",
+      "name": "The Frostglass Choir Crypt",
+      "subtitle": "Tier IV Glacial Sanctum · Beneath Aurora Citadel",
+      "position": [
+        -14,
+        -34
+      ],
+      "tier": 4,
+      "style": "glacial-crypt"
+    }
+  ],
+  "materials": {
+    "terrain": "snow_02",
+    "masonry": "castle_wall_slates",
+    "road": "asphalt_snow",
+    "timber": "dark_wooden_planks"
+  },
+  "terrainProfile": {
+    "macroAmp": 3.1,
+    "macroFreq": 0.048,
+    "gorgeDepth": 5.2,
+    "gorgeZ": 5,
+    "gorgeWaveAmp": 2.8,
+    "citadelLift": 4.5,
+    "citadelZ": -18,
+    "coastDip": 2.6,
+    "rimStart": 92,
+    "rimHeight": 3.8,
+    "waterLevel": -0.95,
+    "hasBridge": true,
+    "bridgeDeckY": 1.65,
+    "bridgeZMin": -3.4,
+    "bridgeZMax": 13.4,
+    "bridgeHalfWidth": 2.85
+  },
+  "importedCatalogProps": [
+    {
+      "id": "bor-statue-1",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Frostglass Sentinel W",
+      "position": [
+        -5.6,
+        -10.4
+      ],
+      "targetHeight": 4,
+      "yaw": 0.22,
+      "tintRgb": [
+        0.68,
+        0.8,
+        0.92
+      ],
+      "maxTriangles": 500
+    },
+    {
+      "id": "bor-statue-2",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Frostglass Sentinel E",
+      "position": [
+        5.6,
+        -10.4
+      ],
+      "targetHeight": 4,
+      "yaw": -0.22,
+      "tintRgb": [
+        0.68,
+        0.8,
+        0.92
+      ],
+      "maxTriangles": 500
+    },
+    {
+      "id": "bor-lantern-1",
+      "assetId": "Lantern_01",
+      "source": "polyhaven",
+      "label": "Aurora Beacon Lamp W",
+      "position": [
+        -4.4,
+        14.2
+      ],
+      "targetHeight": 1.35,
+      "yaw": 0.1,
+      "tintRgb": [
+        0.56,
+        0.88,
+        0.98
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "bor-lantern-2",
+      "assetId": "Lantern_01",
+      "source": "polyhaven",
+      "label": "Aurora Beacon Lamp E",
+      "position": [
+        4.4,
+        14.2
+      ],
+      "targetHeight": 1.35,
+      "yaw": 1.6,
+      "tintRgb": [
+        0.56,
+        0.88,
+        0.98
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "bor-rock-1",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Glacial Slate Outcrop W",
+      "position": [
+        -10.2,
+        8.8
+      ],
+      "targetHeight": 3.6,
+      "yaw": 0.5,
+      "tintRgb": [
+        0.56,
+        0.66,
+        0.76
+      ],
+      "maxTriangles": 440
+    },
+    {
+      "id": "bor-rock-2",
+      "assetId": "moon_rock_01",
+      "source": "polyhaven",
+      "label": "Glacial Slate Outcrop E",
+      "position": [
+        10.8,
+        8.2
+      ],
+      "targetHeight": 3.8,
+      "yaw": 1.8,
+      "tintRgb": [
+        0.58,
+        0.68,
+        0.78
+      ],
+      "maxTriangles": 440
+    },
+    {
+      "id": "bor-shield-1",
+      "assetId": "kite_shield",
+      "source": "polyhaven",
+      "label": "Borealis Bastion Crest",
+      "position": [
+        0,
+        -13
+      ],
+      "yOffset": 1.8,
+      "targetHeight": 1.5,
+      "yaw": 0,
+      "tintRgb": [
+        0.58,
+        0.82,
+        0.94
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "bor-crate-1",
+      "assetId": "old_military_crate",
+      "source": "polyhaven",
+      "label": "Alpine Expedition Chest",
+      "position": [
+        5.8,
+        16.2
+      ],
+      "targetHeight": 1.05,
+      "yaw": 0.4,
+      "tintRgb": [
+        0.46,
+        0.52,
+        0.6
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "bor-barrel-1",
+      "assetId": "Barrel_01",
+      "source": "polyhaven",
+      "label": "Glacier Oil Cask",
+      "position": [
+        -5.2,
+        17.5
+      ],
+      "targetHeight": 1.1,
+      "yaw": 1.2,
+      "tintRgb": [
+        0.44,
+        0.46,
+        0.52
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "bor-estoc-1",
+      "assetId": "antique_estoc",
+      "source": "polyhaven",
+      "label": "Rime-Forged Obelisk Blade",
+      "position": [
+        0,
+        -56
+      ],
+      "yOffset": 1.2,
+      "targetHeight": 2.8,
+      "yaw": 0.2,
+      "tintRgb": [
+        0.76,
+        0.9,
+        0.98
+      ],
+      "maxTriangles": 360
+    },
+    {
+      "id": "bor-west-rock",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Frost Ring Monolith",
+      "position": [
+        -52,
+        -20
+      ],
+      "targetHeight": 4.1,
+      "yaw": 1,
+      "tintRgb": [
+        0.52,
+        0.64,
+        0.76
+      ],
+      "maxTriangles": 420
+    }
+  ],
+  "regions": [
+    {
+      "id": "high-causeway",
+      "name": "Aurora Spire Bastion",
+      "subtitle": "Frostglass Citadel & Starry Keep",
+      "center": [
+        0,
+        -14
+      ],
+      "radius": 18,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "ashen-kiln",
+      "name": "Rime-Bell Hearth",
+      "subtitle": "Thermal Meltwater Foundry",
+      "center": [
+        -25,
+        -6
+      ],
+      "radius": 18,
+      "ambientMood": "foundry"
+    },
+    {
+      "id": "ironwood-reaches",
+      "name": "Crystal Pine Reaches",
+      "subtitle": "Frost-Rimed Timber Ridge",
+      "center": [
+        25,
+        -6
+      ],
+      "radius": 18,
+      "ambientMood": "ironwood"
+    },
+    {
+      "id": "salt-loom",
+      "name": "Frozen Fjord Shelf",
+      "subtitle": "Glacial Ice-Stacks & Pier",
+      "center": [
+        24,
+        24
+      ],
+      "radius": 20,
+      "ambientMood": "coast"
+    },
+    {
+      "id": "southern-terrace",
+      "name": "Borealis Snow-Gate",
+      "subtitle": "High-Altitude Meridian Pass",
+      "center": [
+        0,
+        19
+      ],
+      "radius": 16,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "northern-watch",
+      "name": "Frostglass Crypt Approach",
+      "subtitle": "Glacial Choir Sanctum Entry",
+      "center": [
+        -6,
+        -46
+      ],
+      "radius": 24,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "western-ruins",
+      "name": "Star-Dial Monoliths",
+      "subtitle": "Ancient Alpine Stone Circle",
+      "center": [
+        -54,
+        -22
+      ],
+      "radius": 24,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "eastern-ridge",
+      "name": "Glacier Watch Camp",
+      "subtitle": "Northern Survey Outpost",
+      "center": [
+        54,
+        10
+      ],
+      "radius": 24,
+      "ambientMood": "ironwood"
+    }
+  ],
+  "fastTravelPoints": [
+    {
+      "regionId": "southern-terrace",
+      "name": "Borealis Snow-Gate",
+      "x": 0,
+      "z": 17.5
+    },
+    {
+      "regionId": "high-causeway",
+      "name": "Aurora Spire Bastion",
+      "x": 0,
+      "z": -8.5
+    },
+    {
+      "regionId": "northern-watch",
+      "name": "Frostglass Choir Crypt",
+      "x": -14,
+      "z": -29.5
+    },
+    {
+      "regionId": "western-ruins",
+      "name": "Star-Dial Monoliths",
+      "x": -49,
+      "z": -18
+    },
+    {
+      "regionId": "eastern-ridge",
+      "name": "Glacier Watch Camp",
+      "x": 48,
+      "z": 10
+    }
+  ],
+  "npcs": [
+    {
+      "id": "npc-astrid",
+      "name": "Ice-Warden Astrid Sol",
+      "title": "Borealis Glaciologist",
+      "guildId": "guild-tideloom",
+      "guildName": "Borealis Spire Watch",
+      "regionId": "southern-terrace",
+      "portraitUrl": "/src/assets/images/ff_npc_orenna_1795129454002.jpg",
+      "position": [
+        -3.2,
+        15.6
+      ],
+      "cloakHex": 2903662,
+      "trimHex": 10279157,
+      "greeting": "Breathe slow in the thin air, Waywright. The glacier shifted three spans under the Aurora Bastion—opening the sealed doors of the Frostglass Choir Crypt.",
+      "cognitiveDrive": "Stabilize Borealis’s glacial foundations using acoustic resonance before spring thaw.",
+      "concealedSecret": "She recorded a harmonic echo beneath the ice sheet matching Vaelmor’s 174 Hz bronze bells.",
+      "speechCadence": "Measured, crystal-clear, observant of barometric pressure and ice acoustics.",
+      "beliefs": [
+        "Ice remembers every footstep and every storm for a thousand winters."
+      ],
+      "choices": [
+        {
+          "id": "astrid-1",
+          "label": "How do we stabilize the Aurora Spire foundations?",
+          "reply": "Strike the Ice-Arch Bridge Pier with your Bell-Hammer, attune the Aurora Waystone, and venture into the Frostglass Choir Crypt northwest of the keep.",
+          "thought": "Hoping the Waywright can silence the Rime Colossus stirring inside the crypt.",
+          "renownGain": 35,
+          "advancesQuestId": "quest-borealis-spire"
+        }
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": "quest-borealis-spire",
+      "title": "Harmonics of the Frostglass Spire",
+      "giverNpcId": "npc-astrid",
+      "guildId": "guild-tideloom",
+      "regionId": "high-causeway",
+      "summary": "Sound Borealis’s glacial stress pier, attune the Aurora Spire Waystone, and vanquish the Rime-Bound Colossus prowling the frozen fjord.",
+      "motif": "glacial ice acoustics",
+      "renownReward": 240,
+      "status": "active",
+      "objectives": [
+        {
+          "id": "obj-bor-1",
+          "description": "Speak with Ice-Warden Astrid Sol",
+          "kind": "talk-npc",
+          "targetId": "npc-astrid",
+          "targetCoords": [
+            -3.2,
+            15.6
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        },
+        {
+          "id": "obj-bor-2",
+          "description": "Sound the Glacial Causeway Pier [Bell-Hammer]",
+          "kind": "ring-bell",
+          "targetId": "int-bor-pier",
+          "targetCoords": [
+            0,
+            5.2
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        },
+        {
+          "id": "obj-bor-3",
+          "description": "Vanquish the Rime-Bound Colossus",
+          "kind": "defeat-archetype",
+          "targetId": "colossus",
+          "targetCoords": [
+            22,
+            16
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        }
+      ]
+    }
+  ],
+  "interactables": [
+    {
+      "id": "int-bor-pier",
+      "kind": "resonance-pier",
+      "name": "Glacial Causeway Pier",
+      "promptVerb": "Sound Pier [Bell-Hammer]",
+      "regionId": "high-causeway",
+      "position": [
+        0,
+        5.2
+      ],
+      "requiredGear": "bellhammer",
+      "activated": false
+    },
+    {
+      "id": "int-bor-waystone",
+      "kind": "waystone-beacon",
+      "name": "Aurora Spire Waystone",
+      "promptVerb": "Attune Aurora Waystone",
+      "regionId": "high-causeway",
+      "position": [
+        0,
+        -10.5
+      ],
+      "activated": false
+    },
+    {
+      "id": "int-bor-bell",
+      "kind": "forge-bell",
+      "name": "Rime-Bell Hearth Chime",
+      "promptVerb": "Ring Rime-Bell [Bell-Hammer]",
+      "regionId": "ashen-kiln",
+      "position": [
+        -25,
+        -8
+      ],
+      "requiredGear": "bellhammer",
+      "activated": false
+    },
+    {
+      "id": "int-bor-dungeon",
+      "kind": "dungeon-portal",
+      "name": "The Frostglass Choir Crypt",
+      "promptVerb": "Descend into Frostglass Choir Crypt",
+      "regionId": "northern-watch",
+      "position": [
+        -14,
+        -34
+      ],
+      "activated": false,
+      "targetRealmSlug": "borealis-frostglass-crypt"
+    },
+    {
+      "id": "int-bor-chest",
+      "kind": "vault-chest",
+      "name": "Star-Dial Relic Coffer",
+      "promptVerb": "Unseal Relic Coffer",
+      "regionId": "western-ruins",
+      "position": [
+        -54,
+        -22
+      ],
+      "activated": false
+    }
+  ],
+  "enemies": [
+    {
+      "id": "bor-e1",
+      "archetype": "stalker",
+      "name": "Rime-Fang Stalker",
+      "x": -12,
+      "z": -8,
+      "homeX": -12,
+      "homeZ": -8,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 74,
+      "maxHp": 74,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "bor-e2",
+      "archetype": "shardcaster",
+      "name": "Frostglass Prism-Caster",
+      "x": 14,
+      "z": -9,
+      "homeX": 14,
+      "homeZ": -9,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 68,
+      "maxHp": 68,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 12,
+      "moveSpeed": 4.5,
+      "aggroRadius": 17,
+      "preferredRange": 9.5,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "bor-e3",
+      "archetype": "colossus",
+      "name": "Rime-Bound Glacier Colossus",
+      "x": 22,
+      "z": 16,
+      "homeX": 22,
+      "homeZ": 16,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 210,
+      "maxHp": 210,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 26,
+      "attackRadius": 4.4,
+      "moveSpeed": 3.3,
+      "aggroRadius": 20,
+      "preferredRange": 3.6,
+      "telegraphDuration": 0.95,
+      "hasAttackToken": false
+    },
+    {
+      "id": "bor-e4",
+      "archetype": "stalker",
+      "name": "Fjord Stalker",
+      "x": -46,
+      "z": -20,
+      "homeX": -46,
+      "homeZ": -20,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 76,
+      "maxHp": 76,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "bor-e5",
+      "archetype": "shardcaster",
+      "name": "Aurora Refraction Sentinel",
+      "x": 48,
+      "z": 8,
+      "homeX": 48,
+      "homeZ": 8,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 72,
+      "maxHp": 72,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 12,
+      "moveSpeed": 4.5,
+      "aggroRadius": 17,
+      "preferredRange": 9.5,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    }
+  ],
+  "prismCustody": {
+    "worldGlbKappa": "sha256:b7319905ff6ec65972886ad4855c3ce74efd07e0bc4073881648aadac61b48f3",
+    "vdntKappa": "sha256:a394e95595b7ba11d7629d538680aa8bd0529703826da2cdabe9e772fc7a6e56",
+    "skyKappa": "sha256:e3e66cf54f9b64916fe6d2f870e79b0ed6a3038f58880736bb79784cb023348e",
+    "triangles": 23896,
+    "vertices": 42324,
+    "glbBytes": 2539824,
+    "atlasTileCount": 4,
+    "importedCatalogModelsCount": 11,
+    "importedCatalogAssets": [
+      "gothic_statue",
+      "Lantern_01",
+      "boulder_01",
+      "moon_rock_01",
+      "kite_shield",
+      "old_military_crate",
+      "Barrel_01",
+      "antique_estoc"
+    ],
+    "projectModelsRegistered": 10,
+    "cognitiveKnowledgeIngested": 10,
+    "operatorAdmitted": true,
+    "stitchRecoveryVerified": true,
+    "stitchShardSizes": [
+      1159,
+      1159,
+      1159
+    ],
+    "observerPartsHydrated": 8
+  }
+}

@@ -1,0 +1,809 @@
+{
+  "id": "realm-glasswater",
+  "slug": "glasswater",
+  "name": "The Pelagic Spires of Glasswater",
+  "subtitle": "Cell (0, 0, -1) · Tidal Archipelago & Limestone Watchtowers",
+  "cell": [
+    0,
+    0,
+    -1
+  ],
+  "theme": "pelagic-spires",
+  "seed": 5519,
+  "worldHalfExtent": 112,
+  "summary": "Sun-bleached limestone sea-arches and weathered cedar piers overlooking crystalline tidal straits, distant shoal watchtowers, and the Drowned Sextant Grotto.",
+  "skyAssetId": "aristea_wreck_puresky",
+  "skyUrl": "/verdant/realms/glasswater/sky.jpg",
+  "glbUrl": "/verdant/realms/glasswater/world.glb",
+  "vdntUrl": "/verdant/realms/glasswater/world.vdnt",
+  "ambientMood": "coast",
+  "skyFallbackRgb": [
+    0.4,
+    0.56,
+    0.68
+  ],
+  "fogRgb": [
+    0.64,
+    0.7,
+    0.74
+  ],
+  "spawnPoint": [
+    0,
+    20.5
+  ],
+  "soundtrack": {
+    "id": "score-glasswater",
+    "title": "Sextant Winds of Glasswater",
+    "composerNote": "Mixolydian maritime anthem: rolling harp waves, soaring wooden whistle lines, and open-fifth sea-horn calls.",
+    "realmSlug": "glasswater",
+    "isDungeon": false,
+    "mode": "mixolydian",
+    "rootMidi": 55,
+    "bpm": 94,
+    "chordProgression": [
+      0,
+      6,
+      3,
+      0,
+      0,
+      4,
+      6,
+      3
+    ],
+    "melodyMotif": [
+      {
+        "degree": 7,
+        "lengthSteps": 2,
+        "velocity": 0.78
+      },
+      {
+        "degree": 11,
+        "lengthSteps": 2,
+        "velocity": 0.84
+      },
+      {
+        "degree": 10,
+        "lengthSteps": 2,
+        "velocity": 0.76
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.8
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 3,
+        "velocity": 0.86
+      },
+      {
+        "degree": 6,
+        "lengthSteps": 1,
+        "velocity": 0.65
+      },
+      {
+        "degree": 4,
+        "lengthSteps": 2,
+        "velocity": 0.72
+      },
+      {
+        "degree": null,
+        "lengthSteps": 2,
+        "velocity": 0
+      }
+    ],
+    "harpArpeggio": [
+      0,
+      4,
+      7,
+      9,
+      10,
+      9,
+      7,
+      4,
+      0,
+      3,
+      6,
+      9,
+      7,
+      4,
+      2,
+      4
+    ],
+    "instrumentation": {
+      "harp": 0.88,
+      "strings": 0.72,
+      "flute": 0.92,
+      "horn": 0.66,
+      "percussion": 0.54,
+      "modalBells": 0.48
+    },
+    "foleyProfile": "ocean-surf",
+    "reverbDecaySec": 3.3,
+    "workletTuning": {
+      "fundamentalHz": 196,
+      "rt60Ms": 2200,
+      "modeNumers": [
+        100,
+        265,
+        510,
+        825
+      ],
+      "modeDenom": 100
+    }
+  },
+  "dungeonEntrances": [
+    {
+      "id": "ent-glasswater-grotto",
+      "dungeonSlug": "glasswater-abyssal-grotto",
+      "name": "The Drowned Sextant Grotto",
+      "subtitle": "Tier II Tidal Sea-Vault · Beneath Lighthouse Keep",
+      "position": [
+        -14,
+        -34
+      ],
+      "tier": 2,
+      "style": "sunken-cistern"
+    }
+  ],
+  "materials": {
+    "terrain": "coast_sand_rocks_02",
+    "masonry": "castle_brick_01",
+    "road": "cobblestone_floor_01",
+    "timber": "brown_planks_03"
+  },
+  "terrainProfile": {
+    "macroAmp": 2.1,
+    "macroFreq": 0.046,
+    "gorgeDepth": 4.8,
+    "gorgeZ": 5,
+    "gorgeWaveAmp": 3.4,
+    "citadelLift": 4,
+    "citadelZ": -18,
+    "coastDip": 3.4,
+    "rimStart": 94,
+    "rimHeight": 2.4,
+    "waterLevel": -0.55,
+    "hasBridge": true,
+    "bridgeDeckY": 1.55,
+    "bridgeZMin": -3.4,
+    "bridgeZMax": 13.4,
+    "bridgeHalfWidth": 2.85
+  },
+  "importedCatalogProps": [
+    {
+      "id": "gw-barrel-1",
+      "assetId": "Barrel_01",
+      "source": "polyhaven",
+      "label": "Salt-Brine Cask",
+      "position": [
+        -5.2,
+        17.4
+      ],
+      "targetHeight": 1.1,
+      "yaw": 0.5,
+      "tintRgb": [
+        0.58,
+        0.44,
+        0.28
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "gw-barrel-2",
+      "assetId": "Barrel_02",
+      "source": "polyhaven",
+      "label": "Tar Pitch Cask",
+      "position": [
+        5.4,
+        16.8
+      ],
+      "targetHeight": 1.1,
+      "yaw": 2,
+      "tintRgb": [
+        0.46,
+        0.36,
+        0.26
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "gw-table-1",
+      "assetId": "WoodenTable_02",
+      "source": "polyhaven",
+      "label": "Chart-Maker’s Table",
+      "position": [
+        -6.4,
+        16.4
+      ],
+      "targetHeight": 1,
+      "yaw": 0,
+      "tintRgb": [
+        0.56,
+        0.45,
+        0.32
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "gw-lantern-1",
+      "assetId": "Lantern_01",
+      "source": "polyhaven",
+      "label": "Harbor Signal Lamp W",
+      "position": [
+        -4.4,
+        14
+      ],
+      "targetHeight": 1.25,
+      "yaw": 0,
+      "tintRgb": [
+        0.86,
+        0.72,
+        0.34
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "gw-lantern-2",
+      "assetId": "Lantern_01",
+      "source": "polyhaven",
+      "label": "Harbor Signal Lamp E",
+      "position": [
+        4.4,
+        14
+      ],
+      "targetHeight": 1.25,
+      "yaw": 0,
+      "tintRgb": [
+        0.86,
+        0.72,
+        0.34
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "gw-shield-1",
+      "assetId": "kite_shield",
+      "source": "polyhaven",
+      "label": "Tide-Loom Crest",
+      "position": [
+        0,
+        -13
+      ],
+      "yOffset": 1.8,
+      "targetHeight": 1.5,
+      "yaw": 0,
+      "tintRgb": [
+        0.34,
+        0.68,
+        0.74
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "gw-rock-1",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Tidal Headland Boulder",
+      "position": [
+        14.5,
+        16.5
+      ],
+      "targetHeight": 3.4,
+      "yaw": 1.2,
+      "tintRgb": [
+        0.48,
+        0.49,
+        0.47
+      ],
+      "maxTriangles": 420
+    },
+    {
+      "id": "gw-rock-2",
+      "assetId": "moon_rock_01",
+      "source": "polyhaven",
+      "label": "Shoal Sea-Rock",
+      "position": [
+        -14.2,
+        13.5
+      ],
+      "targetHeight": 3,
+      "yaw": 2.4,
+      "tintRgb": [
+        0.45,
+        0.47,
+        0.48
+      ],
+      "maxTriangles": 420
+    },
+    {
+      "id": "gw-pot-1",
+      "assetId": "antique_ceramic_vase_01",
+      "source": "polyhaven",
+      "label": "Sea-Salt Amphora",
+      "position": [
+        19,
+        21.5
+      ],
+      "targetHeight": 1.25,
+      "yaw": 0.9,
+      "tintRgb": [
+        0.72,
+        0.64,
+        0.52
+      ],
+      "maxTriangles": 300
+    },
+    {
+      "id": "gw-west-rock",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Breakwater Stack",
+      "position": [
+        -52,
+        -20
+      ],
+      "targetHeight": 4,
+      "yaw": 1.1,
+      "tintRgb": [
+        0.44,
+        0.48,
+        0.5
+      ],
+      "maxTriangles": 400
+    },
+    {
+      "id": "gw-east-crate",
+      "assetId": "old_military_crate",
+      "source": "polyhaven",
+      "label": "Navigator Supply Crate",
+      "position": [
+        51,
+        10
+      ],
+      "targetHeight": 1.1,
+      "yaw": 0.6,
+      "tintRgb": [
+        0.54,
+        0.48,
+        0.38
+      ],
+      "maxTriangles": 320
+    }
+  ],
+  "regions": [
+    {
+      "id": "high-causeway",
+      "name": "Glasswater Lighthouse Keep",
+      "subtitle": "Northern Triangulation Spire",
+      "center": [
+        0,
+        -14
+      ],
+      "radius": 18,
+      "ambientMood": "coast"
+    },
+    {
+      "id": "ashen-kiln",
+      "name": "West Breakwater Shoals",
+      "subtitle": "Resonant Tide Bells",
+      "center": [
+        -25,
+        -6
+      ],
+      "radius": 18,
+      "ambientMood": "coast"
+    },
+    {
+      "id": "ironwood-reaches",
+      "name": "Driftwood Promontory",
+      "subtitle": "Sea-Cedar Groves",
+      "center": [
+        25,
+        -6
+      ],
+      "radius": 18,
+      "ambientMood": "coast"
+    },
+    {
+      "id": "salt-loom",
+      "name": "Glasswater Deep Wharf",
+      "subtitle": "Pelagic Timber Pier",
+      "center": [
+        24,
+        24
+      ],
+      "radius": 20,
+      "ambientMood": "coast"
+    },
+    {
+      "id": "southern-terrace",
+      "name": "Tidal Causeway Quay",
+      "subtitle": "Northern Meridian Strait",
+      "center": [
+        0,
+        19
+      ],
+      "radius": 16,
+      "ambientMood": "coast"
+    },
+    {
+      "id": "northern-watch",
+      "name": "Abyssal Grotto Headland",
+      "subtitle": "Drowned Sextant Vault Entry",
+      "center": [
+        -6,
+        -46
+      ],
+      "radius": 24,
+      "ambientMood": "coast"
+    },
+    {
+      "id": "western-ruins",
+      "name": "Sunken Beacon Ring",
+      "subtitle": "Old Shoal Standing Stones",
+      "center": [
+        -54,
+        -22
+      ],
+      "radius": 24,
+      "ambientMood": "coast"
+    },
+    {
+      "id": "eastern-ridge",
+      "name": "East Strait Watch",
+      "subtitle": "Pelagic Signal Camp",
+      "center": [
+        54,
+        10
+      ],
+      "radius": 24,
+      "ambientMood": "coast"
+    }
+  ],
+  "fastTravelPoints": [
+    {
+      "regionId": "southern-terrace",
+      "name": "Tidal Causeway Quay",
+      "x": 0,
+      "z": 17.5
+    },
+    {
+      "regionId": "high-causeway",
+      "name": "Glasswater Lighthouse Keep",
+      "x": 0,
+      "z": -8.5
+    },
+    {
+      "regionId": "northern-watch",
+      "name": "Drowned Sextant Grotto",
+      "x": -14,
+      "z": -29.5
+    },
+    {
+      "regionId": "salt-loom",
+      "name": "Glasswater Deep Wharf",
+      "x": 19,
+      "z": 19.5
+    },
+    {
+      "regionId": "western-ruins",
+      "name": "Sunken Beacon Ring",
+      "x": -49,
+      "z": -18
+    }
+  ],
+  "npcs": [
+    {
+      "id": "npc-soren",
+      "name": "Harbor-Sextant Soren Vane",
+      "title": "Pelagic Shoal Navigator",
+      "guildId": "guild-tideloom",
+      "guildName": "Tide-Loom Navigators",
+      "regionId": "southern-terrace",
+      "portraitUrl": "/src/assets/images/ff_npc_seraia_1795130893399.jpg",
+      "position": [
+        -3.2,
+        15.5
+      ],
+      "cloakHex": 2709362,
+      "trimHex": 14859629,
+      "greeting": "Clear horizon, Waywright. The spring shoals shifted forty fathoms west—and the low tide uncovered the gate to the Drowned Sextant Grotto.",
+      "cognitiveDrive": "Keep the Glasswater straits safely charted through shifting obsidian tides.",
+      "concealedSecret": "He charted a submerged stone causeway linking Glasswater directly to Borealis.",
+      "speechCadence": "Breezy, exact, speaks in bearings, knots, and tide tables.",
+      "beliefs": [
+        "Charts are living promises, not dead ink."
+      ],
+      "choices": [
+        {
+          "id": "soren-1",
+          "label": "Where are the triangulation beacons failing?",
+          "reply": "Attune the Lighthouse Keep Waystone across the causeway and sound the Breakwater Tide-Bell—then inspect the Drowned Sextant Grotto northwest.",
+          "thought": "Keeping his sounding chart for the submerged causeway folded beneath his sleeve.",
+          "renownGain": 25,
+          "advancesQuestId": "quest-gw-shoals"
+        }
+      ]
+    }
+  ],
+  "quests": [
+    {
+      "id": "quest-gw-shoals",
+      "title": "Bearings of the Glasswater Strait",
+      "giverNpcId": "npc-soren",
+      "guildId": "guild-tideloom",
+      "regionId": "high-causeway",
+      "summary": "Recalibrate Glasswater’s coastal navigation network by attuning the Lighthouse Waystone and sounding the West Breakwater Tide-Bell.",
+      "motif": "pelagic tide triangulation",
+      "renownReward": 175,
+      "status": "active",
+      "objectives": [
+        {
+          "id": "obj-gw-1",
+          "description": "Speak with Harbor-Sextant Soren Vane",
+          "kind": "talk-npc",
+          "targetId": "npc-soren",
+          "targetCoords": [
+            -3.2,
+            15.5
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        },
+        {
+          "id": "obj-gw-2",
+          "description": "Attune the Lighthouse Keep Waystone",
+          "kind": "calibrate-beacon",
+          "targetId": "int-gw-waystone",
+          "targetCoords": [
+            0,
+            -10.5
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        },
+        {
+          "id": "obj-gw-3",
+          "description": "Ring the West Breakwater Bell [Bell-Hammer]",
+          "kind": "ring-bell",
+          "targetId": "int-gw-bell",
+          "targetCoords": [
+            -25,
+            -8
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        }
+      ]
+    }
+  ],
+  "interactables": [
+    {
+      "id": "int-gw-pier",
+      "kind": "resonance-pier",
+      "name": "Strait Tide-Arch Pier",
+      "promptVerb": "Sound Tide-Arch [Bell-Hammer]",
+      "regionId": "high-causeway",
+      "position": [
+        0,
+        5.2
+      ],
+      "requiredGear": "bellhammer",
+      "activated": false
+    },
+    {
+      "id": "int-gw-waystone",
+      "kind": "waystone-beacon",
+      "name": "Lighthouse Keep Waystone",
+      "promptVerb": "Attune Lighthouse Waystone",
+      "regionId": "high-causeway",
+      "position": [
+        0,
+        -10.5
+      ],
+      "activated": false
+    },
+    {
+      "id": "int-gw-bell",
+      "kind": "forge-bell",
+      "name": "West Breakwater Tide-Bell",
+      "promptVerb": "Ring Breakwater Bell [Bell-Hammer]",
+      "regionId": "ashen-kiln",
+      "position": [
+        -25,
+        -8
+      ],
+      "requiredGear": "bellhammer",
+      "activated": false
+    },
+    {
+      "id": "int-gw-dungeon",
+      "kind": "dungeon-portal",
+      "name": "The Drowned Sextant Grotto",
+      "promptVerb": "Descend into Drowned Sextant Grotto",
+      "regionId": "northern-watch",
+      "position": [
+        -14,
+        -34
+      ],
+      "activated": false,
+      "targetRealmSlug": "glasswater-abyssal-grotto"
+    },
+    {
+      "id": "int-gw-chest",
+      "kind": "vault-chest",
+      "name": "Shoal Navigator Strongbox",
+      "promptVerb": "Unseal Navigator Strongbox",
+      "regionId": "eastern-ridge",
+      "position": [
+        54,
+        10
+      ],
+      "activated": false
+    }
+  ],
+  "enemies": [
+    {
+      "id": "gw-e1",
+      "archetype": "stalker",
+      "name": "Reef-Scale Stalker",
+      "x": 12,
+      "z": -8,
+      "homeX": 12,
+      "homeZ": -8,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 60,
+      "maxHp": 60,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "gw-e2",
+      "archetype": "shardcaster",
+      "name": "Salt-Prism Caster",
+      "x": -15,
+      "z": -7,
+      "homeX": -15,
+      "homeZ": -7,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 58,
+      "maxHp": 58,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 12,
+      "moveSpeed": 4.5,
+      "aggroRadius": 17,
+      "preferredRange": 9.5,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "gw-e3",
+      "archetype": "colossus",
+      "name": "Shoal Basalt Guardian",
+      "x": 20,
+      "z": 16,
+      "homeX": 20,
+      "homeZ": 16,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 170,
+      "maxHp": 170,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 26,
+      "attackRadius": 4.4,
+      "moveSpeed": 3.3,
+      "aggroRadius": 20,
+      "preferredRange": 3.6,
+      "telegraphDuration": 0.95,
+      "hasAttackToken": false
+    },
+    {
+      "id": "gw-e4",
+      "archetype": "stalker",
+      "name": "Breakwater Skirmisher",
+      "x": -46,
+      "z": -20,
+      "homeX": -46,
+      "homeZ": -20,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 66,
+      "maxHp": 66,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "gw-e5",
+      "archetype": "shardcaster",
+      "name": "Tide-Glass Weaver",
+      "x": 48,
+      "z": 8,
+      "homeX": 48,
+      "homeZ": 8,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 64,
+      "maxHp": 64,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 12,
+      "moveSpeed": 4.5,
+      "aggroRadius": 17,
+      "preferredRange": 9.5,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    }
+  ],
+  "prismCustody": {
+    "worldGlbKappa": "sha256:3252c06436039193ccb3c74ebd0e71e6a136c00255623ad81f58057e0e968cca",
+    "vdntKappa": "sha256:4518735f5128254169577b7c1420476ba9d54f634bc069901368f13ff955e200",
+    "skyKappa": "sha256:a296aabd2c26c36279c678c0ca2752f83a1f7e564d47d531755af11975c756c5",
+    "triangles": 23964,
+    "vertices": 42419,
+    "glbBytes": 2565704,
+    "atlasTileCount": 4,
+    "importedCatalogModelsCount": 11,
+    "importedCatalogAssets": [
+      "Barrel_01",
+      "Barrel_02",
+      "WoodenTable_02",
+      "Lantern_01",
+      "kite_shield",
+      "boulder_01",
+      "moon_rock_01",
+      "antique_ceramic_vase_01",
+      "old_military_crate"
+    ],
+    "projectModelsRegistered": 11,
+    "cognitiveKnowledgeIngested": 10,
+    "operatorAdmitted": true,
+    "stitchRecoveryVerified": true,
+    "stitchShardSizes": [
+      1162,
+      1162,
+      1162
+    ],
+    "observerPartsHydrated": 8
+  }
+}

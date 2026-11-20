@@ -1,0 +1,8 @@
+{
+  "name": "Frontiers and Foundations",
+  "description": "An expansive 3D open-world fantasy action-RPG across the Shattered Meridian of Vaelmor with intelligent characters, acoustic relic combat, multi-stage quests, and federated community foundations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

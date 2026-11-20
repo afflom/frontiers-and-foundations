@@ -1,0 +1,710 @@
+{
+  "id": "dungeon-glasswater-abyssal-grotto",
+  "slug": "glasswater-abyssal-grotto",
+  "name": "The Drowned Sextant Grotto",
+  "subtitle": "Tier 2 3D Dungeon Delve · Beneath Glasswater",
+  "cell": [
+    0,
+    -2,
+    0
+  ],
+  "theme": "sunken-aqueducts",
+  "seed": 17704,
+  "worldHalfExtent": 46,
+  "isDungeon": true,
+  "parentRealmSlug": "glasswater",
+  "dungeonStyle": "sunken-cistern",
+  "dungeonTier": 2,
+  "dungeonEntrances": [],
+  "summary": "A subterranean vaulted sanctuary beneath Glasswater. Cross the glowing abyss bridge, ignite the three Resonant Seal Braziers, unseal the alcove vaults, and defeat Abyssal Shoal Sentinel.",
+  "skyAssetId": "blue_lagoon_night",
+  "skyUrl": "/verdant/realms/glasswater-abyssal-grotto/sky.jpg",
+  "glbUrl": "/verdant/realms/glasswater-abyssal-grotto/world.glb",
+  "vdntUrl": "/verdant/realms/glasswater-abyssal-grotto/world.vdnt",
+  "ambientMood": "causeway",
+  "skyFallbackRgb": [
+    0.06,
+    0.14,
+    0.16
+  ],
+  "fogRgb": [
+    0.1,
+    0.2,
+    0.22
+  ],
+  "spawnPoint": [
+    0,
+    26.5
+  ],
+  "soundtrack": {
+    "id": "score-glasswater-abyssal-grotto",
+    "title": "Echoes of The Drowned Sextant Grotto",
+    "composerNote": "Cavernous chamber score: deep hall reverb, plucked harp ostinato, dark bowed cello suspensions, and resonant subterranean bells.",
+    "realmSlug": "glasswater-abyssal-grotto",
+    "isDungeon": true,
+    "mode": "harmonic-minor",
+    "rootMidi": 47,
+    "bpm": 84,
+    "chordProgression": [
+      0,
+      5,
+      3,
+      4,
+      0,
+      6,
+      4,
+      0
+    ],
+    "melodyMotif": [
+      {
+        "degree": 7,
+        "lengthSteps": 3,
+        "velocity": 0.72
+      },
+      {
+        "degree": null,
+        "lengthSteps": 1,
+        "velocity": 0
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.78
+      },
+      {
+        "degree": 8,
+        "lengthSteps": 2,
+        "velocity": 0.66
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 4,
+        "velocity": 0.74
+      },
+      {
+        "degree": 6,
+        "lengthSteps": 2,
+        "velocity": 0.62
+      },
+      {
+        "degree": 4,
+        "lengthSteps": 2,
+        "velocity": 0.7
+      }
+    ],
+    "harpArpeggio": [
+      0,
+      4,
+      7,
+      9,
+      7,
+      4,
+      2,
+      4,
+      0,
+      5,
+      7,
+      11,
+      9,
+      7,
+      4,
+      null
+    ],
+    "instrumentation": {
+      "harp": 0.78,
+      "strings": 0.82,
+      "flute": 0.42,
+      "horn": 0.65,
+      "percussion": 0.68,
+      "modalBells": 0.72
+    },
+    "foleyProfile": "dungeon-cavern",
+    "reverbDecaySec": 4.4,
+    "workletTuning": {
+      "fundamentalHz": 247,
+      "rt60Ms": 3200,
+      "modeNumers": [
+        100,
+        276,
+        540,
+        893
+      ],
+      "modeDenom": 100
+    }
+  },
+  "materials": {
+    "terrain": "cobblestone_02",
+    "masonry": "brick_moss_001",
+    "road": "mossy_cobblestone",
+    "timber": "brown_planks_05"
+  },
+  "terrainProfile": {
+    "macroAmp": 0,
+    "macroFreq": 0.05,
+    "gorgeDepth": 5,
+    "gorgeZ": 11,
+    "gorgeWaveAmp": 0,
+    "citadelLift": 0,
+    "citadelZ": -26,
+    "coastDip": 0,
+    "rimStart": 42,
+    "rimHeight": 2,
+    "waterLevel": -2.2,
+    "hasBridge": true,
+    "bridgeDeckY": 1.15,
+    "bridgeZMin": 3.6,
+    "bridgeZMax": 18.4,
+    "bridgeHalfWidth": 2.65
+  },
+  "importedCatalogProps": [
+    {
+      "id": "glasswater-abyssal-grotto-st-w",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Vestibule Warden W",
+      "position": [
+        -6,
+        21
+      ],
+      "targetHeight": 3.8,
+      "yaw": 0.3,
+      "tintRgb": [
+        0.38,
+        0.52,
+        0.46
+      ],
+      "maxTriangles": 480
+    },
+    {
+      "id": "glasswater-abyssal-grotto-st-e",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Vestibule Warden E",
+      "position": [
+        6,
+        21
+      ],
+      "targetHeight": 3.8,
+      "yaw": -0.3,
+      "tintRgb": [
+        0.38,
+        0.52,
+        0.46
+      ],
+      "maxTriangles": 480
+    },
+    {
+      "id": "glasswater-abyssal-grotto-st-bw",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Sanctum Sentinel W",
+      "position": [
+        -9,
+        -24
+      ],
+      "targetHeight": 4.4,
+      "yaw": 0.4,
+      "tintRgb": [
+        0.38,
+        0.52,
+        0.46
+      ],
+      "maxTriangles": 500
+    },
+    {
+      "id": "glasswater-abyssal-grotto-st-be",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Sanctum Sentinel E",
+      "position": [
+        9,
+        -24
+      ],
+      "targetHeight": 4.4,
+      "yaw": -0.4,
+      "tintRgb": [
+        0.38,
+        0.52,
+        0.46
+      ],
+      "maxTriangles": 500
+    },
+    {
+      "id": "glasswater-abyssal-grotto-lamp-1",
+      "assetId": "brass_diya_lantern",
+      "source": "polyhaven",
+      "label": "Bridge Torch W",
+      "position": [
+        -3.4,
+        18.2
+      ],
+      "targetHeight": 1.35,
+      "yaw": 0.1,
+      "tintRgb": [
+        0.36,
+        0.88,
+        0.68
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "glasswater-abyssal-grotto-lamp-2",
+      "assetId": "brass_diya_lantern",
+      "source": "polyhaven",
+      "label": "Bridge Torch E",
+      "position": [
+        3.4,
+        18.2
+      ],
+      "targetHeight": 1.35,
+      "yaw": 1.5,
+      "tintRgb": [
+        0.36,
+        0.88,
+        0.68
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "glasswater-abyssal-grotto-lamp-3",
+      "assetId": "Lantern_01",
+      "source": "polyhaven",
+      "label": "Rotunda Lantern W",
+      "position": [
+        -8.5,
+        -3
+      ],
+      "targetHeight": 1.35,
+      "yaw": 0.3,
+      "tintRgb": [
+        0.36,
+        0.88,
+        0.68
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "glasswater-abyssal-grotto-lamp-4",
+      "assetId": "Lantern_01",
+      "source": "polyhaven",
+      "label": "Rotunda Lantern E",
+      "position": [
+        8.5,
+        -3
+      ],
+      "targetHeight": 1.35,
+      "yaw": 1.9,
+      "tintRgb": [
+        0.36,
+        0.88,
+        0.68
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "glasswater-abyssal-grotto-estoc",
+      "assetId": "antique_estoc",
+      "source": "polyhaven",
+      "label": "Boss Altar Relic Blade",
+      "position": [
+        0,
+        -32
+      ],
+      "yOffset": 1.2,
+      "targetHeight": 2.6,
+      "yaw": 0,
+      "tintRgb": [
+        0.88,
+        0.8,
+        0.56
+      ],
+      "maxTriangles": 360
+    },
+    {
+      "id": "glasswater-abyssal-grotto-vase-w",
+      "assetId": "brass_vase_01",
+      "source": "polyhaven",
+      "label": "West Alcove Reliquary",
+      "position": [
+        -18.5,
+        -4
+      ],
+      "targetHeight": 1.4,
+      "yaw": 0.8,
+      "tintRgb": [
+        0.36,
+        0.88,
+        0.68
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "glasswater-abyssal-grotto-crate-e",
+      "assetId": "old_military_crate",
+      "source": "polyhaven",
+      "label": "East Alcove Vault Crate",
+      "position": [
+        18.5,
+        -4
+      ],
+      "targetHeight": 1.15,
+      "yaw": 0.4,
+      "tintRgb": [
+        0.44,
+        0.38,
+        0.32
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "glasswater-abyssal-grotto-rock-1",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Vault Cavern Outcrop",
+      "position": [
+        -14,
+        -29
+      ],
+      "targetHeight": 3.2,
+      "yaw": 0.9,
+      "tintRgb": [
+        0.38,
+        0.52,
+        0.46
+      ],
+      "maxTriangles": 400
+    }
+  ],
+  "regions": [
+    {
+      "id": "dungeon-sanctum",
+      "name": "The Drowned Sextant Grotto — Vestibule",
+      "subtitle": "Tier 2 Subterranean Vault",
+      "center": [
+        0,
+        22
+      ],
+      "radius": 14,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "high-causeway",
+      "name": "Abyss Span & Seal Rotunda",
+      "subtitle": "Pillared Acoustic Hall & Treasure Alcoves",
+      "center": [
+        0,
+        -4
+      ],
+      "radius": 18,
+      "ambientMood": "foundry"
+    },
+    {
+      "id": "boss-vault",
+      "name": "Abyssal Shoal Sentinel Sanctum",
+      "subtitle": "Inner Boss Amphitheater & Ascend Portal",
+      "center": [
+        0,
+        -26
+      ],
+      "radius": 16,
+      "ambientMood": "foundry"
+    }
+  ],
+  "fastTravelPoints": [
+    {
+      "regionId": "dungeon-sanctum",
+      "name": "Dungeon Entry Vestibule",
+      "x": 0,
+      "z": 26.5
+    },
+    {
+      "regionId": "high-causeway",
+      "name": "Central Seal Rotunda",
+      "x": 0,
+      "z": -2
+    },
+    {
+      "regionId": "boss-vault",
+      "name": "Boss Sanctum Threshold",
+      "x": 0,
+      "z": -18
+    }
+  ],
+  "npcs": [],
+  "quests": [
+    {
+      "id": "quest-delve-glasswater-abyssal-grotto",
+      "title": "Bearings of the Drowned Grotto",
+      "giverNpcId": "npc-orenna",
+      "guildId": "guild-kiln",
+      "regionId": "boss-vault",
+      "summary": "Conquer The Drowned Sextant Grotto: ignite the Resonant Seal Braziers, plunder the side treasure vaults, and defeat Abyssal Shoal Sentinel in the northern Sanctum.",
+      "motif": "subterranean sunken-cistern delve",
+      "renownReward": 310,
+      "status": "active",
+      "objectives": [
+        {
+          "id": "obj-glasswater-abyssal-grotto-brazier",
+          "description": "Ignite Resonant Seal Braziers",
+          "kind": "calibrate-beacon",
+          "targetId": "glasswater-abyssal-grotto-brazier",
+          "targetCoords": [
+            0,
+            -4
+          ],
+          "requiredCount": 2,
+          "currentCount": 0
+        },
+        {
+          "id": "obj-glasswater-abyssal-grotto-boss",
+          "description": "Vanquish Abyssal Shoal Sentinel",
+          "kind": "defeat-archetype",
+          "targetId": "colossus",
+          "targetCoords": [
+            0,
+            -26
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        }
+      ]
+    }
+  ],
+  "interactables": [
+    {
+      "id": "glasswater-abyssal-grotto-brazier-w",
+      "kind": "seal-brazier",
+      "name": "West Resonant Seal Brazier",
+      "promptVerb": "Ignite Seal Brazier",
+      "regionId": "high-causeway",
+      "position": [
+        -8.5,
+        -4.5
+      ],
+      "activated": false
+    },
+    {
+      "id": "glasswater-abyssal-grotto-brazier-e",
+      "kind": "seal-brazier",
+      "name": "East Resonant Seal Brazier",
+      "promptVerb": "Ignite Seal Brazier",
+      "regionId": "high-causeway",
+      "position": [
+        8.5,
+        -4.5
+      ],
+      "activated": false
+    },
+    {
+      "id": "glasswater-abyssal-grotto-chest-w",
+      "kind": "vault-chest",
+      "name": "West Alcove Relic Chest",
+      "promptVerb": "Unseal Vault Chest",
+      "regionId": "high-causeway",
+      "position": [
+        -16.5,
+        -4
+      ],
+      "activated": false
+    },
+    {
+      "id": "glasswater-abyssal-grotto-chest-e",
+      "kind": "vault-chest",
+      "name": "East Alcove Foundry Coffer",
+      "promptVerb": "Unseal Vault Coffer",
+      "regionId": "high-causeway",
+      "position": [
+        16.5,
+        -4
+      ],
+      "activated": false
+    },
+    {
+      "id": "glasswater-abyssal-grotto-ascend-entry",
+      "kind": "dungeon-exit",
+      "name": "Ascend to Glasswater",
+      "promptVerb": "Return to Glasswater",
+      "regionId": "dungeon-sanctum",
+      "position": [
+        0,
+        30.5
+      ],
+      "activated": false,
+      "targetRealmSlug": "glasswater"
+    },
+    {
+      "id": "glasswater-abyssal-grotto-ascend-boss",
+      "kind": "dungeon-exit",
+      "name": "Sanctum Ascend Portal (Glasswater)",
+      "promptVerb": "Ascend to Glasswater",
+      "regionId": "boss-vault",
+      "position": [
+        0,
+        -33.5
+      ],
+      "activated": false,
+      "targetRealmSlug": "glasswater"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "glasswater-abyssal-grotto-e1",
+      "archetype": "stalker",
+      "name": "Vault Stone-Stalker",
+      "x": -6.5,
+      "z": 0.5,
+      "homeX": -6.5,
+      "homeZ": 0.5,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 84,
+      "maxHp": 84,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "glasswater-abyssal-grotto-e2",
+      "archetype": "stalker",
+      "name": "Rotunda Skirmisher",
+      "x": 6.5,
+      "z": 0.5,
+      "homeX": 6.5,
+      "homeZ": 0.5,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 84,
+      "maxHp": 84,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "glasswater-abyssal-grotto-e3",
+      "archetype": "shardcaster",
+      "name": "Alcove Prism-Sentinel",
+      "x": -12.5,
+      "z": -5.5,
+      "homeX": -12.5,
+      "homeZ": -5.5,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 80,
+      "maxHp": 80,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 12,
+      "moveSpeed": 4.5,
+      "aggroRadius": 17,
+      "preferredRange": 9.5,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "glasswater-abyssal-grotto-e4",
+      "archetype": "shardcaster",
+      "name": "Sanctum Arc-Weaver",
+      "x": 12.5,
+      "z": -5.5,
+      "homeX": 12.5,
+      "homeZ": -5.5,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 80,
+      "maxHp": 80,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 12,
+      "moveSpeed": 4.5,
+      "aggroRadius": 17,
+      "preferredRange": 9.5,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "glasswater-abyssal-grotto-boss",
+      "archetype": "colossus",
+      "name": "Abyssal Shoal Sentinel",
+      "x": 0,
+      "z": -25.5,
+      "homeX": 0,
+      "homeZ": -25.5,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 265,
+      "maxHp": 265,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 26,
+      "attackRadius": 4.4,
+      "moveSpeed": 3.3,
+      "aggroRadius": 20,
+      "preferredRange": 3.6,
+      "telegraphDuration": 0.95,
+      "hasAttackToken": false
+    }
+  ],
+  "prismCustody": {
+    "worldGlbKappa": "sha256:1277dd0a3c581302400b67d1d0083a4722684bbbd3f987613b4f45d8d2257742",
+    "vdntKappa": "sha256:df38503fa3cc59b18e81cc7a284740858c9785d77e165e53931177cf4846cddf",
+    "skyKappa": "sha256:4fa2ba43da087ab39f0c7fa7f5ed6361fe7e6f38dded47d2470a4895da2f28ca",
+    "triangles": 16562,
+    "vertices": 25709,
+    "glbBytes": 1725552,
+    "atlasTileCount": 4,
+    "importedCatalogModelsCount": 12,
+    "importedCatalogAssets": [
+      "gothic_statue",
+      "brass_diya_lantern",
+      "Lantern_01",
+      "antique_estoc",
+      "brass_vase_01",
+      "old_military_crate",
+      "boulder_01"
+    ],
+    "projectModelsRegistered": 9,
+    "cognitiveKnowledgeIngested": 4,
+    "operatorAdmitted": true,
+    "stitchRecoveryVerified": true,
+    "stitchShardSizes": [
+      1153,
+      1153,
+      1153
+    ],
+    "observerPartsHydrated": 8
+  }
+}

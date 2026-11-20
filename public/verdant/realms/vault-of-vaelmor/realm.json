@@ -1,0 +1,710 @@
+{
+  "id": "dungeon-vault-of-vaelmor",
+  "slug": "vault-of-vaelmor",
+  "name": "The Sunken Meridian Vault",
+  "subtitle": "Tier 1 3D Dungeon Delve · Beneath Vaelmor",
+  "cell": [
+    0,
+    -1,
+    0
+  ],
+  "theme": "citadel-highlands",
+  "seed": 17701,
+  "worldHalfExtent": 46,
+  "isDungeon": true,
+  "parentRealmSlug": "vaelmor",
+  "dungeonStyle": "catacomb-vault",
+  "dungeonTier": 1,
+  "dungeonEntrances": [],
+  "summary": "A subterranean vaulted sanctuary beneath Vaelmor. Cross the glowing abyss bridge, ignite the three Resonant Seal Braziers, unseal the alcove vaults, and defeat The Charter Stone Colossus.",
+  "skyAssetId": "dikhololo_night",
+  "skyUrl": "/verdant/realms/vault-of-vaelmor/sky.jpg",
+  "glbUrl": "/verdant/realms/vault-of-vaelmor/world.glb",
+  "vdntUrl": "/verdant/realms/vault-of-vaelmor/world.vdnt",
+  "ambientMood": "causeway",
+  "skyFallbackRgb": [
+    0.08,
+    0.1,
+    0.14
+  ],
+  "fogRgb": [
+    0.12,
+    0.14,
+    0.18
+  ],
+  "spawnPoint": [
+    0,
+    26.5
+  ],
+  "soundtrack": {
+    "id": "score-vault-of-vaelmor",
+    "title": "Echoes of The Sunken Meridian Vault",
+    "composerNote": "Cavernous chamber score: deep hall reverb, plucked harp ostinato, dark bowed cello suspensions, and resonant subterranean bells.",
+    "realmSlug": "vault-of-vaelmor",
+    "isDungeon": true,
+    "mode": "harmonic-minor",
+    "rootMidi": 47,
+    "bpm": 84,
+    "chordProgression": [
+      0,
+      5,
+      3,
+      4,
+      0,
+      6,
+      4,
+      0
+    ],
+    "melodyMotif": [
+      {
+        "degree": 7,
+        "lengthSteps": 3,
+        "velocity": 0.72
+      },
+      {
+        "degree": null,
+        "lengthSteps": 1,
+        "velocity": 0
+      },
+      {
+        "degree": 9,
+        "lengthSteps": 2,
+        "velocity": 0.78
+      },
+      {
+        "degree": 8,
+        "lengthSteps": 2,
+        "velocity": 0.66
+      },
+      {
+        "degree": 7,
+        "lengthSteps": 4,
+        "velocity": 0.74
+      },
+      {
+        "degree": 6,
+        "lengthSteps": 2,
+        "velocity": 0.62
+      },
+      {
+        "degree": 4,
+        "lengthSteps": 2,
+        "velocity": 0.7
+      }
+    ],
+    "harpArpeggio": [
+      0,
+      4,
+      7,
+      9,
+      7,
+      4,
+      2,
+      4,
+      0,
+      5,
+      7,
+      11,
+      9,
+      7,
+      4,
+      null
+    ],
+    "instrumentation": {
+      "harp": 0.78,
+      "strings": 0.82,
+      "flute": 0.42,
+      "horn": 0.65,
+      "percussion": 0.68,
+      "modalBells": 0.72
+    },
+    "foleyProfile": "dungeon-cavern",
+    "reverbDecaySec": 4.4,
+    "workletTuning": {
+      "fundamentalHz": 247,
+      "rt60Ms": 3200,
+      "modeNumers": [
+        100,
+        276,
+        540,
+        893
+      ],
+      "modeDenom": 100
+    }
+  },
+  "materials": {
+    "terrain": "cobblestone_04",
+    "masonry": "castle_brick_01",
+    "road": "mossy_cobblestone",
+    "timber": "dark_wooden_planks"
+  },
+  "terrainProfile": {
+    "macroAmp": 0,
+    "macroFreq": 0.05,
+    "gorgeDepth": 5,
+    "gorgeZ": 11,
+    "gorgeWaveAmp": 0,
+    "citadelLift": 0,
+    "citadelZ": -26,
+    "coastDip": 0,
+    "rimStart": 42,
+    "rimHeight": 2,
+    "waterLevel": -2.2,
+    "hasBridge": true,
+    "bridgeDeckY": 1.15,
+    "bridgeZMin": 3.6,
+    "bridgeZMax": 18.4,
+    "bridgeHalfWidth": 2.65
+  },
+  "importedCatalogProps": [
+    {
+      "id": "vault-of-vaelmor-st-w",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Vestibule Warden W",
+      "position": [
+        -6,
+        21
+      ],
+      "targetHeight": 3.8,
+      "yaw": 0.3,
+      "tintRgb": [
+        0.46,
+        0.48,
+        0.52
+      ],
+      "maxTriangles": 480
+    },
+    {
+      "id": "vault-of-vaelmor-st-e",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Vestibule Warden E",
+      "position": [
+        6,
+        21
+      ],
+      "targetHeight": 3.8,
+      "yaw": -0.3,
+      "tintRgb": [
+        0.46,
+        0.48,
+        0.52
+      ],
+      "maxTriangles": 480
+    },
+    {
+      "id": "vault-of-vaelmor-st-bw",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Sanctum Sentinel W",
+      "position": [
+        -9,
+        -24
+      ],
+      "targetHeight": 4.4,
+      "yaw": 0.4,
+      "tintRgb": [
+        0.46,
+        0.48,
+        0.52
+      ],
+      "maxTriangles": 500
+    },
+    {
+      "id": "vault-of-vaelmor-st-be",
+      "assetId": "gothic_statue",
+      "source": "polyhaven",
+      "label": "Sanctum Sentinel E",
+      "position": [
+        9,
+        -24
+      ],
+      "targetHeight": 4.4,
+      "yaw": -0.4,
+      "tintRgb": [
+        0.46,
+        0.48,
+        0.52
+      ],
+      "maxTriangles": 500
+    },
+    {
+      "id": "vault-of-vaelmor-lamp-1",
+      "assetId": "brass_diya_lantern",
+      "source": "polyhaven",
+      "label": "Bridge Torch W",
+      "position": [
+        -3.4,
+        18.2
+      ],
+      "targetHeight": 1.35,
+      "yaw": 0.1,
+      "tintRgb": [
+        0.92,
+        0.68,
+        0.28
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vault-of-vaelmor-lamp-2",
+      "assetId": "brass_diya_lantern",
+      "source": "polyhaven",
+      "label": "Bridge Torch E",
+      "position": [
+        3.4,
+        18.2
+      ],
+      "targetHeight": 1.35,
+      "yaw": 1.5,
+      "tintRgb": [
+        0.92,
+        0.68,
+        0.28
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vault-of-vaelmor-lamp-3",
+      "assetId": "Lantern_01",
+      "source": "polyhaven",
+      "label": "Rotunda Lantern W",
+      "position": [
+        -8.5,
+        -3
+      ],
+      "targetHeight": 1.35,
+      "yaw": 0.3,
+      "tintRgb": [
+        0.92,
+        0.68,
+        0.28
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vault-of-vaelmor-lamp-4",
+      "assetId": "Lantern_01",
+      "source": "polyhaven",
+      "label": "Rotunda Lantern E",
+      "position": [
+        8.5,
+        -3
+      ],
+      "targetHeight": 1.35,
+      "yaw": 1.9,
+      "tintRgb": [
+        0.92,
+        0.68,
+        0.28
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "vault-of-vaelmor-estoc",
+      "assetId": "antique_estoc",
+      "source": "polyhaven",
+      "label": "Boss Altar Relic Blade",
+      "position": [
+        0,
+        -32
+      ],
+      "yOffset": 1.2,
+      "targetHeight": 2.6,
+      "yaw": 0,
+      "tintRgb": [
+        0.88,
+        0.8,
+        0.56
+      ],
+      "maxTriangles": 360
+    },
+    {
+      "id": "vault-of-vaelmor-vase-w",
+      "assetId": "brass_vase_01",
+      "source": "polyhaven",
+      "label": "West Alcove Reliquary",
+      "position": [
+        -18.5,
+        -4
+      ],
+      "targetHeight": 1.4,
+      "yaw": 0.8,
+      "tintRgb": [
+        0.92,
+        0.68,
+        0.28
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "vault-of-vaelmor-crate-e",
+      "assetId": "old_military_crate",
+      "source": "polyhaven",
+      "label": "East Alcove Vault Crate",
+      "position": [
+        18.5,
+        -4
+      ],
+      "targetHeight": 1.15,
+      "yaw": 0.4,
+      "tintRgb": [
+        0.44,
+        0.38,
+        0.32
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "vault-of-vaelmor-rock-1",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Vault Cavern Outcrop",
+      "position": [
+        -14,
+        -29
+      ],
+      "targetHeight": 3.2,
+      "yaw": 0.9,
+      "tintRgb": [
+        0.46,
+        0.48,
+        0.52
+      ],
+      "maxTriangles": 400
+    }
+  ],
+  "regions": [
+    {
+      "id": "dungeon-sanctum",
+      "name": "The Sunken Meridian Vault — Vestibule",
+      "subtitle": "Tier 1 Subterranean Vault",
+      "center": [
+        0,
+        22
+      ],
+      "radius": 14,
+      "ambientMood": "causeway"
+    },
+    {
+      "id": "high-causeway",
+      "name": "Abyss Span & Seal Rotunda",
+      "subtitle": "Pillared Acoustic Hall & Treasure Alcoves",
+      "center": [
+        0,
+        -4
+      ],
+      "radius": 18,
+      "ambientMood": "foundry"
+    },
+    {
+      "id": "boss-vault",
+      "name": "The Charter Stone Colossus Sanctum",
+      "subtitle": "Inner Boss Amphitheater & Ascend Portal",
+      "center": [
+        0,
+        -26
+      ],
+      "radius": 16,
+      "ambientMood": "foundry"
+    }
+  ],
+  "fastTravelPoints": [
+    {
+      "regionId": "dungeon-sanctum",
+      "name": "Dungeon Entry Vestibule",
+      "x": 0,
+      "z": 26.5
+    },
+    {
+      "regionId": "high-causeway",
+      "name": "Central Seal Rotunda",
+      "x": 0,
+      "z": -2
+    },
+    {
+      "regionId": "boss-vault",
+      "name": "Boss Sanctum Threshold",
+      "x": 0,
+      "z": -18
+    }
+  ],
+  "npcs": [],
+  "quests": [
+    {
+      "id": "quest-delve-vault-of-vaelmor",
+      "title": "Secrets of the Sunken Meridian Vault",
+      "giverNpcId": "npc-orenna",
+      "guildId": "guild-kiln",
+      "regionId": "boss-vault",
+      "summary": "Conquer The Sunken Meridian Vault: ignite the Resonant Seal Braziers, plunder the side treasure vaults, and defeat The Charter Stone Colossus in the northern Sanctum.",
+      "motif": "subterranean catacomb-vault delve",
+      "renownReward": 265,
+      "status": "active",
+      "objectives": [
+        {
+          "id": "obj-vault-of-vaelmor-brazier",
+          "description": "Ignite Resonant Seal Braziers",
+          "kind": "calibrate-beacon",
+          "targetId": "vault-of-vaelmor-brazier",
+          "targetCoords": [
+            0,
+            -4
+          ],
+          "requiredCount": 2,
+          "currentCount": 0
+        },
+        {
+          "id": "obj-vault-of-vaelmor-boss",
+          "description": "Vanquish The Charter Stone Colossus",
+          "kind": "defeat-archetype",
+          "targetId": "colossus",
+          "targetCoords": [
+            0,
+            -26
+          ],
+          "requiredCount": 1,
+          "currentCount": 0
+        }
+      ]
+    }
+  ],
+  "interactables": [
+    {
+      "id": "vault-of-vaelmor-brazier-w",
+      "kind": "seal-brazier",
+      "name": "West Resonant Seal Brazier",
+      "promptVerb": "Ignite Seal Brazier",
+      "regionId": "high-causeway",
+      "position": [
+        -8.5,
+        -4.5
+      ],
+      "activated": false
+    },
+    {
+      "id": "vault-of-vaelmor-brazier-e",
+      "kind": "seal-brazier",
+      "name": "East Resonant Seal Brazier",
+      "promptVerb": "Ignite Seal Brazier",
+      "regionId": "high-causeway",
+      "position": [
+        8.5,
+        -4.5
+      ],
+      "activated": false
+    },
+    {
+      "id": "vault-of-vaelmor-chest-w",
+      "kind": "vault-chest",
+      "name": "West Alcove Relic Chest",
+      "promptVerb": "Unseal Vault Chest",
+      "regionId": "high-causeway",
+      "position": [
+        -16.5,
+        -4
+      ],
+      "activated": false
+    },
+    {
+      "id": "vault-of-vaelmor-chest-e",
+      "kind": "vault-chest",
+      "name": "East Alcove Foundry Coffer",
+      "promptVerb": "Unseal Vault Coffer",
+      "regionId": "high-causeway",
+      "position": [
+        16.5,
+        -4
+      ],
+      "activated": false
+    },
+    {
+      "id": "vault-of-vaelmor-ascend-entry",
+      "kind": "dungeon-exit",
+      "name": "Ascend to Vaelmor",
+      "promptVerb": "Return to Vaelmor",
+      "regionId": "dungeon-sanctum",
+      "position": [
+        0,
+        30.5
+      ],
+      "activated": false,
+      "targetRealmSlug": "vaelmor"
+    },
+    {
+      "id": "vault-of-vaelmor-ascend-boss",
+      "kind": "dungeon-exit",
+      "name": "Sanctum Ascend Portal (Vaelmor)",
+      "promptVerb": "Ascend to Vaelmor",
+      "regionId": "boss-vault",
+      "position": [
+        0,
+        -33.5
+      ],
+      "activated": false,
+      "targetRealmSlug": "vaelmor"
+    }
+  ],
+  "enemies": [
+    {
+      "id": "vault-of-vaelmor-e1",
+      "archetype": "stalker",
+      "name": "Vault Stone-Stalker",
+      "x": -6.5,
+      "z": 0.5,
+      "homeX": -6.5,
+      "homeZ": 0.5,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 74,
+      "maxHp": 74,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "vault-of-vaelmor-e2",
+      "archetype": "stalker",
+      "name": "Rotunda Skirmisher",
+      "x": 6.5,
+      "z": 0.5,
+      "homeX": 6.5,
+      "homeZ": 0.5,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 74,
+      "maxHp": 74,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
+      "aggroRadius": 17,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "vault-of-vaelmor-e3",
+      "archetype": "shardcaster",
+      "name": "Alcove Prism-Sentinel",
+      "x": -12.5,
+      "z": -5.5,
+      "homeX": -12.5,
+      "homeZ": -5.5,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 70,
+      "maxHp": 70,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 12,
+      "moveSpeed": 4.5,
+      "aggroRadius": 17,
+      "preferredRange": 9.5,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "vault-of-vaelmor-e4",
+      "archetype": "shardcaster",
+      "name": "Sanctum Arc-Weaver",
+      "x": 12.5,
+      "z": -5.5,
+      "homeX": 12.5,
+      "homeZ": -5.5,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 70,
+      "maxHp": 70,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 12,
+      "moveSpeed": 4.5,
+      "aggroRadius": 17,
+      "preferredRange": 9.5,
+      "telegraphDuration": 0.6,
+      "hasAttackToken": false
+    },
+    {
+      "id": "vault-of-vaelmor-boss",
+      "archetype": "colossus",
+      "name": "The Charter Stone Colossus",
+      "x": 0,
+      "z": -25.5,
+      "homeX": 0,
+      "homeZ": -25.5,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 230,
+      "maxHp": 230,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 26,
+      "attackRadius": 4.4,
+      "moveSpeed": 3.3,
+      "aggroRadius": 20,
+      "preferredRange": 3.6,
+      "telegraphDuration": 0.95,
+      "hasAttackToken": false
+    }
+  ],
+  "prismCustody": {
+    "worldGlbKappa": "sha256:6d9db82084173597c5dd3544f7d8beec08fa689ec0a46c21758270dd80b25ba4",
+    "vdntKappa": "sha256:9118a2903abfedcafbdd3e041860e95f4467d7b734c9f65d438b40ccfb9a280a",
+    "skyKappa": "sha256:fc7ac5ac1ff5a0cbc25724fe0f347e7bf1cae61b758323d1faac761a1cd9af36",
+    "triangles": 16562,
+    "vertices": 25709,
+    "glbBytes": 1840760,
+    "atlasTileCount": 4,
+    "importedCatalogModelsCount": 12,
+    "importedCatalogAssets": [
+      "gothic_statue",
+      "brass_diya_lantern",
+      "Lantern_01",
+      "antique_estoc",
+      "brass_vase_01",
+      "old_military_crate",
+      "boulder_01"
+    ],
+    "projectModelsRegistered": 9,
+    "cognitiveKnowledgeIngested": 4,
+    "operatorAdmitted": true,
+    "stitchRecoveryVerified": true,
+    "stitchShardSizes": [
+      1159,
+      1159,
+      1159
+    ],
+    "observerPartsHydrated": 8
+  }
+}
