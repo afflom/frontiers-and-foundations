@@ -599,13 +599,13 @@
       "guildId": "guild-causeway",
       "guildName": "Oakhaven Sluice Guild",
       "regionId": "southern-terrace",
-      "portraitUrl": "/src/assets/images/ff_npc_orenna_1795129454002.jpg",
+      "portraitUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20256%20256%22%20width%3D%22256%22%20height%3D%22256%22%20role%3D%22img%22%20aria-label%3D%22Maren%20Sluiceborn%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%233f534c%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2268%25%22%20stop-color%3D%22%2366867b%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23141921%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22rim%22%20cx%3D%2250%25%22%20cy%3D%2238%25%22%20r%3D%2255%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%236cb296%22%20stop-opacity%3D%220.34%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%236cb296%22%20stop-opacity%3D%220%22%2F%3E%0A%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22faceGrad%22%20x1%3D%220.2%22%20y1%3D%220%22%20x2%3D%220.85%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23d19169%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%23bb825e%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%238f6348%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22url(%23bg)%22%2F%3E%0A%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22url(%23rim)%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M0%2C192%20L38%2C162%20L76%2C178%20L128%2C154%20L182%2C174%20L224%2C158%20L256%2C184%20L256%2C256%20L0%2C256%20Z%22%20fill%3D%22%230d1218%22%20opacity%3D%220.45%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cg%20fill%3D%22%23b88f4f%22%20stroke%3D%22%237d6136%22%20stroke-width%3D%221.5%22%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20d%3D%22M98%2C108%20C86%2C138%2082%2C175%2088%2C215%20L104%2C215%20C100%2C178%20104%2C145%20110%2C118%20Z%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20d%3D%22M158%2C108%20C170%2C138%20174%2C175%20168%2C215%20L152%2C215%20C156%2C178%20152%2C145%20146%2C118%20Z%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%2294%22%20cy%3D%22148%22%20r%3D%228%22%2F%3E%3Ccircle%20cx%3D%2291%22%20cy%3D%22168%22%20r%3D%227.5%22%2F%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%22188%22%20r%3D%227%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%22162%22%20cy%3D%22148%22%20r%3D%228%22%2F%3E%3Ccircle%20cx%3D%22165%22%20cy%3D%22168%22%20r%3D%227.5%22%2F%3E%3Ccircle%20cx%3D%22166%22%20cy%3D%22188%22%20r%3D%227%22%2F%3E%0A%20%20%20%20%20%20%3C%2Fg%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M36%2C256%20C36%2C194%2084%2C166%20128%2C166%20C172%2C166%20220%2C194%20220%2C256%20Z%22%20fill%3D%22%2361573d%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M104%2C174%20L128%2C232%20L152%2C174%22%20fill%3D%22%235d4f37%22%20stroke%3D%22%237bcbab%22%20stroke-width%3D%222.4%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C176%20L172%2C252%22%20stroke%3D%22%23423029%22%20stroke-width%3D%2210%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%3Crect%20x%3D%22114%22%20y%3D%22180%22%20width%3D%2228%22%20height%3D%2214%22%20rx%3D%223%22%20fill%3D%22%237bcbab%22%20stroke%3D%22%23423b2a%22%20stroke-width%3D%221.5%22%2F%3E%3Ccircle%20cx%3D%22128%22%20cy%3D%22187%22%20r%3D%223.5%22%20fill%3D%22%23423b2a%22%2F%3E%0A%20%20%3C!--%20Neck%20--%3E%0A%20%20%3Cpath%20d%3D%22M111%2C148%20L145%2C148%20L148%2C176%20Q128%2C186%20108%2C176%20Z%22%20fill%3D%22%238f6348%22%2F%3E%0A%20%20%3C!--%20Ears%20--%3E%0A%20%20%3Cellipse%20cx%3D%2290%22%20cy%3D%22116%22%20rx%3D%227%22%20ry%3D%2212%22%20fill%3D%22%238f6348%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22166%22%20cy%3D%22116%22%20rx%3D%227%22%20ry%3D%2212%22%20fill%3D%22%238f6348%22%2F%3E%0A%20%20%3C!--%20Sculpted%20Head%20%26%20Jawline%20--%3E%0A%20%20%3Cpath%20d%3D%22M92%2C102%20C92%2C68%20164%2C68%20164%2C102%20C164%2C132%20152%2C154%20128%2C158%20C104%2C154%2092%2C132%2092%2C102%20Z%22%20fill%3D%22url(%23faceGrad)%22%2F%3E%0A%20%20%3C!--%20Cheek%20%26%20Nose%20contour%20--%3E%0A%20%20%3Cpath%20d%3D%22M128%2C104%20L125%2C126%20L133%2C127%22%20fill%3D%22none%22%20stroke%3D%22%238f6348%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3C!--%20Eyes%20--%3E%0A%20%20%3Cellipse%20cx%3D%22111%22%20cy%3D%22111%22%20rx%3D%228.5%22%20ry%3D%224.6%22%20fill%3D%22%23f5f2ec%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22145%22%20cy%3D%22111%22%20rx%3D%228.5%22%20ry%3D%224.6%22%20fill%3D%22%23f5f2ec%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22111%22%20cy%3D%22111%22%20r%3D%224.1%22%20fill%3D%22%233d754d%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22145%22%20cy%3D%22111%22%20r%3D%224.1%22%20fill%3D%22%233d754d%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22109.5%22%20cy%3D%22109.5%22%20r%3D%221.4%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22143.5%22%20cy%3D%22109.5%22%20r%3D%221.4%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3C!--%20Eyebrows%20--%3E%0A%20%20%3Cpath%20d%3D%22M101%2C102%20Q111%2C98%20121%2C102%22%20fill%3D%22none%22%20stroke%3D%22%237d6136%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M135%2C102%20Q145%2C98%20155%2C102%22%20fill%3D%22none%22%20stroke%3D%22%237d6136%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3C!--%20Mouth%20--%3E%0A%20%20%3Cpath%20d%3D%22M117%2C139%20Q128%2C144%20139%2C139%22%20fill%3D%22none%22%20stroke%3D%22%238f6348%22%20stroke-width%3D%222.8%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M94%2C124%20C96%2C154%20110%2C168%20128%2C172%20C146%2C168%20160%2C154%20162%2C124%20C150%2C142%20140%2C145%20128%2C145%20C116%2C145%20106%2C142%2094%2C124%20Z%22%20fill%3D%22%23b88f4f%22%2F%3E%0A%20%20%20%20%20%20%3Cellipse%20cx%3D%22128%22%20cy%3D%22176%22%20rx%3D%2210%22%20ry%3D%228%22%20fill%3D%22%237d6136%22%2F%3E%0A%20%20%20%20%20%20%3Crect%20x%3D%22119%22%20y%3D%22180%22%20width%3D%2218%22%20height%3D%225%22%20rx%3D%222%22%20fill%3D%22%237bcbab%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M86%2C108%20C86%2C64%20170%2C64%20170%2C108%20C162%2C86%20144%2C78%20126%2C80%20C106%2C82%2094%2C90%2086%2C108%20Z%22%20fill%3D%22%23b88f4f%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M96%2C76%20Q128%2C64%20156%2C78%22%20fill%3D%22none%22%20stroke%3D%22%23e4b162%22%20stroke-width%3D%223.5%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cg%20transform%3D%22translate(208%2C184)%22%3E%0A%20%20%20%20%20%20%20%20%3Cline%20x1%3D%220%22%20y1%3D%22-26%22%20x2%3D%220%22%20y2%3D%2270%22%20stroke%3D%22%23423029%22%20stroke-width%3D%226%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%22-30%22%20r%3D%2218%22%20fill%3D%22none%22%20stroke%3D%22%237bcbab%22%20stroke-width%3D%223.5%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%22-30%22%20r%3D%2210%22%20fill%3D%22none%22%20stroke%3D%22%237bcbab%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%22-30%22%20r%3D%224.5%22%20fill%3D%22%236be8d4%22%2F%3E%0A%20%20%20%20%20%20%3C%2Fg%3E%0A%20%20%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%22248%22%20height%3D%22248%22%20fill%3D%22none%22%20stroke%3D%22%237bcbab%22%20stroke-opacity%3D%220.35%22%20stroke-width%3D%222%22%2F%3E%0A%3C%2Fsvg%3E",
       "position": [
         -3.2,
         15.6
       ],
-      "cloakHex": 4160357,
-      "trimHex": 13935187,
+      "cloakHex": 6379325,
+      "trimHex": 7717539,
       "greeting": "Step lightly across the mossy sluice, Waywright. The Crown Cistern dropped four palms overnight—and the Flooded Siphon Catacombs north of the keep have begun vibrating.",
       "cognitiveDrive": "Maintain clean artesian head pressure across Oakhaven without draining the fern terraces.",
       "concealedSecret": "She diverted a hidden siphon toward the dry eastern villages against Citadel toll decrees.",
@@ -630,7 +630,68 @@
           "thought": "Hoping this Waywright values ecological repair over salvage tolls.",
           "renownGain": 20
         }
-      ]
+      ],
+      "appearance": {
+        "rigId": "verdant:rig:npc-maren",
+        "portraitArchetype": "synthesized",
+        "portraitUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20256%20256%22%20width%3D%22256%22%20height%3D%22256%22%20role%3D%22img%22%20aria-label%3D%22Maren%20Sluiceborn%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%233f534c%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2268%25%22%20stop-color%3D%22%2366867b%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23141921%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22rim%22%20cx%3D%2250%25%22%20cy%3D%2238%25%22%20r%3D%2255%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%236cb296%22%20stop-opacity%3D%220.34%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%236cb296%22%20stop-opacity%3D%220%22%2F%3E%0A%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22faceGrad%22%20x1%3D%220.2%22%20y1%3D%220%22%20x2%3D%220.85%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23d19169%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%23bb825e%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%238f6348%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22url(%23bg)%22%2F%3E%0A%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22url(%23rim)%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M0%2C192%20L38%2C162%20L76%2C178%20L128%2C154%20L182%2C174%20L224%2C158%20L256%2C184%20L256%2C256%20L0%2C256%20Z%22%20fill%3D%22%230d1218%22%20opacity%3D%220.45%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cg%20fill%3D%22%23b88f4f%22%20stroke%3D%22%237d6136%22%20stroke-width%3D%221.5%22%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20d%3D%22M98%2C108%20C86%2C138%2082%2C175%2088%2C215%20L104%2C215%20C100%2C178%20104%2C145%20110%2C118%20Z%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20d%3D%22M158%2C108%20C170%2C138%20174%2C175%20168%2C215%20L152%2C215%20C156%2C178%20152%2C145%20146%2C118%20Z%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%2294%22%20cy%3D%22148%22%20r%3D%228%22%2F%3E%3Ccircle%20cx%3D%2291%22%20cy%3D%22168%22%20r%3D%227.5%22%2F%3E%3Ccircle%20cx%3D%2290%22%20cy%3D%22188%22%20r%3D%227%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%22162%22%20cy%3D%22148%22%20r%3D%228%22%2F%3E%3Ccircle%20cx%3D%22165%22%20cy%3D%22168%22%20r%3D%227.5%22%2F%3E%3Ccircle%20cx%3D%22166%22%20cy%3D%22188%22%20r%3D%227%22%2F%3E%0A%20%20%20%20%20%20%3C%2Fg%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M36%2C256%20C36%2C194%2084%2C166%20128%2C166%20C172%2C166%20220%2C194%20220%2C256%20Z%22%20fill%3D%22%2361573d%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M104%2C174%20L128%2C232%20L152%2C174%22%20fill%3D%22%235d4f37%22%20stroke%3D%22%237bcbab%22%20stroke-width%3D%222.4%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C176%20L172%2C252%22%20stroke%3D%22%23423029%22%20stroke-width%3D%2210%22%2F%3E%0A%20%20%20%20%20%20%0A%20%20%3Crect%20x%3D%22114%22%20y%3D%22180%22%20width%3D%2228%22%20height%3D%2214%22%20rx%3D%223%22%20fill%3D%22%237bcbab%22%20stroke%3D%22%23423b2a%22%20stroke-width%3D%221.5%22%2F%3E%3Ccircle%20cx%3D%22128%22%20cy%3D%22187%22%20r%3D%223.5%22%20fill%3D%22%23423b2a%22%2F%3E%0A%20%20%3C!--%20Neck%20--%3E%0A%20%20%3Cpath%20d%3D%22M111%2C148%20L145%2C148%20L148%2C176%20Q128%2C186%20108%2C176%20Z%22%20fill%3D%22%238f6348%22%2F%3E%0A%20%20%3C!--%20Ears%20--%3E%0A%20%20%3Cellipse%20cx%3D%2290%22%20cy%3D%22116%22%20rx%3D%227%22%20ry%3D%2212%22%20fill%3D%22%238f6348%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22166%22%20cy%3D%22116%22%20rx%3D%227%22%20ry%3D%2212%22%20fill%3D%22%238f6348%22%2F%3E%0A%20%20%3C!--%20Sculpted%20Head%20%26%20Jawline%20--%3E%0A%20%20%3Cpath%20d%3D%22M92%2C102%20C92%2C68%20164%2C68%20164%2C102%20C164%2C132%20152%2C154%20128%2C158%20C104%2C154%2092%2C132%2092%2C102%20Z%22%20fill%3D%22url(%23faceGrad)%22%2F%3E%0A%20%20%3C!--%20Cheek%20%26%20Nose%20contour%20--%3E%0A%20%20%3Cpath%20d%3D%22M128%2C104%20L125%2C126%20L133%2C127%22%20fill%3D%22none%22%20stroke%3D%22%238f6348%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3C!--%20Eyes%20--%3E%0A%20%20%3Cellipse%20cx%3D%22111%22%20cy%3D%22111%22%20rx%3D%228.5%22%20ry%3D%224.6%22%20fill%3D%22%23f5f2ec%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22145%22%20cy%3D%22111%22%20rx%3D%228.5%22%20ry%3D%224.6%22%20fill%3D%22%23f5f2ec%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22111%22%20cy%3D%22111%22%20r%3D%224.1%22%20fill%3D%22%233d754d%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22145%22%20cy%3D%22111%22%20r%3D%224.1%22%20fill%3D%22%233d754d%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22109.5%22%20cy%3D%22109.5%22%20r%3D%221.4%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22143.5%22%20cy%3D%22109.5%22%20r%3D%221.4%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3C!--%20Eyebrows%20--%3E%0A%20%20%3Cpath%20d%3D%22M101%2C102%20Q111%2C98%20121%2C102%22%20fill%3D%22none%22%20stroke%3D%22%237d6136%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M135%2C102%20Q145%2C98%20155%2C102%22%20fill%3D%22none%22%20stroke%3D%22%237d6136%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3C!--%20Mouth%20--%3E%0A%20%20%3Cpath%20d%3D%22M117%2C139%20Q128%2C144%20139%2C139%22%20fill%3D%22none%22%20stroke%3D%22%238f6348%22%20stroke-width%3D%222.8%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M94%2C124%20C96%2C154%20110%2C168%20128%2C172%20C146%2C168%20160%2C154%20162%2C124%20C150%2C142%20140%2C145%20128%2C145%20C116%2C145%20106%2C142%2094%2C124%20Z%22%20fill%3D%22%23b88f4f%22%2F%3E%0A%20%20%20%20%20%20%3Cellipse%20cx%3D%22128%22%20cy%3D%22176%22%20rx%3D%2210%22%20ry%3D%228%22%20fill%3D%22%237d6136%22%2F%3E%0A%20%20%20%20%20%20%3Crect%20x%3D%22119%22%20y%3D%22180%22%20width%3D%2218%22%20height%3D%225%22%20rx%3D%222%22%20fill%3D%22%237bcbab%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M86%2C108%20C86%2C64%20170%2C64%20170%2C108%20C162%2C86%20144%2C78%20126%2C80%20C106%2C82%2094%2C90%2086%2C108%20Z%22%20fill%3D%22%23b88f4f%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M96%2C76%20Q128%2C64%20156%2C78%22%20fill%3D%22none%22%20stroke%3D%22%23e4b162%22%20stroke-width%3D%223.5%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cg%20transform%3D%22translate(208%2C184)%22%3E%0A%20%20%20%20%20%20%20%20%3Cline%20x1%3D%220%22%20y1%3D%22-26%22%20x2%3D%220%22%20y2%3D%2270%22%20stroke%3D%22%23423029%22%20stroke-width%3D%226%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%22-30%22%20r%3D%2218%22%20fill%3D%22none%22%20stroke%3D%22%237bcbab%22%20stroke-width%3D%223.5%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%22-30%22%20r%3D%2210%22%20fill%3D%22none%22%20stroke%3D%22%237bcbab%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Ccircle%20cx%3D%220%22%20cy%3D%22-30%22%20r%3D%224.5%22%20fill%3D%22%236be8d4%22%2F%3E%0A%20%20%20%20%20%20%3C%2Fg%3E%0A%20%20%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%22248%22%20height%3D%22248%22%20fill%3D%22none%22%20stroke%3D%22%237bcbab%22%20stroke-opacity%3D%220.35%22%20stroke-width%3D%222%22%2F%3E%0A%3C%2Fsvg%3E",
+        "garmentStyle": "waywright-longcoat",
+        "hairStyle": "braided-locs",
+        "beardStyle": "braided-beard",
+        "satchelStyle": "twin-scroll",
+        "signatureProp": "astrolabe-staff",
+        "buildScale": [
+          1,
+          1.03,
+          0.96
+        ],
+        "bareForearms": false,
+        "hasHoodDown": false,
+        "hasPauldrons": false,
+        "skinRgb": [
+          0.72,
+          0.5,
+          0.36
+        ],
+        "hairRgb": [
+          0.72,
+          0.56,
+          0.31
+        ],
+        "garmentRgb": [
+          0.38,
+          0.34,
+          0.24
+        ],
+        "underTunicRgb": [
+          0.366,
+          0.31120000000000003,
+          0.216
+        ],
+        "trimRgb": [
+          0.46,
+          0.76,
+          0.64
+        ],
+        "leatherRgb": [
+          0.26,
+          0.19,
+          0.16
+        ],
+        "claspRgb": [
+          0.46,
+          0.76,
+          0.64
+        ],
+        "claspKind": "runic-gold",
+        "eyeRgb": [
+          0.24,
+          0.46,
+          0.3
+        ],
+        "genomeSeed": 465565281,
+        "traitSummary": "waywright-longcoat · braided-locs · braided-beard · astrolabe-staff"
+      }
     },
     {
       "id": "npc-haldor",
@@ -639,13 +700,13 @@
       "guildId": "guild-kiln",
       "guildName": "Oakhaven Sluice Guild",
       "regionId": "ashen-kiln",
-      "portraitUrl": "/src/assets/images/ff_npc_tarsik_1795130893764.jpg",
+      "portraitUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20256%20256%22%20width%3D%22256%22%20height%3D%22256%22%20role%3D%22img%22%20aria-label%3D%22Hesper%20Fallow%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%233f534c%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2268%25%22%20stop-color%3D%22%2366867b%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23141921%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22rim%22%20cx%3D%2250%25%22%20cy%3D%2238%25%22%20r%3D%2255%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23b77138%22%20stop-opacity%3D%220.34%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b77138%22%20stop-opacity%3D%220%22%2F%3E%0A%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22faceGrad%22%20x1%3D%220.2%22%20y1%3D%220%22%20x2%3D%220.85%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23b47754%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%23a16b4b%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%237b523a%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22url(%23bg)%22%2F%3E%0A%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22url(%23rim)%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M0%2C192%20L38%2C162%20L76%2C178%20L128%2C154%20L182%2C174%20L224%2C158%20L256%2C184%20L256%2C256%20L0%2C256%20Z%22%20fill%3D%22%230d1218%22%20opacity%3D%220.45%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C92%20C72%2C72%2095%2C46%20132%2C48%20C166%2C50%20184%2C74%20176%2C104%20C172%2C118%20164%2C132%20158%2C142%20L94%2C138%20C86%2C124%2080%2C108%2084%2C92%20Z%22%20fill%3D%22%233d4557%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M36%2C256%20C36%2C194%2084%2C166%20128%2C166%20C172%2C166%20220%2C194%20220%2C256%20Z%22%20fill%3D%22%2361573d%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M104%2C174%20L128%2C232%20L152%2C174%22%20fill%3D%22%235d4f37%22%20stroke%3D%22%23d18140%22%20stroke-width%3D%222.4%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C176%20L172%2C252%22%20stroke%3D%22%237a4d2b%22%20stroke-width%3D%2210%22%2F%3E%0A%20%20%20%20%20%20%3Cellipse%20cx%3D%2272%22%20cy%3D%22198%22%20rx%3D%2224%22%20ry%3D%2215%22%20fill%3D%22%23d18140%22%20stroke%3D%22%23423b2a%22%20stroke-width%3D%222%22%2F%3E%3Cellipse%20cx%3D%22184%22%20cy%3D%22198%22%20rx%3D%2224%22%20ry%3D%2215%22%20fill%3D%22%23d18140%22%20stroke%3D%22%23423b2a%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Cpolygon%20points%3D%22128%2C176%20138%2C187%20128%2C198%20118%2C187%22%20fill%3D%22%23dc8643%22%20stroke%3D%22%23423b2a%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%3C!--%20Neck%20--%3E%0A%20%20%3Cpath%20d%3D%22M111%2C148%20L145%2C148%20L148%2C176%20Q128%2C186%20108%2C176%20Z%22%20fill%3D%22%237b523a%22%2F%3E%0A%20%20%3C!--%20Ears%20--%3E%0A%20%20%3Cellipse%20cx%3D%2290%22%20cy%3D%22116%22%20rx%3D%227%22%20ry%3D%2212%22%20fill%3D%22%237b523a%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22166%22%20cy%3D%22116%22%20rx%3D%227%22%20ry%3D%2212%22%20fill%3D%22%237b523a%22%2F%3E%0A%20%20%3C!--%20Sculpted%20Head%20%26%20Jawline%20--%3E%0A%20%20%3Cpath%20d%3D%22M92%2C102%20C92%2C68%20164%2C68%20164%2C102%20C164%2C132%20152%2C154%20128%2C158%20C104%2C154%2092%2C132%2092%2C102%20Z%22%20fill%3D%22url(%23faceGrad)%22%2F%3E%0A%20%20%3C!--%20Cheek%20%26%20Nose%20contour%20--%3E%0A%20%20%3Cpath%20d%3D%22M128%2C104%20L125%2C126%20L133%2C127%22%20fill%3D%22none%22%20stroke%3D%22%237b523a%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3C!--%20Eyes%20--%3E%0A%20%20%3Cellipse%20cx%3D%22111%22%20cy%3D%22111%22%20rx%3D%228.5%22%20ry%3D%224.6%22%20fill%3D%22%23f5f2ec%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22145%22%20cy%3D%22111%22%20rx%3D%228.5%22%20ry%3D%224.6%22%20fill%3D%22%23f5f2ec%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22111%22%20cy%3D%22111%22%20r%3D%224.1%22%20fill%3D%22%23574770%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22145%22%20cy%3D%22111%22%20r%3D%224.1%22%20fill%3D%22%23574770%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22109.5%22%20cy%3D%22109.5%22%20r%3D%221.4%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22143.5%22%20cy%3D%22109.5%22%20r%3D%221.4%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3C!--%20Eyebrows%20--%3E%0A%20%20%3Cpath%20d%3D%22M101%2C102%20Q111%2C98%20121%2C102%22%20fill%3D%22none%22%20stroke%3D%22%232a2f3b%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M135%2C102%20Q145%2C98%20155%2C102%22%20fill%3D%22none%22%20stroke%3D%22%232a2f3b%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3C!--%20Mouth%20--%3E%0A%20%20%3Cpath%20d%3D%22M117%2C139%20Q128%2C144%20139%2C139%22%20fill%3D%22none%22%20stroke%3D%22%237b523a%22%20stroke-width%3D%222.8%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M95%2C126%20C95%2C152%20112%2C164%20128%2C164%20C144%2C164%20161%2C152%20161%2C126%20C154%2C142%20142%2C148%20128%2C148%20C114%2C148%20102%2C142%2095%2C126%20Z%22%20fill%3D%22%233d4557%22%20opacity%3D%220.94%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M114%2C138%20Q128%2C133%20142%2C138%22%20fill%3D%22none%22%20stroke%3D%22%234c556c%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C110%20C82%2C66%20122%2C52%20162%2C68%20C176%2C74%20178%2C94%20170%2C112%20C164%2C90%20144%2C80%20120%2C84%20C102%2C86%2092%2C98%2084%2C110%20Z%22%20fill%3D%22%233d4557%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M98%2C74%20Q134%2C58%20164%2C76%22%20fill%3D%22none%22%20stroke%3D%22%234c556c%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cg%20transform%3D%22translate(206%2C196)%20rotate(10)%22%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20d%3D%22M0%2C12%20L0%2C42%20M-10%2C-28%20L-10%2C4%20Q-10%2C14%200%2C14%20Q10%2C14%2010%2C4%20L10%2C-28%22%20fill%3D%22none%22%20stroke%3D%22%23d18140%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%20%20%3C%2Fg%3E%0A%20%20%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%22248%22%20height%3D%22248%22%20fill%3D%22none%22%20stroke%3D%22%23d18140%22%20stroke-opacity%3D%220.35%22%20stroke-width%3D%222%22%2F%3E%0A%3C%2Fsvg%3E",
       "position": [
         -22.5,
         -5.2
       ],
-      "cloakHex": 6051144,
-      "trimHex": 7714974,
+      "cloakHex": 6379325,
+      "trimHex": 13072957,
       "greeting": "Hear that rhythmic clack? A limestone wedge jammed the Silt-Wheel bronze impeller. Strike the Spillway Bell once you scatter the Shardcasters.",
       "cognitiveDrive": "Keep Oakhaven grain mills turning cleanly on spring melt.",
       "concealedSecret": "He smelts salvaged aqueduct coins into corrosion-proof bearings.",
@@ -661,7 +722,68 @@
           "thought": "Quietly tucking away his tray of shaved bronze mintings.",
           "renownGain": 25
         }
-      ]
+      ],
+      "appearance": {
+        "rigId": "verdant:rig:npc-haldor",
+        "portraitArchetype": "synthesized",
+        "portraitUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20256%20256%22%20width%3D%22256%22%20height%3D%22256%22%20role%3D%22img%22%20aria-label%3D%22Hesper%20Fallow%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%233f534c%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2268%25%22%20stop-color%3D%22%2366867b%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23141921%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22rim%22%20cx%3D%2250%25%22%20cy%3D%2238%25%22%20r%3D%2255%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23b77138%22%20stop-opacity%3D%220.34%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b77138%22%20stop-opacity%3D%220%22%2F%3E%0A%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22faceGrad%22%20x1%3D%220.2%22%20y1%3D%220%22%20x2%3D%220.85%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23b47754%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%23a16b4b%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%237b523a%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22url(%23bg)%22%2F%3E%0A%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22url(%23rim)%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M0%2C192%20L38%2C162%20L76%2C178%20L128%2C154%20L182%2C174%20L224%2C158%20L256%2C184%20L256%2C256%20L0%2C256%20Z%22%20fill%3D%22%230d1218%22%20opacity%3D%220.45%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C92%20C72%2C72%2095%2C46%20132%2C48%20C166%2C50%20184%2C74%20176%2C104%20C172%2C118%20164%2C132%20158%2C142%20L94%2C138%20C86%2C124%2080%2C108%2084%2C92%20Z%22%20fill%3D%22%233d4557%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M36%2C256%20C36%2C194%2084%2C166%20128%2C166%20C172%2C166%20220%2C194%20220%2C256%20Z%22%20fill%3D%22%2361573d%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M104%2C174%20L128%2C232%20L152%2C174%22%20fill%3D%22%235d4f37%22%20stroke%3D%22%23d18140%22%20stroke-width%3D%222.4%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C176%20L172%2C252%22%20stroke%3D%22%237a4d2b%22%20stroke-width%3D%2210%22%2F%3E%0A%20%20%20%20%20%20%3Cellipse%20cx%3D%2272%22%20cy%3D%22198%22%20rx%3D%2224%22%20ry%3D%2215%22%20fill%3D%22%23d18140%22%20stroke%3D%22%23423b2a%22%20stroke-width%3D%222%22%2F%3E%3Cellipse%20cx%3D%22184%22%20cy%3D%22198%22%20rx%3D%2224%22%20ry%3D%2215%22%20fill%3D%22%23d18140%22%20stroke%3D%22%23423b2a%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Cpolygon%20points%3D%22128%2C176%20138%2C187%20128%2C198%20118%2C187%22%20fill%3D%22%23dc8643%22%20stroke%3D%22%23423b2a%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%3C!--%20Neck%20--%3E%0A%20%20%3Cpath%20d%3D%22M111%2C148%20L145%2C148%20L148%2C176%20Q128%2C186%20108%2C176%20Z%22%20fill%3D%22%237b523a%22%2F%3E%0A%20%20%3C!--%20Ears%20--%3E%0A%20%20%3Cellipse%20cx%3D%2290%22%20cy%3D%22116%22%20rx%3D%227%22%20ry%3D%2212%22%20fill%3D%22%237b523a%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22166%22%20cy%3D%22116%22%20rx%3D%227%22%20ry%3D%2212%22%20fill%3D%22%237b523a%22%2F%3E%0A%20%20%3C!--%20Sculpted%20Head%20%26%20Jawline%20--%3E%0A%20%20%3Cpath%20d%3D%22M92%2C102%20C92%2C68%20164%2C68%20164%2C102%20C164%2C132%20152%2C154%20128%2C158%20C104%2C154%2092%2C132%2092%2C102%20Z%22%20fill%3D%22url(%23faceGrad)%22%2F%3E%0A%20%20%3C!--%20Cheek%20%26%20Nose%20contour%20--%3E%0A%20%20%3Cpath%20d%3D%22M128%2C104%20L125%2C126%20L133%2C127%22%20fill%3D%22none%22%20stroke%3D%22%237b523a%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3C!--%20Eyes%20--%3E%0A%20%20%3Cellipse%20cx%3D%22111%22%20cy%3D%22111%22%20rx%3D%228.5%22%20ry%3D%224.6%22%20fill%3D%22%23f5f2ec%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22145%22%20cy%3D%22111%22%20rx%3D%228.5%22%20ry%3D%224.6%22%20fill%3D%22%23f5f2ec%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22111%22%20cy%3D%22111%22%20r%3D%224.1%22%20fill%3D%22%23574770%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22145%22%20cy%3D%22111%22%20r%3D%224.1%22%20fill%3D%22%23574770%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22109.5%22%20cy%3D%22109.5%22%20r%3D%221.4%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22143.5%22%20cy%3D%22109.5%22%20r%3D%221.4%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3C!--%20Eyebrows%20--%3E%0A%20%20%3Cpath%20d%3D%22M101%2C102%20Q111%2C98%20121%2C102%22%20fill%3D%22none%22%20stroke%3D%22%232a2f3b%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M135%2C102%20Q145%2C98%20155%2C102%22%20fill%3D%22none%22%20stroke%3D%22%232a2f3b%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3C!--%20Mouth%20--%3E%0A%20%20%3Cpath%20d%3D%22M117%2C139%20Q128%2C144%20139%2C139%22%20fill%3D%22none%22%20stroke%3D%22%237b523a%22%20stroke-width%3D%222.8%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M95%2C126%20C95%2C152%20112%2C164%20128%2C164%20C144%2C164%20161%2C152%20161%2C126%20C154%2C142%20142%2C148%20128%2C148%20C114%2C148%20102%2C142%2095%2C126%20Z%22%20fill%3D%22%233d4557%22%20opacity%3D%220.94%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M114%2C138%20Q128%2C133%20142%2C138%22%20fill%3D%22none%22%20stroke%3D%22%234c556c%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C110%20C82%2C66%20122%2C52%20162%2C68%20C176%2C74%20178%2C94%20170%2C112%20C164%2C90%20144%2C80%20120%2C84%20C102%2C86%2092%2C98%2084%2C110%20Z%22%20fill%3D%22%233d4557%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M98%2C74%20Q134%2C58%20164%2C76%22%20fill%3D%22none%22%20stroke%3D%22%234c556c%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cg%20transform%3D%22translate(206%2C196)%20rotate(10)%22%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20d%3D%22M0%2C12%20L0%2C42%20M-10%2C-28%20L-10%2C4%20Q-10%2C14%200%2C14%20Q10%2C14%2010%2C4%20L10%2C-28%22%20fill%3D%22none%22%20stroke%3D%22%23d18140%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%20%20%3C%2Fg%3E%0A%20%20%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%22248%22%20height%3D%22248%22%20fill%3D%22none%22%20stroke%3D%22%23d18140%22%20stroke-opacity%3D%220.35%22%20stroke-width%3D%222%22%2F%3E%0A%3C%2Fsvg%3E",
+        "garmentStyle": "ranger-brigandine",
+        "hairStyle": "windswept",
+        "beardStyle": "trimmed-grey",
+        "satchelStyle": "smith-belt",
+        "signatureProp": "tuning-fork",
+        "buildScale": [
+          0.96,
+          1.03,
+          1.05
+        ],
+        "bareForearms": false,
+        "hasHoodDown": false,
+        "hasPauldrons": true,
+        "skinRgb": [
+          0.62,
+          0.41,
+          0.29
+        ],
+        "hairRgb": [
+          0.24,
+          0.27,
+          0.34
+        ],
+        "garmentRgb": [
+          0.38,
+          0.34,
+          0.24
+        ],
+        "underTunicRgb": [
+          0.366,
+          0.31120000000000003,
+          0.216
+        ],
+        "trimRgb": [
+          0.78,
+          0.48,
+          0.24
+        ],
+        "leatherRgb": [
+          0.48,
+          0.3,
+          0.17
+        ],
+        "claspRgb": [
+          0.82,
+          0.5,
+          0.25
+        ],
+        "claspKind": "copper-buckle",
+        "eyeRgb": [
+          0.34,
+          0.28,
+          0.44
+        ],
+        "genomeSeed": 4082173811,
+        "traitSummary": "ranger-brigandine · windswept · trimmed-grey · tuning-fork"
+      }
     }
   ],
   "quests": [
@@ -845,7 +967,7 @@
     {
       "id": "oak-e1",
       "archetype": "stalker",
-      "name": "Fen Root-Stalker",
+      "name": "Spore-Antler Stag",
       "x": -13,
       "z": -7,
       "homeX": -13,
@@ -865,13 +987,13 @@
       "moveSpeed": 6.2,
       "aggroRadius": 17,
       "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
+      "telegraphDuration": 0.58,
       "hasAttackToken": false
     },
     {
       "id": "oak-e2",
-      "archetype": "stalker",
-      "name": "Sluice Crawler",
+      "archetype": "skirmisher",
+      "name": "Fern-Mantle Dartstrider",
       "x": 12,
       "z": -9,
       "homeX": 12,
@@ -879,25 +1001,25 @@
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 62,
-      "maxHp": 62,
+      "hp": 58,
+      "maxHp": 58,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
       "hitFlashTimer": 0,
       "koTimer": 0,
-      "attackDamage": 11,
-      "attackRadius": 2.7,
-      "moveSpeed": 6.2,
-      "aggroRadius": 17,
-      "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
+      "attackDamage": 13,
+      "attackRadius": 2.5,
+      "moveSpeed": 7.2,
+      "aggroRadius": 18,
+      "preferredRange": 3.8,
+      "telegraphDuration": 0.4,
       "hasAttackToken": false
     },
     {
       "id": "oak-e3",
-      "archetype": "shardcaster",
-      "name": "Cistern Prism-Weaver",
+      "archetype": "hexweaver",
+      "name": "Mycelial Chorus-Weaver",
       "x": -22,
       "z": -11,
       "homeX": -22,
@@ -905,25 +1027,25 @@
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 56,
-      "maxHp": 56,
+      "hp": 64,
+      "maxHp": 64,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": -1,
       "hitFlashTimer": 0,
       "koTimer": 0,
       "attackDamage": 15,
-      "attackRadius": 12,
-      "moveSpeed": 4.5,
-      "aggroRadius": 17,
-      "preferredRange": 9.5,
-      "telegraphDuration": 0.6,
+      "attackRadius": 13,
+      "moveSpeed": 4.8,
+      "aggroRadius": 19,
+      "preferredRange": 12.5,
+      "telegraphDuration": 0.68,
       "hasAttackToken": false
     },
     {
       "id": "oak-e4",
       "archetype": "colossus",
-      "name": "Moss-Bound Aqueduct Golem",
+      "name": "Elder Aqueduct Treant-Warden",
       "x": 24,
       "z": 15,
       "homeX": 24,
@@ -948,8 +1070,8 @@
     },
     {
       "id": "oak-e5",
-      "archetype": "stalker",
-      "name": "Reservoir Stalker",
+      "archetype": "charger",
+      "name": "Root-Horned Sluice Boar",
       "x": -46,
       "z": -19,
       "homeX": -46,
@@ -957,25 +1079,25 @@
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 68,
-      "maxHp": 68,
+      "hp": 96,
+      "maxHp": 96,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": -1,
       "hitFlashTimer": 0,
       "koTimer": 0,
-      "attackDamage": 11,
-      "attackRadius": 2.7,
-      "moveSpeed": 6.2,
-      "aggroRadius": 17,
-      "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
+      "attackDamage": 22,
+      "attackRadius": 3.3,
+      "moveSpeed": 5.2,
+      "aggroRadius": 19,
+      "preferredRange": 7.5,
+      "telegraphDuration": 0.62,
       "hasAttackToken": false
     },
     {
       "id": "oak-e6",
       "archetype": "shardcaster",
-      "name": "Spillway Arc-Channeler",
+      "name": "Bioluminescent Spore-Medusa",
       "x": 46,
       "z": 8,
       "homeX": 46,
@@ -993,19 +1115,19 @@
       "attackDamage": 15,
       "attackRadius": 12,
       "moveSpeed": 4.5,
-      "aggroRadius": 17,
+      "aggroRadius": 18,
       "preferredRange": 9.5,
-      "telegraphDuration": 0.6,
+      "telegraphDuration": 0.62,
       "hasAttackToken": false
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:5b8dc7dd0655969879623415b6caa9f6d43026d01c266db40f2b6762e2080a42",
+    "worldGlbKappa": "sha256:1e0dbfe8a7ad4db6fee79a28ee94d835fbe544b0e80e8541e6568b186b7b8d2a",
     "vdntKappa": "sha256:df283020479d187b8961c9aaa535b4a8332b987d5ded484ae77a2b7f2e4730ff",
     "skyKappa": "sha256:2e88d477f0c18f7ee923fdda872e0d4a42aa27b54cdd3588fd5358f0b3bf2690",
     "triangles": 36810,
     "vertices": 69051,
-    "glbBytes": 3560956,
+    "glbBytes": 3551520,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 13,
     "importedCatalogAssets": [

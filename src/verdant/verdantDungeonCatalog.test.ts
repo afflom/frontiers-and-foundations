@@ -58,27 +58,37 @@ describe('Verdant Bespoke 3D Dungeon Architecture Catalog & Fauna Combat AI', ()
     }
   });
 
-  it('produces 1:1 navigable dungeon collision maps preserving open bridge, open alcoves, solid walls, and open chasm airspace across all 6 dungeons', () => {
+  it('produces 1:1 navigable dungeon collision maps preserving bespoke walkable floorplans, solid walls, and open hazard airspace across all 6 distinct dungeon topologies', () => {
+    const seenTopologies = new Set<string>();
     for (const dg of CANONICAL_DUNGEON_SPECS) {
+      const plan = synthesizeDungeonEcosystem(dg);
+      seenTopologies.add(plan.topologyId);
       const map = buildRealmCollisionMap(dg, dg.interactables);
-      assert.ok(map.boxes.length >= 12, `${dg.slug} must have solid perimeter & bridge box colliders`);
+      assert.ok(map.boxes.length >= 6, `${dg.slug} must have solid perimeter & hazard box colliders`);
 
-      // Center of chasm bridge must be smoothly walkable
-      const bridgePass = resolveCircleVsWorld(0, 11.0, PLAYER_COLLISION_RADIUS, 1.0, map);
-      assert.equal(bridgePass.collided, false, `${dg.slug} bridge center (0, 11) must remain unobstructed`);
-
-      // Stepping into the abyss chasm pit must block player movement, yet allow projectiles to fly across
-      const chasmBlock = resolveCircleVsWorld(5.0, 11.0, PLAYER_COLLISION_RADIUS, 1.0, map);
-      assert.equal(chasmBlock.collided, true, `${dg.slug} abyss chasm must block player footing`);
-      assert.equal(
-        isProjectileBlockedByWorld(5.5, 11.0, 1.2, 0.35, map),
-        false,
-        `${dg.slug} abyss chasm airspace must NOT block projectiles`,
+      // Spawn point must be smoothly walkable
+      const spawnPass = resolveCircleVsWorld(
+        dg.spawnPoint[0],
+        dg.spawnPoint[1],
+        PLAYER_COLLISION_RADIUS,
+        1.0,
+        map,
       );
+      assert.equal(spawnPass.collided, false, `${dg.slug} spawn (${dg.spawnPoint.join(', ')}) must remain unobstructed`);
 
-      // East & West alcove passages at z = -6.5 must stay open
-      const alcovePass = resolveCircleVsWorld(12.2, -6.5, PLAYER_COLLISION_RADIUS, 1.0, map);
-      assert.equal(alcovePass.collided, false, `${dg.slug} east alcove entrance must remain passable`);
+      // Every topology-specific blocking hazard zone must block player footing while leaving airspace open for projectiles
+      for (const hz of plan.hazardZones) {
+        if (!hz.blocksWalking) continue;
+        const hx = (hz.minX + hz.maxX) * 0.5;
+        const hzMid = (hz.minZ + hz.maxZ) * 0.5;
+        const hazardBlock = resolveCircleVsWorld(hx, hzMid, PLAYER_COLLISION_RADIUS, 1.0, map);
+        assert.equal(hazardBlock.collided, true, `${dg.slug} hazard ${hz.id} at (${hx}, ${hzMid}) must block player footing`);
+        assert.equal(
+          isProjectileBlockedByWorld(hx, hzMid, 1.2, 0.35, map),
+          false,
+          `${dg.slug} hazard ${hz.id} airspace must NOT block projectiles`,
+        );
+      }
 
       // Outer perimeter wall must block projectiles
       assert.equal(
@@ -87,6 +97,7 @@ describe('Verdant Bespoke 3D Dungeon Architecture Catalog & Fauna Combat AI', ()
         `${dg.slug} east perimeter wall must block projectiles`,
       );
     }
+    assert.equal(seenTopologies.size, 6, 'all 6 canonical dungeons must synthesize distinct floorplan topologies');
   });
 
   it('differentiates combat AI speed and regeneration across ecosystem fauna families', () => {

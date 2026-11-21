@@ -2,7 +2,7 @@
   "id": "dungeon-cinderfall-magma-delve",
   "slug": "cinderfall-magma-delve",
   "name": "The Crucible Core Depths",
-  "subtitle": "Tier 3 3D Dungeon Delve · Beneath Cinderfall",
+  "subtitle": "Tier 3 Crucible Caldera Island & Quench Wings · Beneath Cinderfall",
   "cell": [
     0,
     -3,
@@ -16,7 +16,7 @@
   "dungeonStyle": "geothermal-depths",
   "dungeonTier": 3,
   "dungeonEntrances": [],
-  "summary": "A subterranean vaulted sanctuary beneath Cinderfall. Cross the glowing abyss bridge, ignite the three Resonant Seal Braziers, unseal the alcove vaults, and defeat Anvil-Heart Caldera Warden.",
+  "summary": "An octagonal iron-forged island suspended over a molten magma lake, linked by chain walkways to flanking Quench-Valve Bastions and a roaring Blast Furnace Dais. Cross the lava lake to the central Anvil Island, vent both Quench Valves on the flanking bastions, and shatter Anvil-Heart Caldera Warden.",
   "skyAssetId": "dikhololo_night",
   "skyUrl": "/verdant/realms/cinderfall-magma-delve/sky.jpg",
   "glbUrl": "/verdant/realms/cinderfall-magma-delve/world.glb",
@@ -178,8 +178,8 @@
     "coastDip": 0,
     "rimStart": 42,
     "rimHeight": 2,
-    "waterLevel": -2.2,
-    "hasBridge": true,
+    "waterLevel": -2.1,
+    "hasBridge": false,
     "bridgeDeckY": 1.15,
     "bridgeZMin": 3.6,
     "bridgeZMax": 18.4,
@@ -187,88 +187,70 @@
   },
   "importedCatalogProps": [
     {
-      "id": "cinderfall-magma-delve-st-w",
-      "assetId": "gothic_statue",
+      "id": "cinderfall-magma-delve-kettle-w",
+      "assetId": "brass_pot_01",
       "source": "polyhaven",
-      "label": "Vestibule Warden W",
+      "label": "Crucible Slag Kettle W",
       "position": [
-        -6,
-        21
+        -5.5,
+        6.2
       ],
-      "targetHeight": 3.8,
-      "yaw": 0.3,
+      "targetHeight": 1.4,
+      "yaw": 0.5,
       "tintRgb": [
         0.34,
         0.28,
         0.26
       ],
-      "maxTriangles": 480
+      "maxTriangles": 320
     },
     {
-      "id": "cinderfall-magma-delve-st-e",
-      "assetId": "gothic_statue",
+      "id": "cinderfall-magma-delve-kettle-e",
+      "assetId": "brass_pot_01",
       "source": "polyhaven",
-      "label": "Vestibule Warden E",
+      "label": "Crucible Slag Kettle E",
       "position": [
-        6,
-        21
+        5.5,
+        6.2
       ],
-      "targetHeight": 3.8,
-      "yaw": -0.3,
+      "targetHeight": 1.4,
+      "yaw": 1.8,
       "tintRgb": [
         0.34,
         0.28,
         0.26
       ],
-      "maxTriangles": 480
+      "maxTriangles": 320
     },
     {
-      "id": "cinderfall-magma-delve-st-bw",
-      "assetId": "gothic_statue",
+      "id": "cinderfall-magma-delve-lamp-w",
+      "assetId": "brass_diya_lantern",
       "source": "polyhaven",
-      "label": "Sanctum Sentinel W",
+      "label": "Anvil Torch W",
       "position": [
-        -9,
-        -24
+        -5.8,
+        -4.8
       ],
-      "targetHeight": 4.4,
+      "targetHeight": 1.4,
       "yaw": 0.4,
       "tintRgb": [
-        0.34,
-        0.28,
-        0.26
+        0.98,
+        0.48,
+        0.18
       ],
-      "maxTriangles": 500
+      "maxTriangles": 340
     },
     {
-      "id": "cinderfall-magma-delve-st-be",
-      "assetId": "gothic_statue",
-      "source": "polyhaven",
-      "label": "Sanctum Sentinel E",
-      "position": [
-        9,
-        -24
-      ],
-      "targetHeight": 4.4,
-      "yaw": -0.4,
-      "tintRgb": [
-        0.34,
-        0.28,
-        0.26
-      ],
-      "maxTriangles": 500
-    },
-    {
-      "id": "cinderfall-magma-delve-lamp-1",
+      "id": "cinderfall-magma-delve-lamp-e",
       "assetId": "brass_diya_lantern",
       "source": "polyhaven",
-      "label": "Bridge Torch W",
+      "label": "Anvil Torch E",
       "position": [
-        -3.4,
-        18.2
+        5.8,
+        -4.8
       ],
-      "targetHeight": 1.35,
-      "yaw": 0.1,
+      "targetHeight": 1.4,
+      "yaw": 2.1,
       "tintRgb": [
         0.98,
         0.48,
@@ -277,125 +259,53 @@
       "maxTriangles": 340
     },
     {
-      "id": "cinderfall-magma-delve-lamp-2",
-      "assetId": "brass_diya_lantern",
-      "source": "polyhaven",
-      "label": "Bridge Torch E",
-      "position": [
-        3.4,
-        18.2
-      ],
-      "targetHeight": 1.35,
-      "yaw": 1.5,
-      "tintRgb": [
-        0.98,
-        0.48,
-        0.18
-      ],
-      "maxTriangles": 340
-    },
-    {
-      "id": "cinderfall-magma-delve-lamp-3",
-      "assetId": "Lantern_01",
-      "source": "polyhaven",
-      "label": "Rotunda Lantern W",
-      "position": [
-        -8.5,
-        -3
-      ],
-      "targetHeight": 1.35,
-      "yaw": 0.3,
-      "tintRgb": [
-        0.98,
-        0.48,
-        0.18
-      ],
-      "maxTriangles": 340
-    },
-    {
-      "id": "cinderfall-magma-delve-lamp-4",
-      "assetId": "Lantern_01",
-      "source": "polyhaven",
-      "label": "Rotunda Lantern E",
-      "position": [
-        8.5,
-        -3
-      ],
-      "targetHeight": 1.35,
-      "yaw": 1.9,
-      "tintRgb": [
-        0.98,
-        0.48,
-        0.18
-      ],
-      "maxTriangles": 340
-    },
-    {
-      "id": "cinderfall-magma-delve-estoc",
+      "id": "cinderfall-magma-delve-blade-n",
       "assetId": "antique_estoc",
       "source": "polyhaven",
-      "label": "Boss Altar Relic Blade",
+      "label": "Tempered Anvil Relic",
       "position": [
         0,
-        -32
+        -31.8
       ],
       "yOffset": 1.2,
-      "targetHeight": 2.6,
+      "targetHeight": 2.7,
       "yaw": 0,
       "tintRgb": [
-        0.88,
-        0.8,
-        0.56
+        0.34,
+        0.28,
+        0.26
       ],
       "maxTriangles": 360
     },
     {
-      "id": "cinderfall-magma-delve-vase-w",
-      "assetId": "brass_vase_01",
-      "source": "polyhaven",
-      "label": "West Alcove Reliquary",
-      "position": [
-        -18.5,
-        -4
-      ],
-      "targetHeight": 1.4,
-      "yaw": 0.8,
-      "tintRgb": [
-        0.98,
-        0.48,
-        0.18
-      ],
-      "maxTriangles": 320
-    },
-    {
-      "id": "cinderfall-magma-delve-crate-e",
-      "assetId": "old_military_crate",
-      "source": "polyhaven",
-      "label": "East Alcove Vault Crate",
-      "position": [
-        18.5,
-        -4
-      ],
-      "targetHeight": 1.15,
-      "yaw": 0.4,
-      "tintRgb": [
-        0.44,
-        0.38,
-        0.32
-      ],
-      "maxTriangles": 320
-    },
-    {
-      "id": "cinderfall-magma-delve-rock-1",
+      "id": "cinderfall-magma-delve-rock-w",
       "assetId": "boulder_01",
       "source": "polyhaven",
-      "label": "Vault Cavern Outcrop",
+      "label": "Obsidian Basalt Crag W",
       "position": [
-        -14,
-        -29
+        -11.5,
+        -28
       ],
-      "targetHeight": 3.2,
-      "yaw": 0.9,
+      "targetHeight": 3.4,
+      "yaw": 0.8,
+      "tintRgb": [
+        0.34,
+        0.28,
+        0.26
+      ],
+      "maxTriangles": 400
+    },
+    {
+      "id": "cinderfall-magma-delve-rock-e",
+      "assetId": "boulder_01",
+      "source": "polyhaven",
+      "label": "Obsidian Basalt Crag E",
+      "position": [
+        11.5,
+        -28
+      ],
+      "targetHeight": 3.4,
+      "yaw": 2.2,
       "tintRgb": [
         0.34,
         0.28,
@@ -407,56 +317,56 @@
   "regions": [
     {
       "id": "dungeon-sanctum",
-      "name": "The Crucible Core Depths — Vestibule",
-      "subtitle": "Tier 3 Subterranean Vault",
+      "name": "Bellows Entry Ledge",
+      "subtitle": "Volcanic Descent",
       "center": [
         0,
-        22
+        25
       ],
-      "radius": 14,
-      "ambientMood": "causeway"
+      "radius": 13,
+      "ambientMood": "foundry"
     },
     {
       "id": "high-causeway",
-      "name": "Abyss Span & Seal Rotunda",
-      "subtitle": "Pillared Acoustic Hall & Treasure Alcoves",
+      "name": "Anvil-Core Island & Quench Wings",
+      "subtitle": "Suspended Lava Foundry",
       "center": [
         0,
-        -4
+        0.5
       ],
       "radius": 18,
       "ambientMood": "foundry"
     },
     {
       "id": "boss-vault",
-      "name": "Anvil-Heart Caldera Warden Sanctum",
-      "subtitle": "Inner Boss Amphitheater & Ascend Portal",
+      "name": "Anvil-Heart Caldera Warden — Blast Furnace Sanctum",
+      "subtitle": "Molten Crucible Dais",
       "center": [
         0,
         -26
       ],
-      "radius": 16,
+      "radius": 15,
       "ambientMood": "foundry"
     }
   ],
   "fastTravelPoints": [
     {
       "regionId": "dungeon-sanctum",
-      "name": "Dungeon Entry Vestibule",
+      "name": "Bellows Entry Ledge",
       "x": 0,
       "z": 26.5
     },
     {
       "regionId": "high-causeway",
-      "name": "Central Seal Rotunda",
+      "name": "Central Anvil Island",
       "x": 0,
-      "z": -2
+      "z": 0.5
     },
     {
       "regionId": "boss-vault",
-      "name": "Boss Sanctum Threshold",
+      "name": "Furnace Dais Gate",
       "x": 0,
-      "z": -18
+      "z": -18.5
     }
   ],
   "npcs": [],
@@ -467,31 +377,31 @@
       "giverNpcId": "npc-orenna",
       "guildId": "guild-kiln",
       "regionId": "boss-vault",
-      "summary": "Conquer The Crucible Core Depths: ignite the Resonant Seal Braziers, plunder the side treasure vaults, and defeat Anvil-Heart Caldera Warden in the northern Sanctum.",
-      "motif": "subterranean geothermal-depths delve",
+      "summary": "Cross the lava lake to the central Anvil Island, vent both Quench Valves on the flanking bastions, and shatter Anvil-Heart Caldera Warden.",
+      "motif": "volcanic crucible valve quenching",
       "renownReward": 355,
       "status": "active",
       "objectives": [
         {
-          "id": "obj-cinderfall-magma-delve-brazier",
-          "description": "Ignite Resonant Seal Braziers",
+          "id": "obj-cinderfall-magma-delve-primary",
+          "description": "Vent West & East Crucible Quench Valves",
           "kind": "calibrate-beacon",
           "targetId": "cinderfall-magma-delve-brazier",
           "targetCoords": [
-            0,
-            -4
+            -16.8,
+            0.5
           ],
           "requiredCount": 2,
           "currentCount": 0
         },
         {
           "id": "obj-cinderfall-magma-delve-boss",
-          "description": "Vanquish Anvil-Heart Caldera Warden",
+          "description": "Quench Anvil-Heart Caldera Warden",
           "kind": "defeat-archetype",
           "targetId": "colossus",
           "targetCoords": [
             0,
-            -26
+            -25.5
           ],
           "requiredCount": 1,
           "currentCount": 0
@@ -503,48 +413,48 @@
     {
       "id": "cinderfall-magma-delve-brazier-w",
       "kind": "seal-brazier",
-      "name": "West Resonant Seal Brazier",
-      "promptVerb": "Ignite Seal Brazier",
+      "name": "West Crucible Quench Valve",
+      "promptVerb": "Vent West Quench Valve",
       "regionId": "high-causeway",
       "position": [
-        -8.5,
-        -4.5
+        -16.8,
+        0.5
       ],
       "activated": false
     },
     {
       "id": "cinderfall-magma-delve-brazier-e",
       "kind": "seal-brazier",
-      "name": "East Resonant Seal Brazier",
-      "promptVerb": "Ignite Seal Brazier",
+      "name": "East Crucible Quench Valve",
+      "promptVerb": "Vent East Quench Valve",
       "regionId": "high-causeway",
       "position": [
-        8.5,
-        -4.5
+        16.8,
+        0.5
       ],
       "activated": false
     },
     {
       "id": "cinderfall-magma-delve-chest-w",
       "kind": "vault-chest",
-      "name": "West Alcove Relic Chest",
-      "promptVerb": "Unseal Vault Chest",
+      "name": "Slag-Iron Foundry Cache",
+      "promptVerb": "Unseal Foundry Cache",
       "regionId": "high-causeway",
       "position": [
-        -16.5,
-        -4
+        -17.5,
+        -5.2
       ],
       "activated": false
     },
     {
       "id": "cinderfall-magma-delve-chest-e",
       "kind": "vault-chest",
-      "name": "East Alcove Foundry Coffer",
-      "promptVerb": "Unseal Vault Coffer",
+      "name": "Obsidian Bellows Coffer",
+      "promptVerb": "Unseal Bellows Coffer",
       "regionId": "high-causeway",
       "position": [
-        16.5,
-        -4
+        17.5,
+        -5.2
       ],
       "activated": false
     },
@@ -556,7 +466,7 @@
       "regionId": "dungeon-sanctum",
       "position": [
         0,
-        30.5
+        30.8
       ],
       "activated": false,
       "targetRealmSlug": "cinderfall"
@@ -578,95 +488,69 @@
   "enemies": [
     {
       "id": "cinderfall-magma-delve-e1",
-      "archetype": "stalker",
-      "name": "Vault Stone-Stalker",
-      "x": -6.5,
-      "z": 0.5,
-      "homeX": -6.5,
-      "homeZ": 0.5,
+      "archetype": "charger",
+      "name": "Slag-Anvil Battering Bull",
+      "x": 0,
+      "z": 2.5,
+      "homeX": 0,
+      "homeZ": 2.5,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 94,
-      "maxHp": 94,
-      "state": "idle",
-      "stateTimer": 0,
-      "orbitSign": -1,
-      "hitFlashTimer": 0,
-      "koTimer": 0,
-      "attackDamage": 11,
-      "attackRadius": 2.7,
-      "moveSpeed": 6.2,
-      "aggroRadius": 17,
-      "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
-      "hasAttackToken": false
-    },
-    {
-      "id": "cinderfall-magma-delve-e2",
-      "archetype": "stalker",
-      "name": "Rotunda Skirmisher",
-      "x": 6.5,
-      "z": 0.5,
-      "homeX": 6.5,
-      "homeZ": 0.5,
-      "vx": 0,
-      "vz": 0,
-      "yaw": 0,
-      "hp": 94,
-      "maxHp": 94,
+      "hp": 139,
+      "maxHp": 139,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
       "hitFlashTimer": 0,
       "koTimer": 0,
-      "attackDamage": 11,
-      "attackRadius": 2.7,
-      "moveSpeed": 6.2,
-      "aggroRadius": 17,
-      "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
+      "attackDamage": 22,
+      "attackRadius": 3.3,
+      "moveSpeed": 5.2,
+      "aggroRadius": 19,
+      "preferredRange": 7.5,
+      "telegraphDuration": 0.62,
+      "hasAttackToken": false
+    },
+    {
+      "id": "cinderfall-magma-delve-e2",
+      "archetype": "hexweaver",
+      "name": "Cinder-Bellows Pyromancer",
+      "x": -16.5,
+      "z": 4.2,
+      "homeX": -16.5,
+      "homeZ": 4.2,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 98,
+      "maxHp": 98,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 13,
+      "moveSpeed": 4.8,
+      "aggroRadius": 19,
+      "preferredRange": 12.5,
+      "telegraphDuration": 0.68,
       "hasAttackToken": false
     },
     {
       "id": "cinderfall-magma-delve-e3",
       "archetype": "shardcaster",
-      "name": "Alcove Prism-Sentinel",
-      "x": -12.5,
-      "z": -5.5,
-      "homeX": -12.5,
-      "homeZ": -5.5,
+      "name": "Crucible Censer-Construct",
+      "x": 16.5,
+      "z": 4.2,
+      "homeX": 16.5,
+      "homeZ": 4.2,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 90,
-      "maxHp": 90,
-      "state": "idle",
-      "stateTimer": 0,
-      "orbitSign": -1,
-      "hitFlashTimer": 0,
-      "koTimer": 0,
-      "attackDamage": 15,
-      "attackRadius": 12,
-      "moveSpeed": 4.5,
-      "aggroRadius": 17,
-      "preferredRange": 9.5,
-      "telegraphDuration": 0.6,
-      "hasAttackToken": false
-    },
-    {
-      "id": "cinderfall-magma-delve-e4",
-      "archetype": "shardcaster",
-      "name": "Sanctum Arc-Weaver",
-      "x": 12.5,
-      "z": -5.5,
-      "homeX": 12.5,
-      "homeZ": -5.5,
-      "vx": 0,
-      "vz": 0,
-      "yaw": 0,
-      "hp": 90,
-      "maxHp": 90,
+      "hp": 92,
+      "maxHp": 92,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
@@ -675,9 +559,35 @@
       "attackDamage": 15,
       "attackRadius": 12,
       "moveSpeed": 4.5,
-      "aggroRadius": 17,
+      "aggroRadius": 18,
       "preferredRange": 9.5,
-      "telegraphDuration": 0.6,
+      "telegraphDuration": 0.62,
+      "hasAttackToken": false
+    },
+    {
+      "id": "cinderfall-magma-delve-e4",
+      "archetype": "skirmisher",
+      "name": "Obsidian-Flint Skitterer",
+      "x": 0,
+      "z": -4,
+      "homeX": 0,
+      "homeZ": -4,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 95,
+      "maxHp": 95,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": 1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 13,
+      "attackRadius": 2.5,
+      "moveSpeed": 7.2,
+      "aggroRadius": 18,
+      "preferredRange": 3.8,
+      "telegraphDuration": 0.4,
       "hasAttackToken": false
     },
     {
@@ -691,8 +601,8 @@
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 300,
-      "maxHp": 300,
+      "hp": 347,
+      "maxHp": 347,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
@@ -708,24 +618,21 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:4379dea96d8426c3be044c66bf2a1cb4d95738062b833e1f26c60af2469e64c7",
+    "worldGlbKappa": "sha256:b11eff9f997db6030f539c95e66d3ec45fbc67865718469f4c4fbf97cea01117",
     "vdntKappa": "sha256:8ccae20d8f28406e35cc424e9c06680087c14c8ee3d9de169b263e8031f1deef",
     "skyKappa": "sha256:3701313b99b2534362abf1eafcf7632b70c6aee5f7a9595643b20cd61b2ff9b8",
-    "triangles": 16796,
-    "vertices": 26407,
-    "glbBytes": 1863724,
+    "triangles": 12434,
+    "vertices": 19978,
+    "glbBytes": 1598800,
     "atlasTileCount": 3,
-    "importedCatalogModelsCount": 12,
+    "importedCatalogModelsCount": 7,
     "importedCatalogAssets": [
-      "gothic_statue",
+      "brass_pot_01",
       "brass_diya_lantern",
-      "Lantern_01",
       "antique_estoc",
-      "brass_vase_01",
-      "old_military_crate",
       "boulder_01"
     ],
-    "projectModelsRegistered": 10,
+    "projectModelsRegistered": 7,
     "cognitiveKnowledgeIngested": 4,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

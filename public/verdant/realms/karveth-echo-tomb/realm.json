@@ -2,7 +2,7 @@
   "id": "dungeon-karveth-echo-tomb",
   "slug": "karveth-echo-tomb",
   "name": "The Resonance Hall of Kar-Veth",
-  "subtitle": "Tier 3 3D Dungeon Delve · Beneath Kar-Veth",
+  "subtitle": "Tier 3 Stepped Sandstone Ziggurat & Wind-Harp Galleries · Beneath Kar-Veth",
   "cell": [
     0,
     -3,
@@ -16,7 +16,7 @@
   "dungeonStyle": "echo-tomb",
   "dungeonTier": 3,
   "dungeonEntrances": [],
-  "summary": "A subterranean vaulted sanctuary beneath Kar-Veth. Cross the glowing abyss bridge, ignite the three Resonant Seal Braziers, unseal the alcove vaults, and defeat Grand Wind-Harp Automaton.",
+  "summary": "A dry three-tier ascending sandstone pyramid with a central baffled monolith splitting travelers onto flanking Wind-Harp terraces around a sunken amber-sand resonance well. Climb the flanking sandstone ziggurat ramps around the resonance well, harvest both Aeolian Tuning Shards, and silence Grand Wind-Harp Automaton.",
   "skyAssetId": "dikhololo_night",
   "skyUrl": "/verdant/realms/karveth-echo-tomb/sky.jpg",
   "glbUrl": "/verdant/realms/karveth-echo-tomb/world.glb",
@@ -206,8 +206,8 @@
     "coastDip": 0,
     "rimStart": 42,
     "rimHeight": 2,
-    "waterLevel": -2.2,
-    "hasBridge": true,
+    "waterLevel": -1.1,
+    "hasBridge": false,
     "bridgeDeckY": 1.15,
     "bridgeZMin": 3.6,
     "bridgeZMax": 18.4,
@@ -215,214 +215,106 @@
   },
   "importedCatalogProps": [
     {
-      "id": "karveth-echo-tomb-st-w",
-      "assetId": "gothic_statue",
+      "id": "karveth-echo-tomb-vase-1",
+      "assetId": "brass_vase_01",
       "source": "polyhaven",
-      "label": "Vestibule Warden W",
-      "position": [
-        -6,
-        21
-      ],
-      "targetHeight": 3.8,
-      "yaw": 0.3,
-      "tintRgb": [
-        0.76,
-        0.58,
-        0.34
-      ],
-      "maxTriangles": 480
-    },
-    {
-      "id": "karveth-echo-tomb-st-e",
-      "assetId": "gothic_statue",
-      "source": "polyhaven",
-      "label": "Vestibule Warden E",
-      "position": [
-        6,
-        21
-      ],
-      "targetHeight": 3.8,
-      "yaw": -0.3,
-      "tintRgb": [
-        0.76,
-        0.58,
-        0.34
-      ],
-      "maxTriangles": 480
-    },
-    {
-      "id": "karveth-echo-tomb-st-bw",
-      "assetId": "gothic_statue",
-      "source": "polyhaven",
-      "label": "Sanctum Sentinel W",
-      "position": [
-        -9,
-        -24
-      ],
-      "targetHeight": 4.4,
-      "yaw": 0.4,
-      "tintRgb": [
-        0.76,
-        0.58,
-        0.34
-      ],
-      "maxTriangles": 500
-    },
-    {
-      "id": "karveth-echo-tomb-st-be",
-      "assetId": "gothic_statue",
-      "source": "polyhaven",
-      "label": "Sanctum Sentinel E",
-      "position": [
-        9,
-        -24
-      ],
-      "targetHeight": 4.4,
-      "yaw": -0.4,
-      "tintRgb": [
-        0.76,
-        0.58,
-        0.34
-      ],
-      "maxTriangles": 500
-    },
-    {
-      "id": "karveth-echo-tomb-lamp-1",
-      "assetId": "brass_diya_lantern",
-      "source": "polyhaven",
-      "label": "Bridge Torch W",
-      "position": [
-        -3.4,
-        18.2
-      ],
-      "targetHeight": 1.35,
-      "yaw": 0.1,
-      "tintRgb": [
-        0.98,
-        0.8,
-        0.28
-      ],
-      "maxTriangles": 340
-    },
-    {
-      "id": "karveth-echo-tomb-lamp-2",
-      "assetId": "brass_diya_lantern",
-      "source": "polyhaven",
-      "label": "Bridge Torch E",
-      "position": [
-        3.4,
-        18.2
-      ],
-      "targetHeight": 1.35,
-      "yaw": 1.5,
-      "tintRgb": [
-        0.98,
-        0.8,
-        0.28
-      ],
-      "maxTriangles": 340
-    },
-    {
-      "id": "karveth-echo-tomb-lamp-3",
-      "assetId": "Lantern_01",
-      "source": "polyhaven",
-      "label": "Rotunda Lantern W",
+      "label": "Resonance Urn W",
       "position": [
         -8.5,
-        -3
+        19.5
       ],
-      "targetHeight": 1.35,
-      "yaw": 0.3,
+      "targetHeight": 1.5,
+      "yaw": 0.4,
       "tintRgb": [
         0.98,
         0.8,
         0.28
       ],
-      "maxTriangles": 340
+      "maxTriangles": 320
     },
     {
-      "id": "karveth-echo-tomb-lamp-4",
-      "assetId": "Lantern_01",
+      "id": "karveth-echo-tomb-vase-2",
+      "assetId": "brass_vase_01",
       "source": "polyhaven",
-      "label": "Rotunda Lantern E",
+      "label": "Resonance Urn E",
       "position": [
         8.5,
-        -3
+        19.5
       ],
-      "targetHeight": 1.35,
-      "yaw": 1.9,
+      "targetHeight": 1.5,
+      "yaw": 1.6,
       "tintRgb": [
         0.98,
         0.8,
         0.28
       ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "karveth-echo-tomb-crate-w",
+      "assetId": "old_military_crate",
+      "source": "polyhaven",
+      "label": "Caravan Archive Crate",
+      "position": [
+        -17.5,
+        1.5
+      ],
+      "targetHeight": 1.2,
+      "yaw": 0.5,
+      "tintRgb": [
+        0.76,
+        0.58,
+        0.34
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "karveth-echo-tomb-table-e",
+      "assetId": "WoodenTable_02",
+      "source": "polyhaven",
+      "label": "Tuner Drafting Bench",
+      "position": [
+        17.5,
+        1.5
+      ],
+      "targetHeight": 1.1,
+      "yaw": 1.4,
+      "tintRgb": [
+        0.76,
+        0.58,
+        0.34
+      ],
       "maxTriangles": 340
     },
     {
-      "id": "karveth-echo-tomb-estoc",
+      "id": "karveth-echo-tomb-blade-n",
       "assetId": "antique_estoc",
       "source": "polyhaven",
-      "label": "Boss Altar Relic Blade",
+      "label": "Solar Summit Scepter",
       "position": [
         0,
-        -32
+        -32.2
       ],
       "yOffset": 1.2,
-      "targetHeight": 2.6,
+      "targetHeight": 2.7,
       "yaw": 0,
       "tintRgb": [
-        0.88,
-        0.8,
-        0.56
+        0.76,
+        0.58,
+        0.34
       ],
       "maxTriangles": 360
     },
     {
-      "id": "karveth-echo-tomb-vase-w",
-      "assetId": "brass_vase_01",
-      "source": "polyhaven",
-      "label": "West Alcove Reliquary",
-      "position": [
-        -18.5,
-        -4
-      ],
-      "targetHeight": 1.4,
-      "yaw": 0.8,
-      "tintRgb": [
-        0.98,
-        0.8,
-        0.28
-      ],
-      "maxTriangles": 320
-    },
-    {
-      "id": "karveth-echo-tomb-crate-e",
-      "assetId": "old_military_crate",
-      "source": "polyhaven",
-      "label": "East Alcove Vault Crate",
-      "position": [
-        18.5,
-        -4
-      ],
-      "targetHeight": 1.15,
-      "yaw": 0.4,
-      "tintRgb": [
-        0.44,
-        0.38,
-        0.32
-      ],
-      "maxTriangles": 320
-    },
-    {
-      "id": "karveth-echo-tomb-rock-1",
+      "id": "karveth-echo-tomb-rock-n",
       "assetId": "boulder_01",
       "source": "polyhaven",
-      "label": "Vault Cavern Outcrop",
+      "label": "Ochre Canyon Monolith",
       "position": [
-        -14,
-        -29
+        11.5,
+        -30
       ],
-      "targetHeight": 3.2,
+      "targetHeight": 3.4,
       "yaw": 0.9,
       "tintRgb": [
         0.76,
@@ -435,56 +327,56 @@
   "regions": [
     {
       "id": "dungeon-sanctum",
-      "name": "The Resonance Hall of Kar-Veth — Vestibule",
-      "subtitle": "Tier 3 Subterranean Vault",
+      "name": "Lower Sandstone Forecourt",
+      "subtitle": "Tier I Ziggurat Threshold",
       "center": [
         0,
-        22
+        24
       ],
       "radius": 14,
-      "ambientMood": "causeway"
+      "ambientMood": "ironwood"
     },
     {
       "id": "high-causeway",
-      "name": "Abyss Span & Seal Rotunda",
-      "subtitle": "Pillared Acoustic Hall & Treasure Alcoves",
+      "name": "Aeolian Wind-Harp Galleries",
+      "subtitle": "Tier II Acoustic Terraces",
       "center": [
         0,
         -4
       ],
-      "radius": 18,
-      "ambientMood": "foundry"
+      "radius": 19,
+      "ambientMood": "ironwood"
     },
     {
       "id": "boss-vault",
-      "name": "Grand Wind-Harp Automaton Sanctum",
-      "subtitle": "Inner Boss Amphitheater & Ascend Portal",
+      "name": "Grand Wind-Harp Automaton — Solar Summit Ziggurat",
+      "subtitle": "Tier III Grand Automaton Altar",
       "center": [
         0,
-        -26
+        -27
       ],
-      "radius": 16,
+      "radius": 15,
       "ambientMood": "foundry"
     }
   ],
   "fastTravelPoints": [
     {
       "regionId": "dungeon-sanctum",
-      "name": "Dungeon Entry Vestibule",
+      "name": "Ziggurat Forecourt",
       "x": 0,
       "z": 26.5
     },
     {
       "regionId": "high-causeway",
-      "name": "Central Seal Rotunda",
-      "x": 0,
-      "z": -2
+      "name": "West Wind-Harp Gallery",
+      "x": -12,
+      "z": -3.5
     },
     {
       "regionId": "boss-vault",
-      "name": "Boss Sanctum Threshold",
+      "name": "Solar Summit Stair",
       "x": 0,
-      "z": -18
+      "z": -18.5
     }
   ],
   "npcs": [],
@@ -495,31 +387,31 @@
       "giverNpcId": "npc-orenna",
       "guildId": "guild-kiln",
       "regionId": "boss-vault",
-      "summary": "Conquer The Resonance Hall of Kar-Veth: ignite the Resonant Seal Braziers, plunder the side treasure vaults, and defeat Grand Wind-Harp Automaton in the northern Sanctum.",
-      "motif": "subterranean echo-tomb delve",
+      "summary": "Climb the flanking sandstone ziggurat ramps around the resonance well, harvest both Aeolian Tuning Shards, and silence Grand Wind-Harp Automaton.",
+      "motif": "aeolian ziggurat harmonic counterpoint",
       "renownReward": 355,
       "status": "active",
       "objectives": [
         {
-          "id": "obj-karveth-echo-tomb-brazier",
-          "description": "Ignite Resonant Seal Braziers",
-          "kind": "calibrate-beacon",
+          "id": "obj-karveth-echo-tomb-primary",
+          "description": "Harvest Aeolian Tuning Shards in the Galleries",
+          "kind": "collect-relics",
           "targetId": "karveth-echo-tomb-brazier",
           "targetCoords": [
-            0,
-            -4
+            -14,
+            -3.5
           ],
           "requiredCount": 2,
           "currentCount": 0
         },
         {
           "id": "obj-karveth-echo-tomb-boss",
-          "description": "Vanquish Grand Wind-Harp Automaton",
+          "description": "Silence Grand Wind-Harp Automaton",
           "kind": "defeat-archetype",
           "targetId": "colossus",
           "targetCoords": [
             0,
-            -26
+            -26.5
           ],
           "requiredCount": 1,
           "currentCount": 0
@@ -530,49 +422,49 @@
   "interactables": [
     {
       "id": "karveth-echo-tomb-brazier-w",
-      "kind": "seal-brazier",
-      "name": "West Resonant Seal Brazier",
-      "promptVerb": "Ignite Seal Brazier",
+      "kind": "silicate-relic",
+      "name": "West Aeolian Tuning Shard",
+      "promptVerb": "Harvest West Tuning Shard",
       "regionId": "high-causeway",
       "position": [
-        -8.5,
-        -4.5
+        -14,
+        -3.5
       ],
       "activated": false
     },
     {
       "id": "karveth-echo-tomb-brazier-e",
-      "kind": "seal-brazier",
-      "name": "East Resonant Seal Brazier",
-      "promptVerb": "Ignite Seal Brazier",
+      "kind": "silicate-relic",
+      "name": "East Aeolian Tuning Shard",
+      "promptVerb": "Harvest East Tuning Shard",
       "regionId": "high-causeway",
       "position": [
-        8.5,
-        -4.5
+        14,
+        -3.5
       ],
       "activated": false
     },
     {
       "id": "karveth-echo-tomb-chest-w",
       "kind": "vault-chest",
-      "name": "West Alcove Relic Chest",
-      "promptVerb": "Unseal Vault Chest",
+      "name": "Caravan Tribute Chest W",
+      "promptVerb": "Unseal Tribute Chest",
       "regionId": "high-causeway",
       "position": [
-        -16.5,
-        -4
+        -17.8,
+        -10.5
       ],
       "activated": false
     },
     {
       "id": "karveth-echo-tomb-chest-e",
       "kind": "vault-chest",
-      "name": "East Alcove Foundry Coffer",
-      "promptVerb": "Unseal Vault Coffer",
+      "name": "Sandstone Harp Coffer E",
+      "promptVerb": "Unseal Harp Coffer",
       "regionId": "high-causeway",
       "position": [
-        16.5,
-        -4
+        17.8,
+        -10.5
       ],
       "activated": false
     },
@@ -584,7 +476,7 @@
       "regionId": "dungeon-sanctum",
       "position": [
         0,
-        30.5
+        30.8
       ],
       "activated": false,
       "targetRealmSlug": "kar-veth"
@@ -606,95 +498,95 @@
   "enemies": [
     {
       "id": "karveth-echo-tomb-e1",
-      "archetype": "stalker",
-      "name": "Vault Stone-Stalker",
-      "x": -6.5,
-      "z": 0.5,
-      "homeX": -6.5,
-      "homeZ": 0.5,
+      "archetype": "skirmisher",
+      "name": "Saffron-Scythe Strider",
+      "x": -11.5,
+      "z": 9.5,
+      "homeX": -11.5,
+      "homeZ": 9.5,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 94,
-      "maxHp": 94,
+      "hp": 95,
+      "maxHp": 95,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": -1,
       "hitFlashTimer": 0,
       "koTimer": 0,
-      "attackDamage": 11,
-      "attackRadius": 2.7,
-      "moveSpeed": 6.2,
-      "aggroRadius": 17,
-      "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
+      "attackDamage": 13,
+      "attackRadius": 2.5,
+      "moveSpeed": 7.2,
+      "aggroRadius": 18,
+      "preferredRange": 3.8,
+      "telegraphDuration": 0.4,
       "hasAttackToken": false
     },
     {
       "id": "karveth-echo-tomb-e2",
-      "archetype": "stalker",
-      "name": "Rotunda Skirmisher",
-      "x": 6.5,
-      "z": 0.5,
-      "homeX": 6.5,
-      "homeZ": 0.5,
+      "archetype": "charger",
+      "name": "Ochre-Crest Sand-Bull",
+      "x": 11.5,
+      "z": 9.5,
+      "homeX": 11.5,
+      "homeZ": 9.5,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 94,
-      "maxHp": 94,
+      "hp": 143,
+      "maxHp": 143,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
       "hitFlashTimer": 0,
       "koTimer": 0,
-      "attackDamage": 11,
-      "attackRadius": 2.7,
-      "moveSpeed": 6.2,
-      "aggroRadius": 17,
-      "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
+      "attackDamage": 22,
+      "attackRadius": 3.3,
+      "moveSpeed": 5.2,
+      "aggroRadius": 19,
+      "preferredRange": 7.5,
+      "telegraphDuration": 0.62,
       "hasAttackToken": false
     },
     {
       "id": "karveth-echo-tomb-e3",
-      "archetype": "shardcaster",
-      "name": "Alcove Prism-Sentinel",
-      "x": -12.5,
-      "z": -5.5,
-      "homeX": -12.5,
-      "homeZ": -5.5,
+      "archetype": "hexweaver",
+      "name": "Wind-Harp Mirage Cantor",
+      "x": -11,
+      "z": -7,
+      "homeX": -11,
+      "homeZ": -7,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 90,
-      "maxHp": 90,
+      "hp": 98,
+      "maxHp": 98,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": -1,
       "hitFlashTimer": 0,
       "koTimer": 0,
       "attackDamage": 15,
-      "attackRadius": 12,
-      "moveSpeed": 4.5,
-      "aggroRadius": 17,
-      "preferredRange": 9.5,
-      "telegraphDuration": 0.6,
+      "attackRadius": 13,
+      "moveSpeed": 4.8,
+      "aggroRadius": 19,
+      "preferredRange": 12.5,
+      "telegraphDuration": 0.68,
       "hasAttackToken": false
     },
     {
       "id": "karveth-echo-tomb-e4",
       "archetype": "shardcaster",
-      "name": "Sanctum Arc-Weaver",
-      "x": 12.5,
-      "z": -5.5,
-      "homeX": 12.5,
-      "homeZ": -5.5,
+      "name": "Sun-Djinn Astrolabe",
+      "x": 11,
+      "z": -7,
+      "homeX": 11,
+      "homeZ": -7,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 90,
-      "maxHp": 90,
+      "hp": 95,
+      "maxHp": 95,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
@@ -703,9 +595,9 @@
       "attackDamage": 15,
       "attackRadius": 12,
       "moveSpeed": 4.5,
-      "aggroRadius": 17,
+      "aggroRadius": 18,
       "preferredRange": 9.5,
-      "telegraphDuration": 0.6,
+      "telegraphDuration": 0.62,
       "hasAttackToken": false
     },
     {
@@ -713,14 +605,14 @@
       "archetype": "colossus",
       "name": "Grand Wind-Harp Automaton",
       "x": 0,
-      "z": -25.5,
+      "z": -26.5,
       "homeX": 0,
-      "homeZ": -25.5,
+      "homeZ": -26.5,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 300,
-      "maxHp": 300,
+      "hp": 354,
+      "maxHp": 354,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
@@ -736,24 +628,22 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:dd4f38921fa39735333c2313ab08456d3af11b28a941591705937b25dad5d392",
+    "worldGlbKappa": "sha256:49d4abbee259465f9fd4df3bb88c85df99cec40018caeb4d6520b9a2eddedb74",
     "vdntKappa": "sha256:5231267862cd46d0286d016540e3a5bedbc23a70f86da8a8fc1529c8fdc0cf53",
     "skyKappa": "sha256:0866d50aefb876d1eb7885f77b662002975c771a58559757ff9b55268e8cb823",
-    "triangles": 16742,
-    "vertices": 26113,
-    "glbBytes": 1621868,
+    "triangles": 10562,
+    "vertices": 18110,
+    "glbBytes": 1282744,
     "atlasTileCount": 3,
-    "importedCatalogModelsCount": 12,
+    "importedCatalogModelsCount": 6,
     "importedCatalogAssets": [
-      "gothic_statue",
-      "brass_diya_lantern",
-      "Lantern_01",
-      "antique_estoc",
       "brass_vase_01",
       "old_military_crate",
+      "WoodenTable_02",
+      "antique_estoc",
       "boulder_01"
     ],
-    "projectModelsRegistered": 10,
+    "projectModelsRegistered": 8,
     "cognitiveKnowledgeIngested": 4,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

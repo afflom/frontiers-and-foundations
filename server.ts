@@ -11,6 +11,22 @@ import { auditAntiTropeNovelty } from './src/engine/cognitiveNovelty.ts';
 import { VerdantMcpHost, VERDANT_MCP_TOOLS } from './src/verdant/verdantMcpHost.ts';
 import type { DungeonArchitecturalStyle, RealmThemeId } from './src/verdant/realmModelSchema.ts';
 import type { MusicalModeId } from './src/verdant/verdantScoreSchema.ts';
+import {
+  DEFAULT_PING_TTL_MS,
+  DEFAULT_ROOM_CODE,
+  applyAuthoritativeEnemyDamage,
+  computeCoopHealRecipients,
+  mergeWorldPing,
+  normalizeCallsign,
+  normalizeRoomCode,
+  pruneExpiredPings,
+} from './src/game/multiplayerState.ts';
+import type {
+  PartySummon,
+  SharedEnemyState,
+  WorldPing,
+  WorldPingKind,
+} from './src/game/multiplayerTypes.ts';
 
 const PORT = Number(process.env.PORT) || 3000;
 const IS_PROD = process.env.NODE_ENV === 'production';
@@ -321,6 +337,8 @@ async function startServer() {
         'catacomb-vault',
         'geothermal-depths',
         'sunken-cistern',
+        'abyssal-grotto',
+        'echo-tomb',
         'glacial-crypt',
       ];
       const cleanStyle = validStyles.includes(style) ? (style as DungeonArchitecturalStyle) : 'catacomb-vault';
@@ -417,6 +435,147 @@ async function startServer() {
       res.json({ ok: true, result });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Verdant HD refinement failed.';
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
+  // Uniform Model-of-Models API (inspect root, 8 canonical parts, or specific model)
+  app.get('/api/verdant/model', async (req, res) => {
+    try {
+      const partSlot = typeof req.query.partSlot === 'string' ? req.query.partSlot.trim() : undefined;
+      const includeTree = req.query.includeTree === '1' || req.query.includeTree === 'true';
+      const result = await verdantMcp.handleToolCall(
+        'verdant_inspect_model_of_models',
+        { ...(partSlot ? { partSlot } : {}), includeTree },
+        null,
+      );
+      res.json({ ok: true, ...(result as Record<string, unknown>) });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to inspect Frontiers Model-of-Models.';
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
+  app.get('/api/verdant/model/:modelId', async (req, res) => {
+    try {
+      const modelId = decodeURIComponent(String(req.params.modelId ?? '')).trim();
+      const result = (await verdantMcp.handleToolCall(
+        'verdant_inspect_model_of_models',
+        { modelId },
+        null,
+      )) as { model?: unknown };
+      if (!result.model) {
+        res.status(404).json({ ok: false, error: `Model not found: ${modelId}` });
+        return;
+      }
+      res.json({ ok: true, ...result });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to inspect model.';
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
+  // Extended Verdant Observer/Manager Pattern — 10 Diversity & Cohesion KPIs + 21-Manager VSM Registry
+  app.get('/api/verdant/observer/kpis', async (req, res) => {
+    try {
+      const includeManagers = req.query.managers !== '0';
+      const result = await verdantMcp.handleToolCall(
+        'verdant_observer_diversity_kpis',
+        { includeManagers },
+        null,
+      );
+      res.json({ ok: true, ...(result as Record<string, unknown>) });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to evaluate Verdant Observer KPIs.';
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
+  // M16 Verdant Observer Refinement Agenda (prioritized proposals across 8 parts & 21 VSM S1-S5 managers)
+  app.get('/api/verdant/observer/agenda', async (req, res) => {
+    try {
+      const includeManagers = req.query.managers !== '0';
+      const result = await verdantMcp.handleToolCall(
+        'verdant_observer_refinement_agenda',
+        { includeManagers },
+        null,
+      );
+      res.json({ ok: true, ...(result as Record<string, unknown>) });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to synthesize Verdant Observer agenda.';
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
+  // M16 Verdant Observer Ratchet Cycle — Execute Agenda Proposals & Advance Watermark
+  app.post('/api/verdant/observer/ratchet', async (req, res) => {
+    try {
+      const { targetTier, partSlot, reason } = req.body ?? {};
+      const result = await verdantMcp.handleToolCall(
+        'verdant_run_ratchet_cycle',
+        {
+          ...(typeof targetTier === 'number' ? { targetTier } : {}),
+          ...(typeof partSlot === 'string' && partSlot.trim() ? { partSlot: partSlot.trim() } : {}),
+          ...(typeof reason === 'string' && reason.trim() ? { reason: reason.trim() } : {}),
+        },
+        null,
+      );
+      res.json({ ok: true, ...(result as Record<string, unknown>) });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Verdant Observer ratchet cycle failed.';
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
+  // M16/M17 Verdant Lifecycle Gate — 6 Structural & Semantic Closure Checks
+  app.get('/api/verdant/observer/lifecycle-gate', async (_req, res) => {
+    try {
+      const result = await verdantMcp.handleToolCall('verdant_lifecycle_gate', {}, null);
+      res.json({ ok: true, ...(result as Record<string, unknown>) });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Verdant Lifecycle Gate failed.';
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
+  // M16/M17 Verdant Automate Pipeline — Diagnose -> Ratchet -> Lifecycle Gate -> Watermark Ratchet
+  app.post('/api/verdant/observer/automate', async (req, res) => {
+    try {
+      const { targetTier, partSlot, reason } = req.body ?? {};
+      const result = await verdantMcp.handleToolCall(
+        'verdant_automate',
+        {
+          ...(typeof targetTier === 'number' ? { targetTier } : {}),
+          ...(typeof partSlot === 'string' && partSlot.trim() ? { partSlot: partSlot.trim() } : {}),
+          ...(typeof reason === 'string' && reason.trim() ? { reason: reason.trim() } : {}),
+        },
+        null,
+      );
+      res.json({ ok: true, ...(result as Record<string, unknown>) });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Verdant Automate pipeline failed.';
+      res.status(500).json({ ok: false, error: message });
+    }
+  });
+
+  // Uniform Refinement API — Escalate Definition & Resolution + Auto-Diversify Colliding Siblings
+  app.post('/api/verdant/model/refine', async (req, res) => {
+    try {
+      const { targetTier, partSlot, modelId, enforceDiversity, reason } = req.body ?? {};
+      const result = await verdantMcp.handleToolCall(
+        'verdant_refine_model_api',
+        {
+          ...(typeof targetTier === 'number' ? { targetTier } : {}),
+          ...(typeof partSlot === 'string' && partSlot.trim() ? { partSlot: partSlot.trim() } : {}),
+          ...(typeof modelId === 'string' && modelId.trim() ? { modelId: modelId.trim() } : {}),
+          ...(typeof enforceDiversity === 'boolean' ? { enforceDiversity } : {}),
+          ...(typeof reason === 'string' && reason.trim() ? { reason: reason.trim() } : {}),
+        },
+        null,
+      );
+      res.json({ ok: true, ...(result as Record<string, unknown>) });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Uniform model refinement failed.';
       res.status(500).json({ ok: false, error: message });
     }
   });
@@ -667,10 +826,21 @@ Return JSON with: name, origin (short region or guild phrase), description (1-2 
     '/verdant',
     express.static(verdantPublicDir, {
       setHeaders(res, filePath) {
-        if (filePath.endsWith('.wasm')) res.setHeader('Content-Type', 'application/wasm');
-        else if (filePath.endsWith('.mjs')) res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-        else if (filePath.endsWith('.glb')) res.setHeader('Content-Type', 'model/gltf-binary');
-        else if (filePath.endsWith('.vdnt')) res.setHeader('Content-Type', 'application/octet-stream');
+        if (filePath.endsWith('.wasm')) {
+          res.setHeader('Content-Type', 'application/wasm');
+          res.setHeader('Cache-Control', 'public, max-age=3600');
+        } else if (filePath.endsWith('.mjs')) {
+          res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+          res.setHeader('Cache-Control', 'public, max-age=3600');
+        } else if (filePath.endsWith('.glb')) {
+          res.setHeader('Content-Type', 'model/gltf-binary');
+          res.setHeader('Cache-Control', 'public, max-age=3600');
+        } else if (filePath.endsWith('.vdnt')) {
+          res.setHeader('Content-Type', 'application/octet-stream');
+          res.setHeader('Cache-Control', 'public, max-age=3600');
+        } else if (filePath.endsWith('.jpg') || filePath.endsWith('.png')) {
+          res.setHeader('Cache-Control', 'public, max-age=3600');
+        }
       },
     }),
   );
@@ -684,36 +854,20 @@ Return JSON with: name, origin (short region or guild phrase), description (1-2 
     res.type('application/json').send(fs.readFileSync(manifestPath, 'utf8'));
   });
 
-  if (!IS_PROD) {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distDir = path.resolve(process.cwd(), 'dist');
-    app.use(express.static(distDir));
-    app.get('*', (_req, res) => {
-      const indexHtml = path.join(distDir, 'index.html');
-      if (fs.existsSync(indexHtml)) {
-        res.sendFile(indexHtml);
-      } else {
-        res.status(404).send('Build output not found. Run npm run build first.');
-      }
-    });
-  }
-
-  const server = http.createServer(app);
-
-  // Real-time Server-Authoritative Vaelmor Multiplayer Realm (/ws/realm)
-  const wss = new WebSocketServer({ server, path: '/ws/realm' });
+  // Real-time Server-Authoritative Room & Realm-Scoped Multiplayer State
   interface ServerPlayer {
     id: string;
     name: string;
     guildId: string;
+    roomCode: string;
+    realmSlug: string;
+    realmName: string;
     x: number;
     z: number;
     yaw: number;
+    hp: number;
+    maxHp: number;
+    waterPosture: 'dry' | 'wading' | 'swimming';
     activeGear: string;
     regionId: string;
     actionPulseAt?: number;
@@ -726,6 +880,7 @@ Return JSON with: name, origin (short region or guild phrase), description (1-2 
     builderName: string;
     position: [number, number];
     plantedAt: number;
+    realmSlug: string;
     remote?: boolean;
   }
   interface ServerChat {
@@ -737,88 +892,538 @@ Return JSON with: name, origin (short region or guild phrase), description (1-2 
     kind: 'chat' | 'event';
     timestamp: number;
   }
+  interface RoomState {
+    code: string;
+    sockets: Map<string, WebSocket>;
+    players: Map<string, ServerPlayer>;
+    bannersByRealm: Map<string, ServerBanner[]>;
+    enemiesByRealm: Map<string, Map<string, SharedEnemyState>>;
+    activatedByRealm: Map<string, Set<string>>;
+    pingsByRealm: Map<string, WorldPing[]>;
+    guildProsperity: Record<string, number>;
+    chatHistory: ServerChat[];
+    activeSummon: PartySummon | null;
+    lastActiveAt: number;
+  }
 
-  const realmPlayers = new Map<string, ServerPlayer>();
-  const realmBanners: ServerBanner[] = [];
-  const realmGuildProsperity: Record<string, number> = {
-    'guild-causeway': 64,
-    'guild-tideloom': 52,
-    'guild-kiln': 58,
+  const rooms = new Map<string, RoomState>();
+
+  const getOrCreateRoom = (rawCode?: string): RoomState => {
+    const code = normalizeRoomCode(rawCode);
+    let room = rooms.get(code);
+    if (!room) {
+      room = {
+        code,
+        sockets: new Map(),
+        players: new Map(),
+        bannersByRealm: new Map(),
+        enemiesByRealm: new Map(),
+        activatedByRealm: new Map(),
+        pingsByRealm: new Map(),
+        guildProsperity: {
+          'guild-causeway': 64,
+          'guild-tideloom': 52,
+          'guild-kiln': 58,
+        },
+        chatHistory: [],
+        activeSummon: null,
+        lastActiveAt: Date.now(),
+      };
+      rooms.set(code, room);
+    }
+    room.lastActiveAt = Date.now();
+    return room;
   };
-  const realmChat: ServerChat[] = [];
 
-  const broadcast = (payload: Record<string, unknown>, exclude?: WebSocket) => {
+  // Ensure the open public room always exists
+  getOrCreateRoom(DEFAULT_ROOM_CODE);
+
+  // Public multiplayer room directory summary (registered before SPA catch-all)
+  app.get('/api/multiplayer/rooms', (_req, res) => {
+    const openRoom = rooms.get(DEFAULT_ROOM_CODE);
+    let totalOnline = 0;
+    let activeRoomCount = 0;
+    for (const r of rooms.values()) {
+      if (r.players.size > 0) {
+        totalOnline += r.players.size;
+        activeRoomCount += 1;
+      }
+    }
+    res.json({
+      ok: true,
+      defaultRoomCode: DEFAULT_ROOM_CODE,
+      openRoomPlayers: openRoom?.players.size ?? 0,
+      totalOnline,
+      activeRoomCount,
+    });
+  });
+
+  const distDir = path.resolve(process.cwd(), 'dist');
+  const distIndex = path.join(distDir, 'index.html');
+  // In AI Studio preview (DISABLE_HMR=true), serving the compiled dist/ bundle reduces
+  // initial page-load HTTP requests from ~54 unbundled ESM files down to ~8 requests,
+  // preventing Cloud Run preview proxy 429 ("Rate exceeded") burst rejections and white screens.
+  const serveBuiltDist =
+    IS_PROD || (process.env.DISABLE_HMR === 'true' && fs.existsSync(distIndex));
+
+  app.get('/favicon.ico', (_req, res) => {
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.status(204).end();
+  });
+
+  if (!serveBuiltDist) {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  } else {
+    app.use(
+      '/assets',
+      express.static(path.join(distDir, 'assets'), {
+        maxAge: '1y',
+        immutable: true,
+      }),
+    );
+    app.use(
+      '/src/assets',
+      express.static(path.join(distDir, 'src', 'assets'), {
+        maxAge: '1h',
+      }),
+    );
+    app.use(
+      express.static(distDir, {
+        index: false,
+        setHeaders(res, filePath) {
+          if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache');
+          }
+        },
+      }),
+    );
+    app.get('*', (_req, res) => {
+      if (fs.existsSync(distIndex)) {
+        res.setHeader('Cache-Control', 'no-cache');
+        res.sendFile(distIndex);
+      } else {
+        res.status(404).send('Build output not found. Run npm run build first.');
+      }
+    });
+  }
+
+  const server = http.createServer(app);
+
+  // Real-time Server-Authoritative Room & Realm-Scoped Multiplayer (/ws/realm)
+  const wss = new WebSocketServer({ server, path: '/ws/realm' });
+
+  const getRealmSnapshot = (room: RoomState, realmSlug: string, now: number) => {
+    const banners = room.bannersByRealm.get(realmSlug) ?? [];
+    const enemyMap = room.enemiesByRealm.get(realmSlug);
+    const realmEnemies: Record<string, SharedEnemyState> = {};
+    if (enemyMap) {
+      for (const [id, st] of enemyMap.entries()) {
+        realmEnemies[id] = st;
+      }
+    }
+    const activatedInteractables = Array.from(room.activatedByRealm.get(realmSlug) ?? []);
+    const rawPings = room.pingsByRealm.get(realmSlug) ?? [];
+    const pings = pruneExpiredPings(rawPings, now);
+    room.pingsByRealm.set(realmSlug, pings);
+    return { banners, realmEnemies, activatedInteractables, pings };
+  };
+
+  const broadcastToRoom = (
+    room: RoomState,
+    payload: Record<string, unknown>,
+    excludePlayerId?: string,
+    onlyRealmSlug?: string,
+  ) => {
     const encoded = JSON.stringify(payload);
-    for (const client of wss.clients) {
-      if (client !== exclude && client.readyState === WebSocket.OPEN) {
-        client.send(encoded);
+    for (const [pid, client] of room.sockets.entries()) {
+      if (excludePlayerId && pid === excludePlayerId) continue;
+      if (client.readyState !== WebSocket.OPEN) continue;
+      if (onlyRealmSlug) {
+        const peer = room.players.get(pid);
+        if (!peer || peer.realmSlug !== onlyRealmSlug) continue;
+      }
+      client.send(encoded);
+    }
+  };
+
+  const appendRoomEvent = (room: RoomState, eventMsg: ServerChat) => {
+    room.chatHistory.push(eventMsg);
+    if (room.chatHistory.length > 50) room.chatHistory.shift();
+    broadcastToRoom(room, { type: 'world:chat', message: eventMsg });
+  };
+
+  const detachPlayerFromRoom = (playerId: string, currentRoomCode: string | null) => {
+    if (!currentRoomCode) return;
+    const room = rooms.get(currentRoomCode);
+    if (!room) return;
+    const removed = room.players.get(playerId);
+    room.sockets.delete(playerId);
+    if (room.players.delete(playerId)) {
+      broadcastToRoom(room, { type: 'player:leave', playerId });
+      if (removed) {
+        appendRoomEvent(room, {
+          id: `ev-leave-${Date.now()}-${Math.round(Math.random() * 999)}`,
+          senderId: playerId,
+          senderName: removed.name,
+          guildId: removed.guildId,
+          text: `${removed.name} departed the expedition.`,
+          kind: 'event',
+          timestamp: Date.now(),
+        });
+      }
+    }
+    if (room.code !== DEFAULT_ROOM_CODE && room.players.size === 0) {
+      // Retain private room state briefly only if active; clean immediately when empty & stale
+      if (room.bannersByRealm.size === 0 && room.chatHistory.length === 0) {
+        rooms.delete(room.code);
       }
     }
   };
 
   wss.on('connection', (ws) => {
     const playerId = `ww-${crypto.randomBytes(4).toString('hex')}`;
+    let activeRoomCode: string | null = null;
 
     ws.on('message', (raw) => {
       try {
         const msg = JSON.parse(String(raw));
         const now = Date.now();
 
+        if (msg.type === 'ping') {
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'pong', ts: now }));
+          }
+          return;
+        }
+
         if (msg.type === 'player:join') {
+          const targetCode = normalizeRoomCode(msg.roomCode);
+          if (activeRoomCode && activeRoomCode !== targetCode) {
+            detachPlayerFromRoom(playerId, activeRoomCode);
+          }
+          const room = getOrCreateRoom(targetCode);
+          activeRoomCode = room.code;
+          const realmSlug = String(msg.realmSlug || 'vaelmor').slice(0, 64);
+          const realmName = String(msg.realmName || 'Vaelmor Meridian').slice(0, 64);
+          const hp = Math.max(0, Math.min(999, Number(msg.hp) || 100));
+          const maxHp = Math.max(1, Math.min(999, Number(msg.maxHp) || 100));
+          const posture =
+            msg.waterPosture === 'swimming' || msg.waterPosture === 'wading'
+              ? msg.waterPosture
+              : 'dry';
+
           const player: ServerPlayer = {
             id: playerId,
-            name: String(msg.name || `Waywright-${playerId.slice(-4).toUpperCase()}`).slice(0, 28),
-            guildId: String(msg.guildId || 'guild-causeway'),
-            x: Number(msg.x) || 0,
-            z: Number(msg.z) || 17.5,
+            name: normalizeCallsign(msg.name, `Waywright-${playerId.slice(-4).toUpperCase()}`),
+            guildId: String(msg.guildId || 'guild-causeway').slice(0, 40),
+            roomCode: room.code,
+            realmSlug,
+            realmName,
+            x: Math.max(-104, Math.min(104, Number(msg.x) || 0)),
+            z: Math.max(-104, Math.min(104, Number(msg.z) || 17.5)),
             yaw: Number(msg.yaw) || Math.PI,
-            activeGear: String(msg.activeGear || 'hookblade'),
-            regionId: String(msg.regionId || 'southern-terrace'),
+            hp,
+            maxHp,
+            waterPosture: posture,
+            activeGear: String(msg.activeGear || 'hookblade').slice(0, 24),
+            regionId: String(msg.regionId || 'southern-terrace').slice(0, 48),
             lastSeen: now,
           };
-          realmPlayers.set(playerId, player);
 
-          // Initial full realm snapshot to newly joined player
+          const alreadyInRoom = room.players.has(playerId);
+          room.sockets.set(playerId, ws);
+          room.players.set(playerId, player);
+
+          const snap = getRealmSnapshot(room, realmSlug, now);
+          const freshSummon =
+            room.activeSummon && now - room.activeSummon.createdAt < 90_000
+              ? room.activeSummon
+              : null;
+
           ws.send(
             JSON.stringify({
               type: 'realm:init',
               payload: {
                 selfId: playerId,
-                players: Array.from(realmPlayers.values()).filter((p) => p.id !== playerId),
-                banners: realmBanners,
-                guildProsperity: realmGuildProsperity,
-                chatHistory: realmChat,
+                roomCode: room.code,
+                realmSlug,
+                players: Array.from(room.players.values()).filter((p) => p.id !== playerId),
+                banners: snap.banners,
+                guildProsperity: room.guildProsperity,
+                chatHistory: room.chatHistory,
+                realmEnemies: snap.realmEnemies,
+                activatedInteractables: snap.activatedInteractables,
+                pings: snap.pings,
+                activeSummon: freshSummon && freshSummon.senderId !== playerId ? freshSummon : null,
               },
             }),
           );
 
-          // Notify other connected players
-          broadcast({ type: 'player:upsert', player }, ws);
+          broadcastToRoom(room, { type: 'player:upsert', player }, playerId);
+
+          if (!alreadyInRoom && room.players.size > 1) {
+            appendRoomEvent(room, {
+              id: `ev-join-${now}-${Math.round(Math.random() * 999)}`,
+              senderId: playerId,
+              senderName: player.name,
+              guildId: player.guildId,
+              text: `${player.name} joined ${realmName}.`,
+              kind: 'event',
+              timestamp: now,
+            });
+          }
           return;
         }
 
-        const existing = realmPlayers.get(playerId);
+        if (!activeRoomCode) return;
+        const room = rooms.get(activeRoomCode);
+        if (!room) return;
+        const existing = room.players.get(playerId);
         if (!existing) return;
         existing.lastSeen = now;
+        room.lastActiveAt = now;
 
         if (msg.type === 'player:move') {
           existing.x = Math.max(-104, Math.min(104, Number(msg.x) || 0));
           existing.z = Math.max(-104, Math.min(104, Number(msg.z) || 0));
           existing.yaw = Number(msg.yaw) || 0;
-          existing.activeGear = String(msg.activeGear || existing.activeGear);
-          existing.regionId = String(msg.regionId || existing.regionId);
-          broadcast({ type: 'player:upsert', player: existing }, ws);
+          existing.activeGear = String(msg.activeGear || existing.activeGear).slice(0, 24);
+          existing.regionId = String(msg.regionId || existing.regionId).slice(0, 48);
+          if (typeof msg.hp === 'number' && Number.isFinite(msg.hp)) {
+            existing.hp = Math.max(0, Math.min(999, Math.round(msg.hp)));
+          }
+          if (typeof msg.maxHp === 'number' && Number.isFinite(msg.maxHp)) {
+            existing.maxHp = Math.max(1, Math.min(999, Math.round(msg.maxHp)));
+          }
+          if (msg.waterPosture === 'swimming' || msg.waterPosture === 'wading' || msg.waterPosture === 'dry') {
+            existing.waterPosture = msg.waterPosture;
+          }
+          if (typeof msg.realmSlug === 'string' && msg.realmSlug.trim()) {
+            existing.realmSlug = msg.realmSlug.trim().slice(0, 64);
+          }
+          broadcastToRoom(room, { type: 'player:upsert', player: existing }, playerId);
+        } else if (msg.type === 'player:realm') {
+          const nextSlug = String(msg.realmSlug || 'vaelmor').slice(0, 64);
+          const nextName = String(msg.realmName || nextSlug).slice(0, 64);
+          existing.realmSlug = nextSlug;
+          existing.realmName = nextName;
+          if (typeof msg.x === 'number') existing.x = Math.max(-104, Math.min(104, msg.x));
+          if (typeof msg.z === 'number') existing.z = Math.max(-104, Math.min(104, msg.z));
+          if (typeof msg.yaw === 'number') existing.yaw = msg.yaw;
+
+          const snap = getRealmSnapshot(room, nextSlug, now);
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(
+              JSON.stringify({
+                type: 'realm:sync',
+                payload: {
+                  realmSlug: nextSlug,
+                  banners: snap.banners,
+                  realmEnemies: snap.realmEnemies,
+                  activatedInteractables: snap.activatedInteractables,
+                  pings: snap.pings,
+                },
+              }),
+            );
+          }
+          broadcastToRoom(room, { type: 'player:upsert', player: existing }, playerId);
         } else if (msg.type === 'player:action') {
-          existing.activeGear = String(msg.activeGear || existing.activeGear);
+          existing.activeGear = String(msg.activeGear || existing.activeGear).slice(0, 24);
+          if (typeof msg.x === 'number') existing.x = Math.max(-104, Math.min(104, msg.x));
+          if (typeof msg.z === 'number') existing.z = Math.max(-104, Math.min(104, msg.z));
+          if (typeof msg.yaw === 'number') existing.yaw = msg.yaw;
           existing.actionPulseAt = now;
-          broadcast({ type: 'player:upsert', player: existing }, ws);
+          broadcastToRoom(room, { type: 'player:upsert', player: existing }, playerId);
+          broadcastToRoom(
+            room,
+            {
+              type: 'player:action',
+              event: {
+                playerId,
+                playerName: existing.name,
+                activeGear: existing.activeGear,
+                realmSlug: existing.realmSlug,
+                x: existing.x,
+                z: existing.z,
+                yaw: existing.yaw,
+                timestamp: now,
+              },
+            },
+            playerId,
+            existing.realmSlug,
+          );
+        } else if (msg.type === 'combat:damage') {
+          const realmSlug = String(msg.realmSlug || existing.realmSlug).slice(0, 64);
+          const enemyId = String(msg.enemyId || '').slice(0, 80);
+          if (!enemyId) return;
+          const damage = Math.max(1, Math.min(500, Number(msg.damage) || 15));
+          const maxHp = Math.max(1, Math.min(5000, Number(msg.maxHp) || 100));
+          const enemyName = String(msg.enemyName || 'Frontier Threat').slice(0, 64);
+          const archetype = String(msg.archetype || 'stalker').slice(0, 32);
+
+          let enemyMap = room.enemiesByRealm.get(realmSlug);
+          if (!enemyMap) {
+            enemyMap = new Map();
+            room.enemiesByRealm.set(realmSlug, enemyMap);
+          }
+          const { state, killedNow } = applyAuthoritativeEnemyDamage(
+            enemyMap,
+            enemyId,
+            damage,
+            maxHp,
+            existing.name,
+            now,
+          );
+          broadcastToRoom(
+            room,
+            {
+              type: 'combat:enemy_sync',
+              realmSlug,
+              enemy: state,
+              attackerId: playerId,
+              attackerName: existing.name,
+              killedNow,
+            },
+            playerId,
+            realmSlug,
+          );
+          if (killedNow && archetype === 'colossus') {
+            appendRoomEvent(room, {
+              id: `ev-boss-${now}-${Math.round(Math.random() * 999)}`,
+              senderId: playerId,
+              senderName: existing.name,
+              guildId: existing.guildId,
+              text: `${existing.name} felled ${enemyName} in ${existing.realmName}!`,
+              kind: 'event',
+              timestamp: now,
+            });
+          }
+        } else if (msg.type === 'interactable:activate') {
+          const realmSlug = String(msg.realmSlug || existing.realmSlug).slice(0, 64);
+          const interactableId = String(msg.interactableId || '').slice(0, 96);
+          if (!interactableId) return;
+          let set = room.activatedByRealm.get(realmSlug);
+          if (!set) {
+            set = new Set();
+            room.activatedByRealm.set(realmSlug, set);
+          }
+          if (!set.has(interactableId)) {
+            set.add(interactableId);
+            broadcastToRoom(
+              room,
+              {
+                type: 'interactable:activated',
+                realmSlug,
+                interactableId,
+                interactableName: String(msg.interactableName || 'Waystone').slice(0, 64),
+                activatorId: playerId,
+                activatorName: existing.name,
+              },
+              playerId,
+              realmSlug,
+            );
+          }
+        } else if (msg.type === 'coop:heal') {
+          const realmSlug = String(msg.realmSlug || existing.realmSlug).slice(0, 64);
+          const amount = Math.max(8, Math.min(120, Math.round(Number(msg.amount) || 26)));
+          const hx = typeof msg.x === 'number' ? msg.x : existing.x;
+          const hz = typeof msg.z === 'number' ? msg.z : existing.z;
+          const recipients = computeCoopHealRecipients(
+            { id: playerId, realmSlug, x: hx, z: hz },
+            Array.from(room.players.values()),
+          );
+          const healPayload = JSON.stringify({
+            type: 'coop:healed',
+            event: {
+              id: `heal-${now}-${Math.round(Math.random() * 999)}`,
+              healerId: playerId,
+              healerName: existing.name,
+              amount,
+              realmSlug,
+              x: hx,
+              z: hz,
+              timestamp: now,
+            },
+          });
+          for (const ally of recipients) {
+            const allySocket = room.sockets.get(ally.id);
+            if (allySocket && allySocket.readyState === WebSocket.OPEN) {
+              allySocket.send(healPayload);
+            }
+          }
+        } else if (msg.type === 'world:ping') {
+          const realmSlug = String(msg.realmSlug || existing.realmSlug).slice(0, 64);
+          const kind: WorldPingKind =
+            msg.kind === 'danger' || msg.kind === 'loot' ? msg.kind : 'rally';
+          const label = String(
+            msg.label || (kind === 'danger' ? 'Threat Spotted' : kind === 'loot' ? 'Relic / Vault' : 'Rally Here'),
+          ).slice(0, 40);
+          const px = Math.max(-100, Math.min(100, Number(msg.x) || existing.x));
+          const pz = Math.max(-100, Math.min(100, Number(msg.z) || existing.z));
+          const ping: WorldPing = {
+            id: `ping-${now}-${Math.round(Math.random() * 999)}`,
+            senderId: playerId,
+            senderName: existing.name,
+            guildId: existing.guildId,
+            realmSlug,
+            x: px,
+            z: pz,
+            kind,
+            label,
+            createdAt: now,
+            expiresAt: now + DEFAULT_PING_TTL_MS,
+          };
+          const currentPings = room.pingsByRealm.get(realmSlug) ?? [];
+          room.pingsByRealm.set(realmSlug, mergeWorldPing(currentPings, ping, now));
+          broadcastToRoom(room, { type: 'world:pinged', ping }, undefined, realmSlug);
+        } else if (msg.type === 'party:summon') {
+          const realmSlug = String(msg.realmSlug || existing.realmSlug).slice(0, 64);
+          const realmName = String(msg.realmName || existing.realmName).slice(0, 64);
+          const isDungeon = Boolean(msg.isDungeon);
+          const cell =
+            Array.isArray(msg.cell) && msg.cell.length === 3
+              ? ([Number(msg.cell[0]) || 0, Number(msg.cell[1]) || 0, Number(msg.cell[2]) || 0] as [
+                  number,
+                  number,
+                  number,
+                ])
+              : undefined;
+          const summon: PartySummon = {
+            id: `summon-${now}-${Math.round(Math.random() * 999)}`,
+            senderId: playerId,
+            senderName: existing.name,
+            realmSlug,
+            realmName,
+            isDungeon,
+            x: Math.max(-96, Math.min(96, Number(msg.x) || existing.x)),
+            z: Math.max(-96, Math.min(96, Number(msg.z) || existing.z)),
+            cell,
+            createdAt: now,
+          };
+          room.activeSummon = summon;
+          broadcastToRoom(room, { type: 'party:summoned', summon }, playerId);
+          appendRoomEvent(room, {
+            id: `ev-summon-${now}-${Math.round(Math.random() * 999)}`,
+            senderId: playerId,
+            senderName: existing.name,
+            guildId: existing.guildId,
+            text: `${existing.name} summoned the party to ${realmName}.`,
+            kind: 'event',
+            timestamp: now,
+          });
         } else if (msg.type === 'guild:pledge') {
-          existing.guildId = String(msg.guildId || existing.guildId);
-          if (msg.name) existing.name = String(msg.name).slice(0, 28);
-          broadcast({ type: 'player:upsert', player: existing }, ws);
+          existing.guildId = String(msg.guildId || existing.guildId).slice(0, 40);
+          if (msg.name) existing.name = normalizeCallsign(msg.name, existing.name);
+          broadcastToRoom(room, { type: 'player:upsert', player: existing }, playerId);
         } else if (msg.type === 'banner:plant' && msg.banner) {
           const incoming = msg.banner as ServerBanner;
-          if (!realmBanners.some((b) => b.id === incoming.id)) {
+          const realmSlug = String(incoming.realmSlug || existing.realmSlug).slice(0, 64);
+          const list = room.bannersByRealm.get(realmSlug) ?? [];
+          if (!list.some((b) => b.id === incoming.id)) {
             const cleanBanner: ServerBanner = {
               id: String(incoming.id),
               name: String(incoming.name || 'Frontier Waymark').slice(0, 48),
@@ -826,51 +1431,46 @@ Return JSON with: name, origin (short region or guild phrase), description (1-2 
               builderName: existing.name,
               position: [Number(incoming.position?.[0]) || existing.x, Number(incoming.position?.[1]) || existing.z],
               plantedAt: now,
+              realmSlug,
               remote: true,
             };
-            realmBanners.unshift(cleanBanner);
-            if (realmBanners.length > 40) realmBanners.pop();
-            realmGuildProsperity[cleanBanner.guildId] = Math.min(
+            list.unshift(cleanBanner);
+            if (list.length > 40) list.pop();
+            room.bannersByRealm.set(realmSlug, list);
+            room.guildProsperity[cleanBanner.guildId] = Math.min(
               100,
-              (realmGuildProsperity[cleanBanner.guildId] ?? 50) + 3,
+              (room.guildProsperity[cleanBanner.guildId] ?? 50) + 3,
             );
-            broadcast({ type: 'banner:planted', banner: cleanBanner }, ws);
-            broadcast({ type: 'guild:prosperity', prosperity: realmGuildProsperity });
-
-            const eventMsg: ServerChat = {
-              id: `ev-${now}-${Math.round(Math.random() * 999)}`,
+            broadcastToRoom(room, { type: 'banner:planted', banner: cleanBanner }, playerId, realmSlug);
+            broadcastToRoom(room, { type: 'guild:prosperity', prosperity: room.guildProsperity });
+            appendRoomEvent(room, {
+              id: `ev-ban-${now}-${Math.round(Math.random() * 999)}`,
               senderId: playerId,
               senderName: existing.name,
               guildId: cleanBanner.guildId,
-              text: `${existing.name} raised ${cleanBanner.name} on the frontier.`,
+              text: `${existing.name} raised ${cleanBanner.name} in ${existing.realmName}.`,
               kind: 'event',
               timestamp: now,
-            };
-            realmChat.push(eventMsg);
-            if (realmChat.length > 40) realmChat.shift();
-            broadcast({ type: 'world:chat', message: eventMsg });
+            });
           }
         } else if (msg.type === 'quest:complete') {
           const gId = String(msg.guildId || existing.guildId);
           const title = String(msg.questTitle || 'a Frontier Charter').slice(0, 64);
-          realmGuildProsperity[gId] = Math.min(100, (realmGuildProsperity[gId] ?? 50) + 5);
-          broadcast({ type: 'guild:prosperity', prosperity: realmGuildProsperity });
-          const eventMsg: ServerChat = {
-            id: `ev-${now}-${Math.round(Math.random() * 999)}`,
+          room.guildProsperity[gId] = Math.min(100, (room.guildProsperity[gId] ?? 50) + 5);
+          broadcastToRoom(room, { type: 'guild:prosperity', prosperity: room.guildProsperity });
+          appendRoomEvent(room, {
+            id: `ev-q-${now}-${Math.round(Math.random() * 999)}`,
             senderId: playerId,
             senderName: existing.name,
             guildId: gId,
             text: `${existing.name} completed "${title}".`,
             kind: 'event',
             timestamp: now,
-          };
-          realmChat.push(eventMsg);
-          if (realmChat.length > 40) realmChat.shift();
-          broadcast({ type: 'world:chat', message: eventMsg });
+          });
         } else if (msg.type === 'world:chat') {
           const text = String(msg.text || '').trim().slice(0, 180);
           if (!text) return;
-          const chatMsg: ServerChat = {
+          appendRoomEvent(room, {
             id: `chat-${now}-${Math.round(Math.random() * 999)}`,
             senderId: playerId,
             senderName: existing.name,
@@ -878,10 +1478,7 @@ Return JSON with: name, origin (short region or guild phrase), description (1-2 
             text,
             kind: 'chat',
             timestamp: now,
-          };
-          realmChat.push(chatMsg);
-          if (realmChat.length > 40) realmChat.shift();
-          broadcast({ type: 'world:chat', message: chatMsg });
+          });
         }
       } catch {
         // ignore malformed frames
@@ -889,9 +1486,8 @@ Return JSON with: name, origin (short region or guild phrase), description (1-2 
     });
 
     ws.on('close', () => {
-      if (realmPlayers.delete(playerId)) {
-        broadcast({ type: 'player:leave', playerId });
-      }
+      detachPlayerFromRoom(playerId, activeRoomCode);
+      activeRoomCode = null;
     });
   });
 

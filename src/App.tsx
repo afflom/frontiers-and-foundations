@@ -23,6 +23,15 @@ import {
   VerdantFrontiersRuntime,
   type VerdantWorldStatus,
 } from './verdant/verdantWorldRuntime';
+import type {
+  ObserverRefinementAgenda,
+  ObserverSnapshot,
+  VerdantVsmManagerSpec,
+} from './verdant/verdantObserverManager';
+import type {
+  VerdantPartSlot,
+  VerdantResolutionTier,
+} from './verdant/verdantModelOfModels';
 import {
   ALL_CANONICAL_WORLDS,
   CANONICAL_REALM_SPECS,
@@ -42,6 +51,11 @@ import {
 } from './verdant/verdantScoreSchema';
 import { isStaticPagesHost } from './utils/publicUrl';
 import {
+  getRelicArchetypeForTheme,
+  renderRelicSigilSvgDataUrl,
+  synthesizeBiomeRelic,
+} from './verdant/verdantRelicCatalog';
+import {
   applyGearUpgrade,
   computeCombatStats,
   mergeChatMessage,
@@ -51,66 +65,74 @@ import {
   type CraftingMaterials,
   type EquippedRelic,
   type GearUpgradeTiers,
-  type RelicBonusKind,
+  type PartySummon,
   type RemotePlayerState,
   type WorldChatMessage,
+  type WorldPing,
+  type WorldPingKind,
 } from './game/multiplayerTypes';
+import {
+  mergeWorldPing,
+  normalizeCallsign,
+  normalizeRoomCode,
+  parseCallsignFromSearch,
+  parseRoomCodeFromSearch,
+} from './game/multiplayerState';
 import { VaelmorRealmClient } from './game/multiplayerClient';
 import { TitleOverlay } from './components/game/TitleOverlay';
+import { PrologueCinematicOverlay } from './components/game/PrologueCinematicOverlay';
+import { FieldManualModal } from './components/game/FieldManualModal';
 import { GameHud, type CombatCallout } from './components/game/GameHud';
 import { DialogueOverlay } from './components/game/DialogueOverlay';
 import { JournalMapModal, type AtlasTab } from './components/game/JournalMapModal';
 import { StatusModal } from './components/game/StatusModal';
+import {
+  DEFAULT_SAVE_GEAR_TIERS,
+  DEFAULT_SAVE_MATERIALS,
+  createNewSaveSlot,
+  deleteSaveSlot,
+  getFirstEmptySaveSlotId,
+  getMostRecentSaveSlot,
+  loadSaveSlotStore,
+  renameSaveSlot,
+  updateSaveSlotProgress,
+  type SaveSlotId,
+  type SaveSlotStoreState,
+} from './game/saveSlotStorage';
+import {
+  evaluateJourneyProgress,
+  type PrologueCinematicAct,
+  type WaywrightOathId,
+} from './verdant/verdantJourneyModel';
 
-const STORAGE_KEY = 'frontiers-foundations-save-v3';
+const DEFAULT_MATERIALS: CraftingMaterials = { ...DEFAULT_SAVE_MATERIALS };
+const DEFAULT_TIERS: GearUpgradeTiers = { ...DEFAULT_SAVE_GEAR_TIERS };
 
-interface SavedJourney {
-  quests: GameQuest[];
-  renown: number;
-  pledgedGuildId: string;
-  banners: FoundationBanner[];
-  materials: CraftingMaterials;
-  gearTiers: GearUpgradeTiers;
-  relics: EquippedRelic[];
-  discoveredRegions: RegionId[];
-}
-
-const DEFAULT_MATERIALS: CraftingMaterials = {
-  silicateMoss: 2,
-  lodestoneShards: 2,
-  foundrySlag: 1,
+const SLOT_LABELS: Record<SaveSlotId, string> = {
+  'slot-1': 'Slot I',
+  'slot-2': 'Slot II',
+  'slot-3': 'Slot III',
 };
 
-const DEFAULT_TIERS: GearUpgradeTiers = {
-  hookblade: 1,
-  bellhammer: 1,
-  lantern: 1,
-  compass: 1,
-};
-
-function loadSavedJourney(): SavedJourney | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<SavedJourney>;
-    if (!Array.isArray(parsed.quests) || parsed.quests.length === 0) return null;
+function enrichStarterRelics(list: EquippedRelic[]): EquippedRelic[] {
+  return list.map((r, idx) => {
+    if (r.sigilSvg && r.perkId) return r;
+    const theme: RealmThemeId = r.theme ?? (idx === 0 ? 'citadel-highlands' : 'sunken-aqueducts');
+    const arch = getRelicArchetypeForTheme(theme);
+    const rarity = r.rarity ?? 'Chartered';
     return {
-      quests: parsed.quests,
-      renown: typeof parsed.renown === 'number' ? parsed.renown : 0,
-      pledgedGuildId:
-        typeof parsed.pledgedGuildId === 'string' ? parsed.pledgedGuildId : INITIAL_GUILDS[0].id,
-      banners: Array.isArray(parsed.banners) ? parsed.banners : [],
-      materials: parsed.materials ?? DEFAULT_MATERIALS,
-      gearTiers: parsed.gearTiers ?? DEFAULT_TIERS,
-      relics: Array.isArray(parsed.relics) && parsed.relics.length > 0 ? parsed.relics : INITIAL_RELICS,
-      discoveredRegions:
-        Array.isArray(parsed.discoveredRegions) && parsed.discoveredRegions.length > 0
-          ? parsed.discoveredRegions
-          : ['southern-terrace'],
+      ...r,
+      theme,
+      rarity,
+      perkId: r.perkId ?? arch.perkId,
+      perkLabel: r.perkLabel ?? arch.perkLabel,
+      perkDescription: r.perkDescription ?? arch.perkDescription,
+      resonanceHz: r.resonanceHz ?? arch.resonanceHz,
+      auraRgb: r.auraRgb ?? [...arch.auraRgb],
+      sigilSvg: r.sigilSvg ?? renderRelicSigilSvgDataUrl(theme, rarity, 107 + idx * 31),
+      catalogId: r.catalogId ?? arch.catalogId,
     };
-  } catch {
-    return null;
-  }
+  });
 }
 
 const DEFAULT_HUD: HudSnapshot = {
@@ -130,7 +152,6 @@ const DEFAULT_HUD: HudSnapshot = {
 };
 
 export default function App() {
-  const savedOnBoot = useMemo(() => loadSavedJourney(), []);
   const autostart = useMemo(() => {
     try {
       return new URLSearchParams(window.location.search).get('autostart') === '1';
@@ -139,11 +160,60 @@ export default function App() {
     }
   }, []);
 
-  const playerCallsign = useMemo(() => {
+  const initialRoom = useMemo(() => {
+    try {
+      return parseRoomCodeFromSearch(window.location.search);
+    } catch {
+      return { roomCode: 'MERIDIAN-OPEN', invited: false };
+    }
+  }, []);
+
+  const defaultBootCallsign = useMemo(() => {
+    try {
+      const fromUrl = parseCallsignFromSearch(window.location.search);
+      if (fromUrl) return fromUrl;
+      const stored = window.localStorage.getItem('frontiers-waywright-callsign');
+      if (stored && stored.trim().length >= 2) return normalizeCallsign(stored);
+    } catch {
+      // ignore storage errors
+    }
     const names = ['Alden', 'Bryn', 'Corin', 'Dara', 'Elowen', 'Fenn', 'Maren', 'Torin'];
     const suffix = Math.floor(10 + Math.random() * 89);
     return `${names[Math.floor(Math.random() * names.length)]}-${suffix}`;
   }, []);
+
+  const initialSaveStore = useMemo(
+    () => loadSaveSlotStore(undefined, defaultBootCallsign),
+    [defaultBootCallsign],
+  );
+  const bootSlotRecord = useMemo(
+    () => getMostRecentSaveSlot(initialSaveStore),
+    [initialSaveStore],
+  );
+  const savedOnBoot = bootSlotRecord?.journey ?? null;
+
+  const [saveStore, setSaveStore] = useState<SaveSlotStoreState>(initialSaveStore);
+  const [activeSlotId, setActiveSlotId] = useState<SaveSlotId>(
+    bootSlotRecord?.slotId ?? initialSaveStore.activeSlotId,
+  );
+  const [hasActiveSession, setHasActiveSession] = useState<boolean>(autostart);
+  const [prologueReturnPhase, setPrologueReturnPhase] = useState<'title' | 'playing'>('playing');
+  const [prologueIsReplay, setPrologueIsReplay] = useState<boolean>(false);
+  const [fieldManualOpen, setFieldManualOpen] = useState<boolean>(false);
+  const [waywrightOath, setWaywrightOath] = useState<WaywrightOathId | null>(
+    () => bootSlotRecord?.waywrightOath ?? null,
+  );
+  const [guideDismissed, setGuideDismissed] = useState<boolean>(false);
+  const [hasVisitedDungeon, setHasVisitedDungeon] = useState<boolean>(
+    () => Boolean(savedOnBoot?.hasVisitedDungeon),
+  );
+
+  const [playerCallsign, setPlayerCallsign] = useState<string>(
+    () => bootSlotRecord?.waywrightName ?? defaultBootCallsign,
+  );
+  const [roomCode, setRoomCode] = useState<string>(initialRoom.roomCode);
+  const [worldPings, setWorldPings] = useState<WorldPing[]>([]);
+  const [activeSummon, setActiveSummon] = useState<PartySummon | null>(null);
 
   const mountRef = useRef<HTMLDivElement | null>(null);
   const engineRef = useRef<VerdantFrontiersRuntime | null>(null);
@@ -173,8 +243,8 @@ export default function App() {
   const [gearTiers, setGearTiers] = useState<GearUpgradeTiers>(
     () => savedOnBoot?.gearTiers ?? DEFAULT_TIERS,
   );
-  const [relics, setRelics] = useState<EquippedRelic[]>(
-    () => savedOnBoot?.relics ?? INITIAL_RELICS.map((r) => ({ ...r })),
+  const [relics, setRelics] = useState<EquippedRelic[]>(() =>
+    enrichStarterRelics(savedOnBoot?.relics ?? INITIAL_RELICS.map((r) => ({ ...r }))),
   );
   const [discoveredRegions, setDiscoveredRegions] = useState<RegionId[]>(
     () => savedOnBoot?.discoveredRegions ?? ['southern-terrace'],
@@ -198,6 +268,8 @@ export default function App() {
   const [forgingRelic, setForgingRelic] = useState<boolean>(false);
   const [forgeError, setForgeError] = useState<string | null>(null);
   const [_verdantStatus, setVerdantStatus] = useState<VerdantWorldStatus | null>(null);
+  const [modelObserverSnapshot, setModelObserverSnapshot] = useState<ObserverSnapshot | null>(null);
+  const [refiningWorldModel, setRefiningWorldModel] = useState<boolean>(false);
 
   // Federated Multi-Realm Universe State (6 Vast Overworld Realms + 6 Playable 3D Dungeons)
   const [realms, setRealms] = useState<FrontiersRealmSpec[]>(() => ALL_CANONICAL_WORLDS);
@@ -228,6 +300,8 @@ export default function App() {
   phaseRef.current = phase;
   const pledgedGuildRef = useRef(pledgedGuildId);
   pledgedGuildRef.current = pledgedGuildId;
+  const playerCallsignRef = useRef(playerCallsign);
+  playerCallsignRef.current = playerCallsign;
   const victoryShownRef = useRef(victoryShown);
   victoryShownRef.current = victoryShown;
   const realmsRef = useRef(realms);
@@ -262,24 +336,99 @@ export default function App() {
     [],
   );
 
-  // Persist journey locally
-  useEffect(() => {
-    try {
-      const payload: SavedJourney = {
+  const gearUpgradeTotal = useMemo(
+    () =>
+      Math.max(0, gearTiers.hookblade - 1) +
+      Math.max(0, gearTiers.bellhammer - 1) +
+      Math.max(0, gearTiers.lantern - 1) +
+      Math.max(0, gearTiers.compass - 1),
+    [gearTiers],
+  );
+
+  const journeySummary = useMemo(
+    () =>
+      evaluateJourneyProgress({
         quests,
-        renown,
-        pledgedGuildId,
-        banners,
-        materials,
-        gearTiers,
-        relics,
+        defeatedCount: hud.defeatedCount,
+        bannersCount: banners.length,
+        gearUpgradeTotal,
+        hasVisitedDungeon,
         discoveredRegions,
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    } catch {
-      // ignore storage quota
-    }
-  }, [quests, renown, pledgedGuildId, banners, materials, gearTiers, relics, discoveredRegions]);
+        prologueCompleted: Boolean(saveStore.slots[activeSlotId]?.prologueCompleted),
+      }),
+    [
+      quests,
+      hud.defeatedCount,
+      banners.length,
+      gearUpgradeTotal,
+      hasVisitedDungeon,
+      discoveredRegions,
+      saveStore.slots,
+      activeSlotId,
+    ],
+  );
+
+  // Persist active Save Slot whenever player is in an active expedition session
+  useEffect(() => {
+    if (!hasActiveSession) return;
+    setSaveStore((prev) =>
+      updateSaveSlotProgress(prev, {
+        slotId: activeSlotId,
+        waywrightName: playerCallsign,
+        journeyChapterTitle: journeySummary.currentChapterTitle,
+        journey: {
+          quests,
+          renown,
+          pledgedGuildId,
+          banners,
+          materials,
+          gearTiers,
+          relics,
+          discoveredRegions,
+          activeRealmSlug,
+          activeRealmName: activeRealmRef.current.name,
+          regionName: hud.region.name,
+          defeatedCount: hud.defeatedCount,
+          hasVisitedDungeon,
+        },
+      }),
+    );
+  }, [
+    hasActiveSession,
+    activeSlotId,
+    playerCallsign,
+    journeySummary.currentChapterTitle,
+    quests,
+    renown,
+    pledgedGuildId,
+    banners,
+    materials,
+    gearTiers,
+    relics,
+    discoveredRegions,
+    activeRealmSlug,
+    hud.region.name,
+    hud.defeatedCount,
+    hasVisitedDungeon,
+  ]);
+
+  // Increment active slot play-time cleanly every 10s while actively playing
+  useEffect(() => {
+    if (phase !== 'playing' || !hasActiveSession) return;
+    const id = window.setInterval(() => {
+      setSaveStore((prev) => {
+        const cur = prev.slots[activeSlotId];
+        if (!cur) return prev;
+        return updateSaveSlotProgress(prev, {
+          slotId: activeSlotId,
+          waywrightName: cur.waywrightName,
+          journey: cur.journey,
+          playTimeDeltaSec: 10,
+        });
+      });
+    }, 10000);
+    return () => window.clearInterval(id);
+  }, [phase, hasActiveSession, activeSlotId]);
 
   // Fetch compiled & dynamically generated Federated Realms from Verdant MCP Host
   useEffect(() => {
@@ -324,6 +473,10 @@ export default function App() {
   useEffect(() => {
     engineRef.current?.syncRemotePlayers(remotePlayers);
   }, [remotePlayers]);
+
+  useEffect(() => {
+    engineRef.current?.syncWorldPings(worldPings);
+  }, [worldPings]);
 
   // Unlock Codex entries automatically as player enters new regions
   useEffect(() => {
@@ -440,10 +593,26 @@ export default function App() {
             snap.playerYaw,
             snap.activeGear,
             snap.region.id,
+            snap.hp,
+            snap.maxHp,
+            snap.waterPosture,
           );
         },
-        onPlayerAction: (gear) => {
-          realmRef.current?.sendAction(gear);
+        onPlayerAction: (gear, x, z, yaw) => {
+          realmRef.current?.sendAction(gear, x, z, yaw);
+        },
+        onEnemyDamaged: (payload) => {
+          realmRef.current?.sendEnemyDamage({
+            enemyId: payload.enemyId,
+            enemyName: payload.enemyName,
+            archetype: payload.archetype,
+            damage: payload.damage,
+            maxHp: payload.maxHp,
+            realmSlug: activeRealmRef.current.slug,
+          });
+        },
+        onCoopLanternCast: (amount, x, z) => {
+          realmRef.current?.sendCoopHeal(amount, x, z, activeRealmRef.current.slug);
         },
         onCombatCallout: (text, tone) => {
           pushCombatCallout(text, tone);
@@ -484,32 +653,87 @@ export default function App() {
               foundrySlag: m.foundrySlag + 2,
             }));
             setRenown((r) => r + 60);
+            const hostRealm = activeRealmRef.current;
+            const vaultRelic = synthesizeBiomeRelic({
+              theme: hostRealm.theme,
+              realmName: hostRealm.name,
+              source: 'vault-chest',
+              seed: (Date.now() + item.id.length * 131) >>> 0,
+            });
+            setRelics((prev) =>
+              prev.some((r) => r.name === vaultRelic.name) ? prev : [vaultRelic, ...prev],
+            );
+            engine.ingestEmergentLore(
+              vaultRelic.id,
+              `Vault Relic ${vaultRelic.name} (${vaultRelic.rarity} · ${vaultRelic.perkLabel}): ${vaultRelic.description}`,
+            );
             audio.playQuestComplete();
-            pushCombatCallout('+60 RENOWN · VAULT UNSEALED', 'gold');
-            showToast(`Unsealed ${item.name} (+2 Moss, +3 Lodestone, +2 Slag, +60 Renown).`);
+            pushCombatCallout(`+60 RENOWN · ${vaultRelic.rarity.toUpperCase()} RELIC`, 'gold');
+            showToast(`Unsealed ${item.name} — Recovered ${vaultRelic.name} (${vaultRelic.perkLabel})!`);
           } else if (item.kind === 'resonance-pier' || item.kind === 'forge-bell') {
             applyQuestProgress('ring-bell', item.id);
+            const stem = item.id.replace(/-[we]$/, '');
+            if (stem !== item.id) {
+              applyQuestProgress('ring-bell', stem);
+            }
             setMaterials((m) => ({ ...m, foundrySlag: m.foundrySlag + 1 }));
             showToast(`${item.name} resonates across the frontier (+1 Foundry Slag).`);
           } else if (item.kind === 'waystone-beacon') {
             applyQuestProgress('calibrate-beacon', item.id);
+            const stem = item.id.replace(/-[we]$/, '');
+            if (stem !== item.id) {
+              applyQuestProgress('calibrate-beacon', stem);
+            }
             setMaterials((m) => ({ ...m, lodestoneShards: m.lodestoneShards + 2 }));
             showToast(`${item.name} attuned to the Meridian network (+2 Lodestone).`);
           } else if (item.kind === 'silicate-relic') {
             applyQuestProgress('collect-relics', 'silicate-relic');
+            applyQuestProgress('collect-relics', item.id);
+            const stem = item.id.replace(/-[we]$/, '');
+            if (stem !== item.id) {
+              applyQuestProgress('collect-relics', stem);
+            }
             setMaterials((m) => ({ ...m, silicateMoss: m.silicateMoss + 1 }));
             showToast(`Harvested ${item.name} (+1 Silicate Moss).`);
+          }
+          if (item.kind !== 'dungeon-portal' && item.kind !== 'dungeon-exit') {
+            realmRef.current?.sendInteractableActivate(
+              item.id,
+              item.name,
+              activeRealmRef.current.slug,
+            );
           }
         },
         onEnemyDefeated: (archetype: EnemyArchetype, name: string) => {
           applyQuestProgress('defeat-archetype', archetype);
-          setRenown((r) => r + 25);
+          const renownReward = archetype === 'colossus' ? 85 : 25;
+          setRenown((r) => r + renownReward);
           setMaterials((m) => ({
-            silicateMoss: m.silicateMoss,
-            lodestoneShards: m.lodestoneShards + 1,
+            silicateMoss: m.silicateMoss + (archetype === 'colossus' ? 1 : 0),
+            lodestoneShards: m.lodestoneShards + (archetype === 'colossus' ? 2 : 1),
             foundrySlag: m.foundrySlag + (archetype === 'colossus' ? 2 : 1),
           }));
-          showToast(`Vanquished ${name} (+25 Renown, +1 Lodestone)`);
+          if (archetype === 'colossus') {
+            const hostRealm = activeRealmRef.current;
+            const bossRelic = synthesizeBiomeRelic({
+              theme: hostRealm.theme,
+              realmName: hostRealm.name,
+              rarity: 'Sovereign',
+              source: 'colossus-drop',
+              brief: `trophied from ${name}`,
+              seed: (Date.now() + name.length * 997) >>> 0,
+            });
+            setRelics((prev) => [bossRelic, ...prev]);
+            engine.ingestEmergentLore(
+              bossRelic.id,
+              `Sovereign Trophy ${bossRelic.name} (${bossRelic.perkLabel}) claimed from ${name}`,
+            );
+            audio.playQuestComplete();
+            pushCombatCallout(`SOVEREIGN RELIC · ${bossRelic.name.toUpperCase()}`, 'gold');
+            showToast(`Vanquished ${name}! Claimed Sovereign Relic: ${bossRelic.name} (${bossRelic.perkLabel}).`);
+          } else {
+            showToast(`Vanquished ${name} (+25 Renown, +1 Lodestone)`);
+          }
         },
         onPlayerDamaged: (_newHp, defeated) => {
           if (defeated && phaseRef.current === 'playing') {
@@ -526,9 +750,10 @@ export default function App() {
             id: `banner-${Date.now()}-${Math.round(Math.random() * 999)}`,
             name: `${guild.name.split(' ')[0]} Waymark`,
             guildId: guild.id,
-            builderName: playerCallsign,
+            builderName: playerCallsignRef.current,
             position: [x, z],
             plantedAt: Date.now(),
+            realmSlug: activeRealmRef.current.slug,
           };
           addedBannerIdsRef.current.add(banner.id);
           engine.addBannerMesh(banner);
@@ -567,6 +792,9 @@ export default function App() {
           setVerdantStatus(st);
           (window as unknown as { __VERDANT_STATUS__?: VerdantWorldStatus }).__VERDANT_STATUS__ = st;
         },
+        onModelObserverChange: (snap) => {
+          setModelObserverSnapshot(snap);
+        },
         onSpatialAudio: (metrics) => {
           audio.updateSpatialMetrics(metrics);
         },
@@ -600,13 +828,24 @@ export default function App() {
 
     // Connect real WebSocket multiplayer client (/ws/realm)
     const realm = new VaelmorRealmClient(
-      { name: playerCallsign, guildId: pledgedGuildRef.current },
+      {
+        name: playerCallsignRef.current,
+        guildId: pledgedGuildRef.current,
+        roomCode: initialRoom.roomCode,
+        realmSlug: activeRealmRef.current.slug,
+        realmName: activeRealmRef.current.name,
+      },
       {
         onConnected: (ok) => setRealmConnected(ok),
         onInit: (payload) => {
           selfIdRef.current = payload.selfId;
+          setRoomCode(payload.roomCode);
           setRemotePlayers(payload.players);
           setChatMessages(payload.chatHistory);
+          setWorldPings(payload.pings ?? []);
+          if (payload.activeSummon) {
+            setActiveSummon(payload.activeSummon);
+          }
           if (payload.guildProsperity) {
             setGuilds((gs) =>
               gs.map((g) =>
@@ -623,6 +862,33 @@ export default function App() {
             }
           }
           setBanners((prev) => payload.banners.reduce((acc, b) => mergeRemoteBanner(acc, b), prev));
+          if (payload.realmEnemies) {
+            for (const sharedEnemy of Object.values(payload.realmEnemies)) {
+              engine.applyRemoteEnemySync(sharedEnemy);
+            }
+          }
+          if (payload.activatedInteractables) {
+            for (const itemId of payload.activatedInteractables) {
+              engine.applyRemoteInteractableActivated(itemId);
+            }
+          }
+        },
+        onRealmSync: (sync) => {
+          if (sync.realmSlug !== activeRealmRef.current.slug) return;
+          setWorldPings(sync.pings ?? []);
+          for (const b of sync.banners) {
+            if (!addedBannerIdsRef.current.has(b.id)) {
+              addedBannerIdsRef.current.add(b.id);
+              engine.addBannerMesh(b);
+            }
+          }
+          setBanners((prev) => sync.banners.reduce((acc, b) => mergeRemoteBanner(acc, b), prev));
+          for (const sharedEnemy of Object.values(sync.realmEnemies ?? {})) {
+            engine.applyRemoteEnemySync(sharedEnemy);
+          }
+          for (const itemId of sync.activatedInteractables ?? []) {
+            engine.applyRemoteInteractableActivated(itemId);
+          }
         },
         onPlayerUpsert: (player) => {
           setRemotePlayers((prev) => upsertRemotePlayer(prev, player, selfIdRef.current));
@@ -630,13 +896,60 @@ export default function App() {
         onPlayerLeave: (playerId) => {
           setRemotePlayers((prev) => removeRemotePlayer(prev, playerId));
         },
+        onPlayerAction: (ev) => {
+          engine.spawnRemoteActionVfx(ev);
+        },
+        onEnemySync: ({ realmSlug, enemy, attackerName, killedNow }) => {
+          if (realmSlug !== activeRealmRef.current.slug) return;
+          const res = engine.applyRemoteEnemySync(enemy, attackerName);
+          if ((killedNow || res.killedLocally) && res.enemy) {
+            applyQuestProgress('defeat-archetype', res.enemy.archetype);
+            const assistRenown = res.enemy.archetype === 'colossus' ? 60 : 20;
+            setRenown((r) => r + assistRenown);
+            showToast(
+              `${attackerName} felled ${res.enemy.name} — Co-op Assist (+${assistRenown} Renown)!`,
+            );
+          }
+        },
+        onInteractableActivated: ({ realmSlug, interactableId, interactableName, activatorName }) => {
+          if (realmSlug !== activeRealmRef.current.slug) return;
+          const activated = engine.applyRemoteInteractableActivated(interactableId);
+          if (activated) {
+            if (activated.kind === 'resonance-pier' || activated.kind === 'forge-bell') {
+              applyQuestProgress('ring-bell', activated.id);
+            } else if (activated.kind === 'waystone-beacon' || activated.kind === 'seal-brazier') {
+              applyQuestProgress('calibrate-beacon', activated.id);
+            } else if (activated.kind === 'silicate-relic') {
+              applyQuestProgress('collect-relics', 'silicate-relic');
+            }
+            showToast(`${activatorName} activated ${interactableName}!`);
+          }
+        },
+        onCoopHealed: (ev) => {
+          if (ev.realmSlug !== activeRealmRef.current.slug) return;
+          engine.applyCoopHeal(ev.amount, ev.healerName);
+          showToast(`${ev.healerName}'s Mortar Lantern mended you (+${ev.amount} Vitality)!`);
+        },
+        onWorldPing: (ping) => {
+          if (ping.realmSlug !== activeRealmRef.current.slug) return;
+          setWorldPings((prev) => mergeWorldPing(prev, ping));
+          if (ping.senderId !== selfIdRef.current) {
+            audio.playResonanceBell(ping.kind === 'danger' ? 196 : 330);
+            showToast(`${ping.senderName} pinged: ${ping.label}`);
+          }
+        },
+        onPartySummon: (summon) => {
+          if (summon.senderId === selfIdRef.current) return;
+          setActiveSummon(summon);
+          audio.playResonanceBell(392);
+        },
         onBannerPlanted: (banner) => {
           if (!addedBannerIdsRef.current.has(banner.id)) {
             addedBannerIdsRef.current.add(banner.id);
             engine.addBannerMesh(banner);
           }
           setBanners((prev) => mergeRemoteBanner(prev, banner));
-          showToast(`${banner.builderName} raised ${banner.name} across Vaelmor!`);
+          showToast(`${banner.builderName} raised ${banner.name}!`);
         },
         onGuildProsperity: (prosperity) => {
           setGuilds((gs) =>
@@ -668,34 +981,193 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleStartNew = useCallback(() => {
-    audioRef.current?.ensureStarted();
-    const freshQuests = INITIAL_QUESTS.map((q) => ({
-      ...q,
-      objectives: q.objectives.map((o) => ({ ...o, currentCount: 0 })),
-      status: 'active' as const,
-    }));
-    setQuests(freshQuests);
-    setTrackedQuestId(freshQuests[0].id);
-    setRenown(0);
-    setMaterials(DEFAULT_MATERIALS);
-    setGearTiers(DEFAULT_TIERS);
-    setRelics(INITIAL_RELICS.map((r) => ({ ...r })));
-    setVictoryShown(false);
-    setActiveNpcId(null);
-    setAtlasTab(null);
-    setChatOpen(false);
-    engineRef.current?.resetRun(createInitialEnemies(), INITIAL_INTERACTABLES);
-    setPhase('playing');
-    showToast('Speak with Magistrate Orenna Vael ahead on the Southern Causeway.');
-  }, [showToast]);
+  const handleStartNewInSlot = useCallback(
+    (slotId: SaveSlotId, waywrightName: string, guildId: string = INITIAL_GUILDS[0].id) => {
+      void audioRef.current?.ensureStarted();
+      const cleanName = normalizeCallsign(waywrightName, defaultBootCallsign);
+      const { store: nextStore, record } = createNewSaveSlot(saveStore, {
+        slotId,
+        waywrightName: cleanName,
+        pledgedGuildId: guildId,
+        prologueCompleted: false,
+      });
+      setSaveStore(nextStore);
+      setActiveSlotId(slotId);
+      setHasActiveSession(true);
+      setPlayerCallsign(cleanName);
+      try {
+        window.localStorage.setItem('frontiers-waywright-callsign', cleanName);
+      } catch {
+        // ignore storage errors
+      }
+      setQuests(record.journey.quests);
+      setTrackedQuestId(record.journey.quests[0].id);
+      setRenown(0);
+      setPledgedGuildId(guildId);
+      setBanners([]);
+      addedBannerIdsRef.current = new Set();
+      setMaterials({ ...DEFAULT_MATERIALS });
+      setGearTiers({ ...DEFAULT_TIERS });
+      setRelics(enrichStarterRelics(INITIAL_RELICS.map((r) => ({ ...r }))));
+      setDiscoveredRegions(['southern-terrace']);
+      setHasVisitedDungeon(false);
+      setGuideDismissed(false);
+      setVictoryShown(false);
+      setActiveNpcId(null);
+      setAtlasTab(null);
+      setChatOpen(false);
+      setActiveRealmSlug('vaelmor');
+      setActiveNpcs(INITIAL_NPCS);
+      realmRef.current?.updateProfile(cleanName, guildId);
+      if (activeRealmRef.current.slug !== 'vaelmor' && handleTravelToRealmRef.current) {
+        void handleTravelToRealmRef.current(CANONICAL_REALM_SPECS[0]);
+      } else {
+        engineRef.current?.resetRun(createInitialEnemies(), INITIAL_INTERACTABLES);
+      }
+      setPrologueReturnPhase('playing');
+      setPrologueIsReplay(false);
+      setPhase('intro');
+    },
+    [defaultBootCallsign, saveStore],
+  );
 
-  const handleContinue = useCallback(() => {
-    audioRef.current?.ensureStarted();
-    setActiveNpcId(null);
+  const handleRestartActiveSlot = useCallback(() => {
+    handleStartNewInSlot(activeSlotId, playerCallsignRef.current, pledgedGuildRef.current);
+  }, [activeSlotId, handleStartNewInSlot]);
+
+  const handleContinueSlot = useCallback(
+    (slotId: SaveSlotId) => {
+      const slot = saveStore.slots[slotId];
+      if (!slot) {
+        handleStartNewInSlot(slotId, playerCallsignRef.current, pledgedGuildRef.current);
+        return;
+      }
+      void audioRef.current?.ensureStarted();
+      setActiveSlotId(slotId);
+      setHasActiveSession(true);
+      setPlayerCallsign(slot.waywrightName);
+      setPledgedGuildId(slot.pledgedGuildId);
+      setQuests(slot.journey.quests);
+      const firstActive = slot.journey.quests.find((q) => q.status === 'active') ?? slot.journey.quests[0];
+      if (firstActive) setTrackedQuestId(firstActive.id);
+      setRenown(slot.journey.renown);
+      setBanners(slot.journey.banners);
+      addedBannerIdsRef.current = new Set(slot.journey.banners.map((b) => b.id));
+      setMaterials(slot.journey.materials);
+      setGearTiers(slot.journey.gearTiers);
+      setRelics(enrichStarterRelics(slot.journey.relics));
+      setDiscoveredRegions(slot.journey.discoveredRegions);
+      setHasVisitedDungeon(Boolean(slot.journey.hasVisitedDungeon));
+      setWaywrightOath(slot.waywrightOath ?? null);
+      setGuideDismissed(false);
+      setActiveNpcId(null);
+      setAtlasTab(null);
+      setChatOpen(false);
+      realmRef.current?.updateProfile(slot.waywrightName, slot.pledgedGuildId);
+
+      // Restore saved realm if player last saved outside Vaelmor
+      const targetSlug = slot.journey.activeRealmSlug || 'vaelmor';
+      if (targetSlug !== activeRealmRef.current.slug && handleTravelToRealmRef.current) {
+        const foundRealm = realmsRef.current.find((r) => r.slug === targetSlug);
+        if (foundRealm) {
+          void handleTravelToRealmRef.current(foundRealm);
+        }
+      }
+      setPhase('playing');
+      showToast(`Resumed ${SLOT_LABELS[slotId]} · Waywright ${slot.waywrightName}`);
+    },
+    [handleStartNewInSlot, saveStore.slots, showToast],
+  );
+
+  const handleRenameSlot = useCallback(
+    (slotId: SaveSlotId, nextName: string) => {
+      const clean = normalizeCallsign(nextName);
+      setSaveStore((prev) => renameSaveSlot(prev, slotId, clean));
+      if (slotId === activeSlotId) {
+        setPlayerCallsign(clean);
+        realmRef.current?.updateProfile(clean, pledgedGuildRef.current);
+      }
+    },
+    [activeSlotId],
+  );
+
+  const handleDeleteSlot = useCallback(
+    (slotId: SaveSlotId) => {
+      setSaveStore((prev) => {
+        const next = deleteSaveSlot(prev, slotId);
+        if (slotId === activeSlotId) {
+          setActiveSlotId(next.activeSlotId);
+          setHasActiveSession(false);
+        }
+        return next;
+      });
+    },
+    [activeSlotId],
+  );
+
+  const handleWatchPrologue = useCallback((returnTo: 'title' | 'playing') => {
+    void audioRef.current?.ensureStarted();
     setAtlasTab(null);
-    setPhase('playing');
+    setActiveNpcId(null);
+    setChatOpen(false);
+    setPrologueReturnPhase(returnTo);
+    setPrologueIsReplay(true);
+    setPhase('intro');
   }, []);
+
+  const handleCompletePrologue = useCallback(() => {
+    void audioRef.current?.ensureStarted();
+    if (!prologueIsReplay && hasActiveSession) {
+      setSaveStore((prev) => {
+        const cur = prev.slots[activeSlotId];
+        if (!cur) return prev;
+        return updateSaveSlotProgress(prev, {
+          slotId: activeSlotId,
+          waywrightName: cur.waywrightName,
+          journey: cur.journey,
+          prologueCompleted: true,
+          waywrightOath: waywrightOath ?? cur.waywrightOath,
+        });
+      });
+    }
+    setPhase(prologueReturnPhase);
+    if (prologueReturnPhase === 'playing') {
+      showToast('Speak with Magistrate Orenna Vael ahead on the Southern Causeway [E].');
+    }
+  }, [activeSlotId, hasActiveSession, prologueIsReplay, prologueReturnPhase, showToast, waywrightOath]);
+
+  const handlePrologueActChange = useCallback((act: PrologueCinematicAct) => {
+    engineRef.current?.setIntroCameraTarget(
+      act.cameraEye,
+      act.cameraTarget,
+      Boolean(act.live3DReveal),
+    );
+    audioRef.current?.playPrologueSceneCue(act.vfxPreset);
+  }, []);
+
+  const handlePrologueSeismicBeat = useCallback(() => {
+    audioRef.current?.playPrologueSeismicCrack();
+  }, []);
+
+  const handleSelectWaywrightOath = useCallback(
+    (oathId: WaywrightOathId) => {
+      setWaywrightOath(oathId);
+      audioRef.current?.playResonanceBell(293.66);
+      if (hasActiveSession) {
+        setSaveStore((prev) => {
+          const cur = prev.slots[activeSlotId];
+          if (!cur) return prev;
+          return updateSaveSlotProgress(prev, {
+            slotId: activeSlotId,
+            waywrightName: cur.waywrightName,
+            journey: cur.journey,
+            waywrightOath: oathId,
+          });
+        });
+      }
+    },
+    [activeSlotId, hasActiveSession],
+  );
 
   const handleRespawnAtCitadel = useCallback(() => {
     audioRef.current?.ensureStarted();
@@ -773,15 +1245,30 @@ export default function App() {
         return;
       }
 
-      if (phase === 'title') {
-        if (e.code === 'Enter' || e.code === 'Space') {
+      if (fieldManualOpen) {
+        if (e.code === 'Escape') {
           e.preventDefault();
-          if (savedOnBoot) {
-            handleContinue();
+          setFieldManualOpen(false);
+        }
+        return;
+      }
+
+      if (phase === 'title') {
+        if (e.code === 'Enter') {
+          e.preventDefault();
+          const latest = getMostRecentSaveSlot(saveStore);
+          if (latest) {
+            handleContinueSlot(latest.slotId);
           } else {
-            handleStartNew();
+            const target = getFirstEmptySaveSlotId(saveStore);
+            handleStartNewInSlot(target, playerCallsignRef.current, pledgedGuildRef.current);
           }
         }
+        return;
+      }
+
+      if (phase === 'intro') {
+        // PrologueCinematicOverlay handles Space / Arrows / Escape internally
         return;
       }
 
@@ -818,9 +1305,23 @@ export default function App() {
         } else if (e.code === 'KeyI') {
           e.preventDefault();
           setAtlasTab((cur) => (cur === 'forge' ? null : 'forge'));
-        } else if (e.code === 'KeyG') {
+        } else if (e.code === 'KeyU') {
           e.preventDefault();
           setAtlasTab((cur) => (cur === 'guilds' ? null : 'guilds'));
+        } else if (e.code === 'KeyG' && atlasTab === null) {
+          e.preventDefault();
+          const snap = engineRef.current?.getDebugSnapshot();
+          if (snap) {
+            realmRef.current?.sendWorldPing(
+              snap.playerX,
+              snap.playerZ,
+              'rally',
+              'Rally Here',
+              activeRealmRef.current.slug,
+            );
+            audioRef.current?.playResonanceBell(330);
+            showToast('Rally Beacon dropped for your fellowship!');
+          }
         } else if (e.code === 'KeyT' && atlasTab === null) {
           e.preventDefault();
           setChatOpen((o) => !o);
@@ -836,7 +1337,18 @@ export default function App() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [phase, activeNpcId, atlasTab, chatOpen, savedOnBoot, handleContinue, handleStartNew, handleToggleMute]);
+  }, [
+    phase,
+    fieldManualOpen,
+    activeNpcId,
+    atlasTab,
+    chatOpen,
+    saveStore,
+    handleContinueSlot,
+    handleStartNewInSlot,
+    handleToggleMute,
+    showToast,
+  ]);
 
   const handleSelectDialogueChoice = useCallback(
     (npc: GameNpc, choice: DialogueChoice) => {
@@ -875,41 +1387,17 @@ export default function App() {
     setForgingRelic(true);
     setForgeError(null);
     try {
+      const hostRealm = activeRealmRef.current;
       const guild = guilds.find((g) => g.id === pledgedGuildId) ?? guilds[0];
-      const res = await fetch('/api/game/forge-relic', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          existingNames: relics.map((r) => r.name),
-          bannedTropes: BANNED_FANTASY_TROPES,
-          playerGuild: guild.name,
-          regionName: hud.region.name,
-        }),
+      const newRelic = synthesizeBiomeRelic({
+        theme: hostRealm.theme,
+        realmName: hostRealm.name,
+        existingNames: relics.map((r) => r.name),
+        source: 'forge',
+        brief: `${guild.name} charter survey`,
+        seed: (Date.now() + relics.length * 4099) >>> 0,
       });
-      const json = await res.json();
-      if (!json.ok || !json.relic) {
-        throw new Error(json.error || 'Unable to forge emergent relic right now.');
-      }
-      const validKinds: RelicBonusKind[] = [
-        'maxHp',
-        'damagePct',
-        'speedPct',
-        'staminaRegenPct',
-        'healPower',
-      ];
-      const kind: RelicBonusKind = validKinds.includes(json.relic.bonusKind)
-        ? json.relic.bonusKind
-        : 'damagePct';
-      const newRelic: EquippedRelic = {
-        id: `relic-forged-${Date.now()}`,
-        name: String(json.relic.name),
-        origin: String(json.relic.origin || hud.region.name),
-        description: String(json.relic.description),
-        bonusKind: kind,
-        bonusValue: Math.max(8, Math.min(35, Number(json.relic.bonusValue) || 15)),
-        equipped: true,
-        isEmergent: true,
-      };
+
       setMaterials((m) => ({
         ...m,
         silicateMoss: Math.max(0, m.silicateMoss - 1),
@@ -918,18 +1406,27 @@ export default function App() {
       setRelics((prev) => [newRelic, ...prev]);
       engineRef.current?.ingestEmergentLore(
         newRelic.id,
-        `${newRelic.name} (${newRelic.origin}): ${newRelic.description}`,
+        `${newRelic.name} (${newRelic.rarity} · ${newRelic.origin} · ${newRelic.perkLabel}): ${newRelic.description}`,
       );
+      void engineRef.current?.sealStitchPayload({
+        kind: 'verdant-relic',
+        id: newRelic.id,
+        name: newRelic.name,
+        theme: newRelic.theme,
+        rarity: newRelic.rarity,
+        perkId: newRelic.perkId,
+        resonanceHz: newRelic.resonanceHz,
+      });
       audioRef.current?.playQuestComplete();
-      showToast(`Forged & equipped ${newRelic.name}!`);
+      showToast(`Forged & equipped ${newRelic.rarity} ${newRelic.name} (${newRelic.perkLabel})!`);
     } catch (err) {
       setForgeError(
-        err instanceof Error ? err.message : 'Unable to forge emergent relic right now.',
+        err instanceof Error ? err.message : 'Unable to forge Verdant relic right now.',
       );
     } finally {
       setForgingRelic(false);
     }
-  }, [guilds, hud.region.name, materials, pledgedGuildId, relics, showToast]);
+  }, [guilds, materials, pledgedGuildId, relics, showToast]);
 
   const handleSeekEmergentQuest = useCallback(async () => {
     setSeekingRumor(true);
@@ -1046,8 +1543,17 @@ export default function App() {
         );
 
         setActiveRealmSlug(realm.slug);
+        if (realm.isDungeon) {
+          setHasVisitedDungeon(true);
+        }
         setActiveNpcs(nextNpcs);
         setActiveNpcId(null);
+        setWorldPings([]);
+
+        const arrivedX = spawnOverride?.x ?? realm.spawnPoint[0];
+        const arrivedZ = spawnOverride?.z ?? realm.spawnPoint[1];
+        const arrivedYaw = spawnOverride?.yaw ?? Math.PI;
+        realmRef.current?.sendRealmChange(realm.slug, realm.name, arrivedX, arrivedZ, arrivedYaw);
 
         if (realm.quests.length > 0) {
           setQuests((prev) => {
@@ -1230,6 +1736,264 @@ export default function App() {
     [showToast],
   );
 
+  // Keep live Model-of-Models synced whenever realms, NPCs, quests, guilds, relics, or multiplayer session change
+  useEffect(() => {
+    if (!engineRef.current) return;
+    const currentRealm = realms.find((r) => r.slug === activeRealmSlug) ?? realms[0];
+    const sameRealmCount = remotePlayers.filter(
+      (p) => !p.realmSlug || p.realmSlug === activeRealmSlug,
+    ).length;
+    const snap = engineRef.current.syncWorldModelState({
+      realms,
+      npcs: activeNpcs,
+      quests,
+      guilds,
+      relics,
+      multiplayer: {
+        roomCode,
+        activeRealmSlug,
+        activeRealmName: currentRealm?.name ?? 'The Shattered Meridian of Vaelmor',
+        onlinePlayers: remotePlayers.length + 1,
+        sameRealmAllies: sameRealmCount,
+        activePings: worldPings.length,
+        activeSummonRealm: activeSummon?.realmSlug ?? null,
+      },
+    });
+    setModelObserverSnapshot(snap);
+  }, [
+    realms,
+    activeRealmSlug,
+    activeNpcs,
+    quests,
+    guilds,
+    relics,
+    roomCode,
+    remotePlayers,
+    worldPings,
+    activeSummon,
+  ]);
+
+  const handleRefineWorldModel = useCallback(
+    async (
+      targetTier: VerdantResolutionTier = 4,
+      partSlot?: VerdantPartSlot,
+      modelId?: string,
+    ) => {
+      if (!engineRef.current) return;
+      setRefiningWorldModel(true);
+      try {
+        const report = await engineRef.current.refineWorldModel({
+          targetTier,
+          partSlot,
+          modelId,
+          enforceDiversity: true,
+          reason: modelId
+            ? `Codex refinement of model ${modelId} to Tier ${targetTier}`
+            : partSlot
+              ? `Codex refinement of ${partSlot} to Tier ${targetTier}`
+              : `Uniform World Charter refinement to Tier ${targetTier}`,
+        });
+        setModelObserverSnapshot(engineRef.current.getModelObserverSnapshot());
+        audioRef.current?.playResonanceBell(modelId ? 349.23 : partSlot ? 329.63 : 392.0);
+        showToast(
+          modelId
+            ? `Refined ${modelId} -> Tier ${report.after.resolutionTier} (Def ${report.after.definitionScore}/100 · Diversity ${report.after.diversityIndex}/100)`
+            : partSlot
+              ? `Refined ${partSlot} -> Tier ${report.after.resolutionTier} (Def ${report.after.definitionScore}/100 · Diversity ${report.after.diversityIndex}/100)`
+              : `World refined to Tier ${report.after.resolutionTier} Sovereign Ultra-Def (${report.modelsRefined} models · Diversity ${report.after.diversityIndex}/100)`,
+        );
+      } catch (err) {
+        showToast(
+          err instanceof Error ? err.message : 'Unable to execute Verdant refinement pass.',
+        );
+      } finally {
+        setRefiningWorldModel(false);
+      }
+    },
+    [showToast],
+  );
+
+  const handleRunRatchetCycle = useCallback(async () => {
+    if (!engineRef.current) return;
+    setRefiningWorldModel(true);
+    try {
+      const cycle = await engineRef.current.runRatchetCycle({
+        enforceDiversity: true,
+        reason: 'Codex Charter M16 Observer Ratchet Cycle',
+      });
+      setModelObserverSnapshot(engineRef.current.getModelObserverSnapshot());
+      if (!isStaticPagesHost()) {
+        void fetch('/api/verdant/observer/ratchet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetTier: cycle.refinementReport.after.resolutionTier,
+            reason: 'Codex Charter M16 Observer Ratchet Cycle',
+          }),
+        }).catch(() => {});
+      }
+      audioRef.current?.playResonanceBell(440.0);
+      showToast(
+        `Observer Ratchet Cycle #${cycle.cycleNumber} complete · Cohesion ${cycle.agendaAfter.cohesionIndex}/100 · Diversity ${cycle.agendaAfter.diversityIndex}/100`,
+      );
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'Unable to execute Observer ratchet cycle.',
+      );
+    } finally {
+      setRefiningWorldModel(false);
+    }
+  }, [showToast]);
+
+  const handleRunAutomate = useCallback(async () => {
+    if (!engineRef.current) return;
+    setRefiningWorldModel(true);
+    try {
+      const report = await engineRef.current.runAutomatePipeline({
+        enforceDiversity: true,
+        reason: 'Codex Charter M17 Verdant Automate Pipeline',
+      });
+      setModelObserverSnapshot(engineRef.current.getModelObserverSnapshot());
+      if (!isStaticPagesHost()) {
+        void fetch('/api/verdant/observer/automate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetTier: report.ratchetCycle.refinementReport.after.resolutionTier,
+            reason: 'Codex Charter M17 Verdant Automate Pipeline',
+          }),
+        }).catch(() => {});
+      }
+      audioRef.current?.playResonanceBell(523.25);
+      showToast(
+        `Verdant Automate #${report.ratchetCycle.cycleNumber}: ${report.passedStages}/${report.totalStages} stages · Gate ${report.lifecycleGate.passedChecks}/${report.lifecycleGate.totalChecks} · Score ${report.ratchetCycle.agendaAfter.overallRefinementScorePermille}‰`,
+      );
+    } catch (err) {
+      showToast(
+        err instanceof Error ? err.message : 'Unable to execute Verdant Automate pipeline.',
+      );
+    } finally {
+      setRefiningWorldModel(false);
+    }
+  }, [showToast]);
+
+  const observerAgenda: ObserverRefinementAgenda | null = useMemo(() => {
+    if (!modelObserverSnapshot || !engineRef.current) return null;
+    return engineRef.current.getRefinementAgenda();
+  }, [modelObserverSnapshot]);
+
+  const observerManagers: VerdantVsmManagerSpec[] = useMemo(() => {
+    if (!modelObserverSnapshot || !engineRef.current) return [];
+    return engineRef.current.listManagers();
+  }, [modelObserverSnapshot]);
+
+  const handleUpdateCallsign = useCallback(
+    (nextName: string) => {
+      const clean = normalizeCallsign(nextName, playerCallsignRef.current);
+      setPlayerCallsign(clean);
+      try {
+        window.localStorage.setItem('frontiers-waywright-callsign', clean);
+      } catch {
+        // ignore storage errors
+      }
+      realmRef.current?.updateProfile(clean, pledgedGuildRef.current);
+      showToast(`Waywright callsign updated to ${clean}.`);
+    },
+    [showToast],
+  );
+
+  const handleSwitchRoom = useCallback(
+    (nextCode: string) => {
+      const normalized = normalizeRoomCode(nextCode);
+      setRoomCode(normalized);
+      setRemotePlayers([]);
+      setWorldPings([]);
+      setActiveSummon(null);
+      realmRef.current?.switchRoom(normalized);
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('room', normalized);
+        window.history.replaceState({}, '', url.toString());
+      } catch {
+        // ignore URL history errors
+      }
+      showToast(`Joined Expedition Room ${normalized}.`);
+    },
+    [showToast],
+  );
+
+  const handleDropPing = useCallback(
+    (kind: WorldPingKind = 'rally', label?: string) => {
+      const snap = engineRef.current?.getDebugSnapshot();
+      const px = snap ? snap.playerX : hud.playerX;
+      const pz = snap ? snap.playerZ : hud.playerZ;
+      realmRef.current?.sendWorldPing(px, pz, kind, label, activeRealmRef.current.slug);
+      audioRef.current?.playResonanceBell(kind === 'danger' ? 196 : 330);
+      showToast(`${label || 'Rally Beacon'} marked for your fellowship!`);
+    },
+    [hud.playerX, hud.playerZ, showToast],
+  );
+
+  const handleSummonParty = useCallback(() => {
+    const realm = activeRealmRef.current;
+    const snap = engineRef.current?.getDebugSnapshot();
+    const px = snap ? snap.playerX : hud.playerX;
+    const pz = snap ? snap.playerZ : hud.playerZ;
+    realmRef.current?.sendPartySummon({
+      realmSlug: realm.slug,
+      realmName: realm.name,
+      isDungeon: Boolean(realm.isDungeon),
+      x: px,
+      z: pz,
+      cell: realm.cell,
+    });
+    audioRef.current?.playResonanceBell(392);
+    showToast(`Summoned fellowship to ${realm.name}!`);
+  }, [hud.playerX, hud.playerZ, showToast]);
+
+  const handleWarpToAlly = useCallback(
+    async (ally: RemotePlayerState) => {
+      const targetSlug = ally.realmSlug || 'vaelmor';
+      const offsetX = ally.x + 2.2;
+      const offsetZ = ally.z + 2.2;
+      if (targetSlug === activeRealmRef.current.slug) {
+        engineRef.current?.teleportPlayer(offsetX, offsetZ);
+        setAtlasTab(null);
+        showToast(`Rendezvoused with ${ally.name}!`);
+        return;
+      }
+      const targetRealm = realmsRef.current.find((r) => r.slug === targetSlug);
+      if (targetRealm) {
+        await handleTravelToRealm(targetRealm, { x: offsetX, z: offsetZ });
+      } else {
+        showToast(`${ally.name} is exploring an uncharted realm (${ally.realmName || targetSlug}).`);
+      }
+    },
+    [handleTravelToRealm, showToast],
+  );
+
+  const handleAcceptSummon = useCallback(
+    async (summon: PartySummon) => {
+      setActiveSummon(null);
+      const offsetX = summon.x + 2.0;
+      const offsetZ = summon.z + 2.0;
+      if (summon.realmSlug === activeRealmRef.current.slug) {
+        engineRef.current?.teleportPlayer(offsetX, offsetZ);
+        showToast(`Joined ${summon.senderName} in ${summon.realmName}!`);
+        return;
+      }
+      const existing = realmsRef.current.find((r) => r.slug === summon.realmSlug);
+      if (existing) {
+        await handleTravelToRealm(existing, { x: offsetX, z: offsetZ });
+      } else if (summon.cell && !summon.isDungeon) {
+        await handleTravelToCell(summon.cell[0], summon.cell[2], { x: offsetX, z: offsetZ });
+      } else {
+        showToast(`Could not locate realm ${summon.realmName} in current atlas.`);
+      }
+    },
+    [handleTravelToCell, handleTravelToRealm, showToast],
+  );
+
   const activeNpc = useMemo(
     () => activeNpcs.find((n) => n.id === activeNpcId) ?? INITIAL_NPCS.find((n) => n.id === activeNpcId) ?? null,
     [activeNpcs, activeNpcId],
@@ -1240,12 +2004,35 @@ export default function App() {
       {/* Dedicated WebGL Mount Container — Never Re-Parented */}
       <div ref={mountRef} className="fixed inset-0 w-full h-full" />
 
-      {/* Title Screen over Live 3D Vaelmor World Flyover */}
+      {/* Title Screen & 3-Slot Expedition Ledger over Live 3D Vaelmor Flyover */}
       {phase === 'title' && (
         <TitleOverlay
-          hasSavedJourney={Boolean(savedOnBoot)}
-          onStartNew={handleStartNew}
-          onContinue={handleContinue}
+          saveStore={saveStore}
+          defaultCallsign={playerCallsign}
+          invitedRoomCode={initialRoom.invited ? roomCode : null}
+          onlineCount={1 + remotePlayers.length}
+          onStartNewInSlot={handleStartNewInSlot}
+          onContinueSlot={handleContinueSlot}
+          onRenameSlot={handleRenameSlot}
+          onDeleteSlot={handleDeleteSlot}
+          onWatchPrologue={() => handleWatchPrologue('title')}
+          onOpenFieldManual={() => setFieldManualOpen(true)}
+        />
+      )}
+
+      {/* 5-Scene Multi-Media Animated Prologue with Live VFX, Sound-Design Captions & Live 3D Reveal */}
+      {phase === 'intro' && (
+        <PrologueCinematicOverlay
+          waywrightName={playerCallsign}
+          isReplay={prologueIsReplay}
+          muted={muted}
+          initialOathId={waywrightOath}
+          onToggleMute={handleToggleMute}
+          onActChange={handlePrologueActChange}
+          onSeismicBeat={handlePrologueSeismicBeat}
+          onSelectOath={handleSelectWaywrightOath}
+          onComplete={handleCompletePrologue}
+          onSkip={handleCompletePrologue}
         />
       )}
 
@@ -1258,7 +2045,11 @@ export default function App() {
           trackedQuest={trackedQuest}
           gearTiers={gearTiers}
           onlineCount={1 + remotePlayers.length}
+          roomCode={roomCode}
           realmConnected={realmConnected}
+          remotePlayers={remotePlayers}
+          worldPings={worldPings}
+          activeSummon={activeSummon}
           chatMessages={chatMessages}
           chatOpen={chatOpen}
           callouts={callouts}
@@ -1266,6 +2057,10 @@ export default function App() {
           activeTrackTitle={audioState?.scoreTitle ?? activeRealm.soundtrack.title}
           toastMessage={toastMessage}
           frontierBanner={frontierBanner}
+          journeySummary={journeySummary}
+          guideDismissed={guideDismissed}
+          onDismissGuide={() => setGuideDismissed(true)}
+          onReplayPrologue={() => handleWatchPrologue('playing')}
           onActivateGear={handleActivateGear}
           onTriggerAction={handleTriggerAction}
           onTriggerDodge={handleTriggerDodge}
@@ -1274,6 +2069,11 @@ export default function App() {
           onOpenMap={() => setAtlasTab('map')}
           onOpenDungeons={() => setAtlasTab('dungeons')}
           onOpenForge={() => setAtlasTab('forge')}
+          onOpenParty={() => setAtlasTab('guilds')}
+          onDropPing={handleDropPing}
+          onWarpToAlly={(ally) => void handleWarpToAlly(ally)}
+          onAcceptSummon={(summon) => void handleAcceptSummon(summon)}
+          onDismissSummon={() => setActiveSummon(null)}
           onToggleChat={() => setChatOpen((o) => !o)}
           onSendChat={(text) => realmRef.current?.sendChat(text)}
           onToggleMute={handleToggleMute}
@@ -1296,7 +2096,7 @@ export default function App() {
         />
       )}
 
-      {/* Diegetic Field Atlas (Chronicle, World Map, Gear & Forge, Guilds, Lore Codex) */}
+      {/* Diegetic Field Atlas (Chronicle, World Map, Gear & Forge, Party & Guilds, Lore Codex) */}
       {phase === 'playing' && atlasTab && (
         <JournalMapModal
           initialTab={atlasTab}
@@ -1305,8 +2105,12 @@ export default function App() {
           npcs={activeNpcs}
           guilds={guilds}
           pledgedGuildId={pledgedGuildId}
+          playerCallsign={playerCallsign}
+          roomCode={roomCode}
+          realmConnected={realmConnected}
           banners={banners}
           remotePlayers={remotePlayers}
+          worldPings={worldPings}
           materials={materials}
           gearTiers={gearTiers}
           relics={relics}
@@ -1314,6 +2118,8 @@ export default function App() {
           playerX={hud.playerX}
           playerZ={hud.playerZ}
           playerYaw={hud.playerYaw}
+          playerHp={hud.hp}
+          playerMaxHp={hud.maxHp}
           renown={renown}
           seekingRumor={seekingRumor}
           rumorError={rumorError}
@@ -1344,22 +2150,42 @@ export default function App() {
           onSelectTrack={handleSelectTrack}
           onPledgeGuild={(id) => {
             setPledgedGuildId(id);
-            realmRef.current?.updateProfile(playerCallsign, id);
+            realmRef.current?.updateProfile(playerCallsignRef.current, id);
             const g = guilds.find((x) => x.id === id);
             if (g) showToast(`Pledged allegiance to ${g.name}.`);
           }}
+          onUpdateCallsign={handleUpdateCallsign}
+          onSwitchRoom={handleSwitchRoom}
+          onWarpToAlly={(ally) => void handleWarpToAlly(ally)}
+          onSummonParty={handleSummonParty}
+          onDropPing={handleDropPing}
           onUpgradeGear={handleUpgradeGear}
           onToggleRelic={handleToggleRelic}
           onForgeEmergentRelic={() => void handleForgeEmergentRelic()}
+          modelObserverSnapshot={modelObserverSnapshot}
+          observerAgenda={observerAgenda}
+          observerManagers={observerManagers}
+          refiningWorldModel={refiningWorldModel}
+          onRefineWorldModel={(tier, slot, modelId) =>
+            void handleRefineWorldModel(tier, slot, modelId)
+          }
+          onRunRatchetCycle={() => void handleRunRatchetCycle()}
+          onRunAutomate={() => void handleRunAutomate()}
+          onInspectPartModels={(slot) => engineRef.current?.listModelsByPart(slot) ?? []}
+          onInspectModelLineage={(id) => engineRef.current?.getModelLineage(id) ?? null}
+          journeySummary={journeySummary}
+          onReplayPrologue={() => handleWatchPrologue('playing')}
           onClose={() => setAtlasTab(null)}
         />
       )}
 
       {/* Paused / Victory / Game Over Modal */}
-      {(phase === 'paused' || phase === 'victory' || phase === 'gameover') && (
+      {(phase === 'paused' || phase === 'victory' || phase === 'gameover') && !fieldManualOpen && (
         <StatusModal
           phase={phase}
           regionName={hud.region.name}
+          waywrightName={playerCallsign}
+          slotLabel={SLOT_LABELS[activeSlotId]}
           completedQuests={completedQuestsCount}
           totalQuests={quests.length}
           defeatedCount={hud.defeatedCount}
@@ -1367,13 +2193,23 @@ export default function App() {
           bannersCount={banners.length}
           onResume={() => setPhase('playing')}
           onRespawnAtCitadel={handleRespawnAtCitadel}
-          onRestart={handleStartNew}
+          onReplayPrologue={() => handleWatchPrologue('playing')}
+          onOpenFieldManual={() => setFieldManualOpen(true)}
+          onRestart={handleRestartActiveSlot}
           onReturnToTitle={() => {
             setActiveNpcId(null);
             setAtlasTab(null);
             setChatOpen(false);
             setPhase('title');
           }}
+        />
+      )}
+
+      {/* Out-of-World Waywright Field Manual (Cleanly Separated from the Dramatic Prologue) */}
+      {fieldManualOpen && (
+        <FieldManualModal
+          onClose={() => setFieldManualOpen(false)}
+          onWatchPrologue={() => handleWatchPrologue(phase === 'title' ? 'title' : 'playing')}
         />
       )}
     </div>

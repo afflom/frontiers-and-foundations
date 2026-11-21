@@ -1,7 +1,8 @@
 import { surfaceHeightAt, vaelmorHeightAt } from '../game/vaelmorRenderer';
 import type { EnemyEntity, ProjectileEntity } from '../game/rpgLogic';
 import type { FoundationBanner, GameNpc, GearSlotId, WorldInteractable } from '../game/worldData';
-import type { RemotePlayerState } from '../game/multiplayerTypes';
+import type { RemotePlayerState, WorldPing } from '../game/multiplayerTypes';
+import type { RemoteVisualPose } from '../game/multiplayerState';
 import {
   compileNpcCharacterAppearance,
   compilePlayerCharacterAppearance,
@@ -10,6 +11,7 @@ import {
 } from './verdantCharacterCompiler';
 import type { WaterPosture, WaterQuadTile } from './verdantEnvironmentPhysics';
 import type { AmbientParticleKind, FaunaKitId } from './verdantEcosystemCatalog';
+import { getDungeonTopologyCharter } from './verdantUnifiedCharter';
 
 export interface DynamicParticle {
   active: boolean;
@@ -57,6 +59,8 @@ export interface DynamicSceneInput {
   interactables: WorldInteractable[];
   banners: FoundationBanner[];
   remotePlayers: RemotePlayerState[];
+  remoteVisualPoses?: Map<string, RemoteVisualPose>;
+  worldPings?: WorldPing[];
   projectiles: ProjectileEntity[];
   particles: DynamicParticle[];
   slashes: SlashEffect[];
@@ -76,6 +80,8 @@ export interface DynamicSceneInput {
   thermalVents?: Array<[number, number]>;
   ambientParticleKind?: AmbientParticleKind;
   ambientRgb?: [number, number, number];
+  playerRelicAuraRgb?: [number, number, number] | null;
+  modelResolutionTier?: 1 | 2 | 3 | 4;
 }
 
 export interface DynamicBuffers {
@@ -105,8 +111,9 @@ export class VerdantDynamicBatcher {
   private iCount = 0;
   private maxVerts: number;
   private maxIdx: number;
+  private resolutionTier: 1 | 2 | 3 | 4 = 3;
 
-  constructor(maxVerts = 76000, maxIdx = 152000) {
+  constructor(maxVerts = 92000, maxIdx = 184000) {
     this.maxVerts = maxVerts;
     this.maxIdx = maxIdx;
     this.pos = new Float32Array(maxVerts * 3);
@@ -312,9 +319,16 @@ export class VerdantDynamicBatcher {
     tiltZ = 0,
     ellipZ = 1.0,
   ): void {
-    const ringVerts = (segs + 1) * 2;
-    const triIdx = segs * 6 + segs * 6;
-    if (!this.ensureSpace(ringVerts + (segs + 2) * 2, triIdx)) return;
+    const effSegs =
+      this.resolutionTier >= 4
+        ? Math.min(20, Math.round(segs * 1.35))
+        : this.resolutionTier <= 2
+          ? Math.max(6, Math.round(segs * 0.8))
+          : segs;
+    const ringVerts = (effSegs + 1) * 2;
+    const triIdx = effSegs * 6 + effSegs * 6;
+    if (!this.ensureSpace(ringVerts + (effSegs + 2) * 2, triIdx)) return;
+    segs = effSegs;
 
     const cyw = Math.cos(yaw), syw = Math.sin(yaw);
     const ct = Math.cos(tiltX), st = Math.sin(tiltX);
@@ -410,6 +424,13 @@ export class VerdantDynamicBatcher {
     segs = 12,
     rings = 6,
   ): void {
+    if (this.resolutionTier >= 4) {
+      segs = Math.min(20, Math.round(segs * 1.3));
+      rings = Math.min(10, rings + 2);
+    } else if (this.resolutionTier <= 2) {
+      segs = Math.max(6, Math.round(segs * 0.75));
+      rings = Math.max(4, rings - 1);
+    }
     const vNeeded = (segs + 1) * (rings + 1);
     const iNeeded = segs * rings * 6;
     if (!this.ensureSpace(vNeeded, iNeeded)) return;
@@ -959,6 +980,7 @@ export class VerdantDynamicBatcher {
 
   public build(input: DynamicSceneInput): DynamicBuffers {
     this.reset();
+    this.resolutionTier = input.modelResolutionTier ?? 3;
     const t = input.timeSec;
     const hAt = input.heightAt ?? surfaceHeightAt;
     const waterY = input.waterLevel ?? -1.75;
@@ -966,6 +988,7 @@ export class VerdantDynamicBatcher {
     // 1. Animated Reflective Water / 6 Bespoke Dungeon Abyss Chasms (v_m = 1.0 or 3.0)
     if (input.isDungeon) {
       const style = input.dungeonStyle ?? 'catacomb-vault';
+      const charter = getDungeonTopologyCharter(style as Parameters<typeof getDungeonTopologyCharter>[0]);
       const isMagma = style === 'geothermal-depths';
       const isGlacial = style === 'glacial-crypt';
       const isAbyssal = style === 'abyssal-grotto';
@@ -984,25 +1007,50 @@ export class VerdantDynamicBatcher {
               : isCistern
                 ? [0.12, 0.48 * pulse, 0.38]
                 : [0.12, 0.24, 0.42];
-      for (let gx = -21; gx < 21; gx += 7) {
-        this.addQuad(
-          [gx, waterY, 4.2],
-          [gx, waterY, 17.8],
-          [gx + 7, waterY, 17.8],
-          [gx + 7, waterY, 4.2],
-          cr,
-          cg,
-          cb,
-          chasmMat,
+      // Render exact topology-driven hazard surfaces (magma lakes, flooded moats, coral lagoons, amber sand wells, glacial crevasses)
+      for (let hi = 0; hi < charter.hazardZones.length; hi++) {
+        const hz = charter.hazardZones[hi];
+        const hy = hz.surfaceY;
+        const wSpan = hz.maxX - hz.minX;
+        const zSpan = hz.maxZ - hz.minZ;
+        const xCols = Math.max(1, Math.min(4, Math.ceil(wSpan / 8)));
+        const zRows = Math.max(1, Math.min(4, Math.ceil(zSpan / 8)));
+        const dx = wSpan / xCols;
+        const dz = zSpan / zRows;
+        for (let ix = 0; ix < xCols; ix++) {
+          for (let iz = 0; iz < zRows; iz++) {
+            const qx0 = hz.minX + ix * dx;
+            const qx1 = qx0 + dx;
+            const qz0 = hz.minZ + iz * dz;
+            const qz1 = qz0 + dz;
+            this.addQuad(
+              [qx0, hy, qz0],
+              [qx0, hy, qz1],
+              [qx1, hy, qz1],
+              [qx1, hy, qz0],
+              cr,
+              cg,
+              cb,
+              chasmMat,
+            );
+          }
+        }
+        // Subtle animated surface ripple / ember ring centered inside each hazard zone
+        const cx = (hz.minX + hz.maxX) * 0.5 + Math.sin(t * 0.7 + hi * 1.6) * Math.min(1.6, wSpan * 0.16);
+        const cz = (hz.minZ + hz.maxZ) * 0.5 + Math.cos(t * 0.8 + hi * 1.3) * Math.min(1.6, zSpan * 0.16);
+        const rPulse = 0.75 + ((t * 0.55 + hi * 0.27) % 1) * Math.min(1.25, Math.min(wSpan, zSpan) * 0.22);
+        this.addRing(
+          cx,
+          hy + 0.08,
+          cz,
+          Math.max(0.2, rPulse - 0.18),
+          rPulse,
+          14,
+          Math.min(1, cr * 1.25),
+          Math.min(1, cg * 1.25),
+          Math.min(1, cb * 1.25),
+          3,
         );
-      }
-      // Subtle animated chasm surface accent wisps/rings for visual depth
-      for (let ci = 0; ci < 6; ci++) {
-        const cx = -16 + ci * 6.4;
-        const cz = 11.0 + Math.sin(t * 0.9 + ci * 1.4) * 3.8;
-        if (Math.abs(cx) < 3.6) continue;
-        const rPulse = 0.85 + ((t * 0.6 + ci * 0.29) % 1) * 1.1;
-        this.addRing(cx, waterY + 0.08, cz, Math.max(0.2, rPulse - 0.18), rPulse, 14, Math.min(1, cr * 1.25), Math.min(1, cg * 1.25), Math.min(1, cb * 1.25), 3);
       }
     } else if (input.waterTiles && input.waterTiles.length > 0) {
       // Terrain-clipped unified hydrology: water ONLY renders inside submerged riverbeds,
@@ -1104,6 +1152,25 @@ export class VerdantDynamicBatcher {
       t,
       waterPosture,
     );
+
+    // Orbiting Verdant Relic Resonance Charm when a biome-attuned Relic is equipped
+    if (input.playerRelicAuraRgb) {
+      const [ar, ag, ab] = input.playerRelicAuraRgb;
+      const orbAng = t * 1.9;
+      const ox = input.playerX + Math.cos(orbAng) * 0.72;
+      const oz = input.playerZ + Math.sin(orbAng) * 0.72;
+      const oy = input.playerY + 1.56 + Math.sin(t * 3.4) * 0.12;
+      this.addOctahedron(ox, oy, oz, 0.11, 0.21, -orbAng * 1.8, ar, ag, ab, 3);
+      this.addRing(ox, oy, oz, 0.13, 0.19, 10, ar * 0.9, ag * 0.9, ab * 0.9, 2);
+      if (this.resolutionTier >= 4) {
+        // Tier 4 Sovereign Ultra-Def counter-orbiting harmonic satellite crystal
+        const ox2 = input.playerX - Math.cos(orbAng * 1.35) * 0.86;
+        const oz2 = input.playerZ - Math.sin(orbAng * 1.35) * 0.86;
+        const oy2 = input.playerY + 1.72 + Math.cos(t * 2.8) * 0.14;
+        this.addOctahedron(ox2, oy2, oz2, 0.08, 0.15, orbAng * 2.2, ar, ag, ab, 3);
+        this.addRing(input.playerX, input.playerY + 0.06, input.playerZ, 0.76, 0.86, 20, ar * 0.75, ag * 0.75, ab * 0.75, 3);
+      }
+    }
 
     // Expanding concentric water ripples & swim wake rings when wading or swimming
     if (!input.isDungeon && waterPosture !== 'dry') {
@@ -1294,6 +1361,71 @@ export class VerdantDynamicBatcher {
             3,
           );
         }
+      } else if (e.archetype === 'charger') {
+        // Armored Horned Ram / Bull Bruiser: wide broadside chassis, twin forward curved horns, charge lane telegraph
+        const crouch = tele ? -0.22 : Math.sin(t * 9.5 + e.x) * 0.06;
+        this.addSmoothSphere(e.x, ey + (0.96 + crouch) * koScale, e.z, 0.72 * koScale, 0.56 * koScale, 1.05 * koScale, bR, bG, bB, mat, e.yaw, 12, 6);
+        // Heavy shoulder yoke plate
+        this.addBox(e.x + sy * 0.42 * koScale, ey + (1.24 + crouch) * koScale, e.z + cy * 0.42 * koScale, 1.18 * koScale, 0.46 * koScale, 0.62 * koScale, e.yaw, fp.accent[0], fp.accent[1], fp.accent[2], 2);
+        // Low battering head & twin forward glowing horns
+        const hx = e.x + sy * 1.04 * koScale;
+        const hz = e.z + cy * 1.04 * koScale;
+        this.addBox(hx, ey + (0.94 + crouch) * koScale, hz, 0.66 * koScale, 0.44 * koScale, 0.54 * koScale, e.yaw, bR * 0.9, bG * 0.9, bB * 0.9, 2);
+        for (const side of [-1, 1]) {
+          const hornX = hx + side * 0.44 * cy * koScale + sy * 0.46 * koScale;
+          const hornZ = hz - side * 0.44 * sy * koScale + cy * 0.46 * koScale;
+          this.addOctahedron(hornX, ey + (1.06 + crouch) * koScale, hornZ, 0.16 * koScale, 0.58 * koScale, e.yaw + side * 0.28, gR, gG, gB, 3);
+        }
+        for (const [lx, lz] of [[-0.52, 0.58], [0.52, 0.58], [-0.48, -0.58], [0.48, -0.58]]) {
+          this.addSmoothCylinder(e.x + lx * cy + lz * sy, ey, e.z - lx * sy + lz * cy, 0.17 * koScale, 0.22 * koScale, 0.82 * koScale, 8, fp.accent[0] * 0.8, fp.accent[1] * 0.8, fp.accent[2] * 0.8, 2, e.yaw);
+        }
+        if (tele) {
+          // Forward bull-rush lane telegraph chevrons
+          this.addRing(e.x, ey + 0.14, e.z, 1.45, 1.88, 16, 0.98, 0.42, 0.12, 3);
+          this.addBox(e.x + sy * 3.0, ey + 0.12, e.z + cy * 3.0, 1.35, 0.08, 4.8, e.yaw, 0.98, 0.44, 0.14, 3);
+        }
+      } else if (e.archetype === 'hexweaver') {
+        // Floating Harmonic Tri-Ring Prism Totem: tall resonant pillar flanked by 3 counter-rotating ward rings
+        const hover = ey + 1.55 + Math.sin(t * 2.7 + e.x) * 0.22;
+        this.addSmoothCylinder(e.x, hover - 0.65 * koScale, e.z, 0.18 * koScale, 0.34 * koScale, 1.38 * koScale, 8, bR, bG, bB, 2, t * 0.9);
+        this.addOctahedron(e.x, hover + 0.58 * koScale, e.z, 0.42 * koScale, 0.78 * koScale, -t * 1.8, gR, gG, gB, 3);
+        this.addRing(e.x, hover + 0.12 * koScale, e.z, 0.92 * koScale, 1.12 * koScale, 18, fp.accent[0], fp.accent[1], fp.accent[2], 2);
+        this.addRing(e.x, hover - 0.34 * koScale, e.z, 0.62 * koScale, 0.78 * koScale, 16, gR, gG, gB, 3);
+        for (let hi = 0; hi < 3; hi++) {
+          const ang = t * 1.9 + (hi * Math.PI * 2) / 3;
+          this.addOctahedron(
+            e.x + Math.cos(ang) * 1.32 * koScale,
+            hover + 0.15 * koScale,
+            e.z + Math.sin(ang) * 1.32 * koScale,
+            0.18 * koScale,
+            0.48 * koScale,
+            ang,
+            gR,
+            gG,
+            gB,
+            3,
+          );
+        }
+        if (tele) {
+          this.addRing(e.x, ey + 0.14, e.z, 1.65, 2.05, 18, gR, gG, gB, 3);
+        }
+      } else if (e.archetype === 'skirmisher') {
+        // Agile Twin-Blade Flanking Hunter: low aerodynamic stance, swept dorsal crest, glowing twin forearm blades
+        const stride = Math.sin(t * 12.0 + e.x) * 0.08;
+        this.addSmoothCylinder(e.x, ey + (0.62 + stride) * koScale, e.z, 0.22 * koScale, 0.30 * koScale, 0.86 * koScale, 10, bR, bG, bB, mat, e.yaw, 0.25);
+        this.addSmoothSphere(e.x + sy * 0.24 * koScale, ey + (1.52 + stride) * koScale, e.z + cy * 0.24 * koScale, 0.21 * koScale, 0.20 * koScale, 0.28 * koScale, fp.accent[0], fp.accent[1], fp.accent[2], mat, e.yaw, 8, 4);
+        // Swept predator crest
+        this.addBox(e.x - sy * 0.18 * koScale, ey + (1.64 + stride) * koScale, e.z - cy * 0.18 * koScale, 0.12 * koScale, 0.28 * koScale, 0.56 * koScale, e.yaw, gR, gG, gB, 3);
+        // Twin swept forearm blades + agile legs
+        for (const side of [-1, 1]) {
+          const bx = e.x + side * 0.44 * cy * koScale + sy * 0.36 * koScale;
+          const bz = e.z - side * 0.44 * sy * koScale + cy * 0.36 * koScale;
+          this.addBox(bx, ey + (0.98 + stride) * koScale, bz, 0.08 * koScale, 0.14 * koScale, 0.74 * koScale, e.yaw + side * 0.18, gR, gG, gB, 3);
+          this.addSmoothCylinder(e.x + side * 0.22 * cy * koScale, ey, e.z - side * 0.22 * sy * koScale, 0.08 * koScale, 0.10 * koScale, 0.68 * koScale, 8, fp.accent[0], fp.accent[1], fp.accent[2], 4, e.yaw);
+        }
+        if (tele) {
+          this.addRing(e.x, ey + 0.12, e.z, 1.05, 1.42, 14, 0.98, 0.62, 0.20, 3);
+        }
       } else {
         // Massive Bespoke Ecosystem Apex Warden Colossus
         const s = 1.65 * koScale;
@@ -1340,9 +1472,18 @@ export class VerdantDynamicBatcher {
         // Warden head + glowing visor slit
         this.addSmoothSphere(e.x, ey + 2.06 * s, e.z, 0.38 * s, 0.36 * s, 0.38 * s, bR, bG, bB, bMat, e.yaw, 10, 5);
         this.addBox(e.x + sy * 0.34 * s, ey + 2.08 * s, e.z + cy * 0.34 * s, 0.42 * s, 0.09 * s, 0.1 * s, e.yaw, gR, gG, gB, 3);
+        if (e.phase2) {
+          const pPulse = 0.78 + Math.sin(t * 5.2) * 0.22;
+          this.addRing(e.x, ey + 0.14, e.z, 2.35, 2.75, 22, fp.glow[0] * pPulse, fp.glow[1] * pPulse, fp.glow[2] * pPulse, 3);
+          this.addRing(e.x, ey + 2.25 * s, e.z, 0.78 * s, 0.98 * s, 16, fp.glow[0], fp.glow[1], fp.glow[2], 3);
+        }
         if (tele) {
           this.addRing(e.x, ey + 0.15, e.z, 3.6, 4.35, 24, 0.98, 0.34, 0.12, 3);
         }
+      }
+      // Frostglass Nova slow-field indicator ring on chilled enemies
+      if (e.slowTimer && e.slowTimer > 0) {
+        this.addRing(e.x, ey + 0.1, e.z, 0.9, 1.22, 14, 0.48, 0.92, 0.99, 3);
       }
     }
 
@@ -1364,6 +1505,9 @@ export class VerdantDynamicBatcher {
         const cy = iy + 2.55 + Math.sin(t * 2.2 + ix) * 0.22;
         this.addOctahedron(ix, cy, iz, 0.65, 1.15, t * 0.9, beaconCol[0], beaconCol[1], beaconCol[2], 3);
         this.addRing(ix, iy + 0.14, iz, 1.5, isHighlight ? 2.1 : 1.85, 18, beaconCol[0], beaconCol[1], beaconCol[2], 3);
+        if (this.resolutionTier >= 4) {
+          this.addRing(ix, cy, iz, 0.85, 1.02, 18, beaconCol[0], beaconCol[1], beaconCol[2], 2);
+        }
       } else if (item.kind === 'forge-bell') {
         const swing = item.activated ? Math.sin(t * 5.0) * 0.22 : Math.sin(t * 1.1) * 0.04;
         this.addBox(ix, iy + 4.4, iz, 2.2, 0.35, 0.35, 0, 0.55, 0.38, 0.22, 0);
@@ -1418,24 +1562,78 @@ export class VerdantDynamicBatcher {
       this.addRing(bx, by + 0.1, bz, 1.0, 1.35, 14, 0.92, 0.76, 0.34, 3);
     }
 
-    // 8. Live Remote Multiplayer Waywrights (Distinct Guild Attire)
+    // 8. Live Remote Multiplayer Waywrights (Smoothly Interpolated + Distinct Guild Attire + Water Posture)
+    const nowMs = Date.now();
     for (const rp of input.remotePlayers) {
-      const ry = hAt(rp.x, rp.z);
-      const pulsing = Boolean(rp.actionPulseAt && Date.now() - rp.actionPulseAt < 500);
+      const pose = input.remoteVisualPoses?.get(rp.id);
+      const rx = pose ? pose.x : rp.x;
+      const rz = pose ? pose.z : rp.z;
+      const ryaw = pose ? pose.yaw : rp.yaw || 0;
+      const rspeed = pose ? pose.speed : 0;
+      const groundY = hAt(rx, rz);
+      const isSwim = !input.isDungeon && rp.waterPosture === 'swimming' && typeof input.waterLevel === 'number';
+      const ry = isSwim ? (input.waterLevel as number) - 0.92 + Math.sin(t * 3.1 + rx) * 0.06 : groundY;
+      const pulsing = Boolean(rp.actionPulseAt && nowMs - rp.actionPulseAt < 520);
+      const strideNorm = isSwim ? 0.55 : Math.min(1, rspeed / 7.5);
       const peerApp = compileRemoteWaywrightAppearance(rp.id, rp.guildId, rp.activeGear || 'hookblade');
       this.addCompiledCharacter(
-        rp.x,
+        rx,
         ry,
-        rp.z,
-        rp.yaw || 0,
+        rz,
+        ryaw,
         peerApp,
-        t * 5.5,
-        0.35,
-        pulsing ? 0.65 : 0,
+        t * (isSwim ? 4.2 : 6.4),
+        strideNorm,
+        pulsing ? 0.72 : 0,
         t,
       );
-      if (Math.hypot(rp.x - input.playerX, rp.z - input.playerZ) > 2.5) {
-        this.addOctahedron(rp.x, ry + 2.42 + Math.sin(t * 3 + rp.x) * 0.08, rp.z, 0.10, 0.15, t * 2, 0.42, 0.92, 0.8, 3);
+      // Ground presence halo & floating ally diamond beacon
+      const ringY = isSwim ? (input.waterLevel as number) + 0.06 : groundY + 0.1;
+      const haloR = pulsing ? 1.15 : 0.78;
+      this.addRing(rx, ringY, rz, haloR - 0.14, haloR, 16, 0.36, 0.86, 0.94, 3);
+      if (Math.hypot(rx - input.playerX, rz - input.playerZ) > 2.2) {
+        this.addOctahedron(
+          rx,
+          ry + 2.18 + Math.sin(t * 3.2 + rx) * 0.06,
+          rz,
+          0.1,
+          0.14,
+          t * 2.2,
+          0.42,
+          0.92,
+          0.96,
+          3,
+        );
+      }
+    }
+
+    // 8b. Live Tactical Co-op World Ping Beacons (Rally / Danger / Relic)
+    if (input.worldPings && input.worldPings.length > 0) {
+      for (const ping of input.worldPings) {
+        if (ping.expiresAt <= nowMs) continue;
+        const py = hAt(ping.x, ping.z);
+        const pulse = 0.75 + Math.sin(t * 5.2 + ping.x) * 0.25;
+        const [pr, pg, pb] =
+          ping.kind === 'danger'
+            ? [0.96, 0.38, 0.28]
+            : ping.kind === 'loot'
+              ? [0.96, 0.78, 0.32]
+              : [0.34, 0.88, 0.96];
+        const ringExpand = 0.8 + ((t * 1.4) % 1.6);
+        this.addRing(ping.x, py + 0.14, ping.z, Math.max(0.25, ringExpand - 0.22), ringExpand, 18, pr, pg, pb, 3);
+        this.addBox(ping.x, py + 4.4, ping.z, 0.14, 8.6, 0.14, t * 1.8, pr * pulse, pg * pulse, pb * pulse, 3);
+        this.addOctahedron(
+          ping.x,
+          py + 2.6 + Math.sin(t * 4.0) * 0.22,
+          ping.z,
+          0.32,
+          0.52,
+          t * 3.0,
+          pr,
+          pg,
+          pb,
+          3,
+        );
       }
     }
 
@@ -1503,7 +1701,13 @@ export class VerdantDynamicBatcher {
     if (input.ambientParticleKind) {
       const [ar, ag, ab] = input.ambientRgb ?? [0.95, 0.82, 0.46];
       const kind = input.ambientParticleKind;
-      const count = input.isDungeon ? 20 : 24;
+      const baseCount = input.isDungeon ? 20 : 24;
+      const count =
+        this.resolutionTier >= 4
+          ? Math.round(baseCount * 1.5)
+          : this.resolutionTier <= 2
+            ? Math.round(baseCount * 0.65)
+            : baseCount;
       for (let i = 0; i < count; i++) {
         const ang = (i * 2.39996) + t * (kind === 'desert-sand' ? 0.55 : kind === 'volcanic-embers' ? 0.18 : 0.12);
         const rad = (input.isDungeon ? 3.5 : 5.5) + ((i * 7.13) % (input.isDungeon ? 11.5 : 16.5));

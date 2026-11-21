@@ -1,7 +1,7 @@
 import { resolvePublicUrl } from '../utils/publicUrl';
 import type { VerdantCharacterAppearance } from '../verdant/verdantCharacterTypes';
 
-export type GamePhase = 'title' | 'playing' | 'paused' | 'victory' | 'gameover';
+export type GamePhase = 'title' | 'intro' | 'playing' | 'paused' | 'victory' | 'gameover';
 
 export type GearSlotId = 'hookblade' | 'bellhammer' | 'lantern' | 'compass';
 
@@ -127,6 +127,7 @@ export interface FoundationBanner {
   builderName: string;
   position: [number, number];
   plantedAt: number;
+  realmSlug?: string;
   remote?: boolean;
 }
 

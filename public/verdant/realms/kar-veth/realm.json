@@ -558,13 +558,13 @@
       "guildId": "guild-causeway",
       "guildName": "Kar-Veth Caravan Compact",
       "regionId": "southern-terrace",
-      "portraitUrl": "/src/assets/images/ff_npc_kaelen_1795129454573.jpg",
+      "portraitUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20256%20256%22%20width%3D%22256%22%20height%3D%22256%22%20role%3D%22img%22%20aria-label%3D%22Fiora%20Emberlyn%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23564938%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2268%25%22%20stop-color%3D%22%238b765b%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23141921%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22rim%22%20cx%3D%2250%25%22%20cy%3D%2238%25%22%20r%3D%2255%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23b77138%22%20stop-opacity%3D%220.34%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b77138%22%20stop-opacity%3D%220%22%2F%3E%0A%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22faceGrad%22%20x1%3D%220.2%22%20y1%3D%220%22%20x2%3D%220.85%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23eeb48e%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%23d5a17f%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23a37b61%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22url(%23bg)%22%2F%3E%0A%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22url(%23rim)%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M0%2C192%20L38%2C162%20L76%2C178%20L128%2C154%20L182%2C174%20L224%2C158%20L256%2C184%20L256%2C256%20L0%2C256%20Z%22%20fill%3D%22%230d1218%22%20opacity%3D%220.45%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C92%20C72%2C72%2095%2C46%20132%2C48%20C166%2C50%20184%2C74%20176%2C104%20C172%2C118%20164%2C132%20158%2C142%20L94%2C138%20C86%2C124%2080%2C108%2084%2C92%20Z%22%20fill%3D%22%233d4557%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M36%2C256%20C36%2C194%2084%2C166%20128%2C166%20C172%2C166%20220%2C194%20220%2C256%20Z%22%20fill%3D%22%237a6640%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M104%2C174%20L128%2C232%20L152%2C174%22%20fill%3D%22%236f5a39%22%20stroke%3D%22%23d18140%22%20stroke-width%3D%222.4%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C176%20L172%2C252%22%20stroke%3D%22%237a4d2b%22%20stroke-width%3D%2210%22%2F%3E%0A%20%20%20%20%20%20%3Cellipse%20cx%3D%2272%22%20cy%3D%22198%22%20rx%3D%2224%22%20ry%3D%2215%22%20fill%3D%22%23d18140%22%20stroke%3D%22%2353452b%22%20stroke-width%3D%222%22%2F%3E%3Cellipse%20cx%3D%22184%22%20cy%3D%22198%22%20rx%3D%2224%22%20ry%3D%2215%22%20fill%3D%22%23d18140%22%20stroke%3D%22%2353452b%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Cpolygon%20points%3D%22128%2C176%20138%2C187%20128%2C198%20118%2C187%22%20fill%3D%22%23d18140%22%20stroke%3D%22%2353452b%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%3C!--%20Neck%20--%3E%0A%20%20%3Cpath%20d%3D%22M111%2C148%20L145%2C148%20L148%2C176%20Q128%2C186%20108%2C176%20Z%22%20fill%3D%22%23a37b61%22%2F%3E%0A%20%20%3C!--%20Ears%20--%3E%0A%20%20%3Cellipse%20cx%3D%2290%22%20cy%3D%22116%22%20rx%3D%227%22%20ry%3D%2212%22%20fill%3D%22%23a37b61%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22166%22%20cy%3D%22116%22%20rx%3D%227%22%20ry%3D%2212%22%20fill%3D%22%23a37b61%22%2F%3E%0A%20%20%3C!--%20Sculpted%20Head%20%26%20Jawline%20--%3E%0A%20%20%3Cpath%20d%3D%22M92%2C102%20C92%2C68%20164%2C68%20164%2C102%20C164%2C132%20152%2C154%20128%2C158%20C104%2C154%2092%2C132%2092%2C102%20Z%22%20fill%3D%22url(%23faceGrad)%22%2F%3E%0A%20%20%3C!--%20Cheek%20%26%20Nose%20contour%20--%3E%0A%20%20%3Cpath%20d%3D%22M128%2C104%20L125%2C126%20L133%2C127%22%20fill%3D%22none%22%20stroke%3D%22%23a37b61%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3C!--%20Eyes%20--%3E%0A%20%20%3Cellipse%20cx%3D%22111%22%20cy%3D%22111%22%20rx%3D%228.5%22%20ry%3D%224.6%22%20fill%3D%22%23f5f2ec%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22145%22%20cy%3D%22111%22%20rx%3D%228.5%22%20ry%3D%224.6%22%20fill%3D%22%23f5f2ec%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22111%22%20cy%3D%22111%22%20r%3D%224.1%22%20fill%3D%22%233d3326%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22145%22%20cy%3D%22111%22%20r%3D%224.1%22%20fill%3D%22%233d3326%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22109.5%22%20cy%3D%22109.5%22%20r%3D%221.4%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22143.5%22%20cy%3D%22109.5%22%20r%3D%221.4%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3C!--%20Eyebrows%20--%3E%0A%20%20%3Cpath%20d%3D%22M101%2C102%20Q111%2C98%20121%2C102%22%20fill%3D%22none%22%20stroke%3D%22%232a2f3b%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M135%2C102%20Q145%2C98%20155%2C102%22%20fill%3D%22none%22%20stroke%3D%22%232a2f3b%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3C!--%20Mouth%20--%3E%0A%20%20%3Cpath%20d%3D%22M117%2C139%20Q128%2C144%20139%2C139%22%20fill%3D%22none%22%20stroke%3D%22%23a37b61%22%20stroke-width%3D%222.8%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C110%20C82%2C66%20122%2C52%20162%2C68%20C176%2C74%20178%2C94%20170%2C112%20C164%2C90%20144%2C80%20120%2C84%20C102%2C86%2092%2C98%2084%2C110%20Z%22%20fill%3D%22%233d4557%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M98%2C74%20Q134%2C58%20164%2C76%22%20fill%3D%22none%22%20stroke%3D%22%234c556c%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cg%20transform%3D%22translate(202%2C212)%20rotate(-8)%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%22-20%22%20y%3D%22-16%22%20width%3D%2238%22%20height%3D%2228%22%20rx%3D%222%22%20fill%3D%22%237a4d2b%22%20stroke%3D%22%23d18140%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%22-16%22%20y%3D%22-12%22%20width%3D%2230%22%20height%3D%2220%22%20fill%3D%22%23efe4cb%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20d%3D%22M10%2C-32%20C22%2C-22%2018%2C-4%206%2C4%22%20fill%3D%22none%22%20stroke%3D%22%23d18140%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%20%20%3C%2Fg%3E%0A%20%20%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%22248%22%20height%3D%22248%22%20fill%3D%22none%22%20stroke%3D%22%23d18140%22%20stroke-opacity%3D%220.35%22%20stroke-width%3D%222%22%2F%3E%0A%3C%2Fsvg%3E",
       "position": [
         -3.2,
         15.6
       ],
-      "cloakHex": 10184235,
-      "trimHex": 15780468,
+      "cloakHex": 8021568,
+      "trimHex": 13072957,
       "greeting": "Welcome to the amber canyons, Waywright. When the trade winds blow north, Kar-Veth’s monoliths sing caravan bearings for twenty leagues—unless sand-stalkers fracture the tuning pins.",
       "cognitiveDrive": "Preserve the acoustic wind-harp network guiding merchants safely across the dry steppe.",
       "concealedSecret": "She discovered that the Resonance Hall beneath the Ziggurat amplifies voices across Meridian Cells.",
@@ -581,7 +581,68 @@
           "renownGain": 30,
           "advancesQuestId": "quest-karveth-harps"
         }
-      ]
+      ],
+      "appearance": {
+        "rigId": "verdant:rig:npc-zara",
+        "portraitArchetype": "synthesized",
+        "portraitUrl": "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20256%20256%22%20width%3D%22256%22%20height%3D%22256%22%20role%3D%22img%22%20aria-label%3D%22Fiora%20Emberlyn%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23564938%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2268%25%22%20stop-color%3D%22%238b765b%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23141921%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%20%20%3CradialGradient%20id%3D%22rim%22%20cx%3D%2250%25%22%20cy%3D%2238%25%22%20r%3D%2255%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23b77138%22%20stop-opacity%3D%220.34%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b77138%22%20stop-opacity%3D%220%22%2F%3E%0A%20%20%20%20%3C%2FradialGradient%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22faceGrad%22%20x1%3D%220.2%22%20y1%3D%220%22%20x2%3D%220.85%22%20y2%3D%221%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23eeb48e%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%23d5a17f%22%2F%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23a37b61%22%2F%3E%0A%20%20%20%20%3C%2FlinearGradient%3E%0A%20%20%3C%2Fdefs%3E%0A%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22url(%23bg)%22%2F%3E%0A%20%20%3Crect%20width%3D%22256%22%20height%3D%22256%22%20fill%3D%22url(%23rim)%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M0%2C192%20L38%2C162%20L76%2C178%20L128%2C154%20L182%2C174%20L224%2C158%20L256%2C184%20L256%2C256%20L0%2C256%20Z%22%20fill%3D%22%230d1218%22%20opacity%3D%220.45%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C92%20C72%2C72%2095%2C46%20132%2C48%20C166%2C50%20184%2C74%20176%2C104%20C172%2C118%20164%2C132%20158%2C142%20L94%2C138%20C86%2C124%2080%2C108%2084%2C92%20Z%22%20fill%3D%22%233d4557%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M36%2C256%20C36%2C194%2084%2C166%20128%2C166%20C172%2C166%20220%2C194%20220%2C256%20Z%22%20fill%3D%22%237a6640%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M104%2C174%20L128%2C232%20L152%2C174%22%20fill%3D%22%236f5a39%22%20stroke%3D%22%23d18140%22%20stroke-width%3D%222.4%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C176%20L172%2C252%22%20stroke%3D%22%237a4d2b%22%20stroke-width%3D%2210%22%2F%3E%0A%20%20%20%20%20%20%3Cellipse%20cx%3D%2272%22%20cy%3D%22198%22%20rx%3D%2224%22%20ry%3D%2215%22%20fill%3D%22%23d18140%22%20stroke%3D%22%2353452b%22%20stroke-width%3D%222%22%2F%3E%3Cellipse%20cx%3D%22184%22%20cy%3D%22198%22%20rx%3D%2224%22%20ry%3D%2215%22%20fill%3D%22%23d18140%22%20stroke%3D%22%2353452b%22%20stroke-width%3D%222%22%2F%3E%0A%20%20%3Cpolygon%20points%3D%22128%2C176%20138%2C187%20128%2C198%20118%2C187%22%20fill%3D%22%23d18140%22%20stroke%3D%22%2353452b%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%3C!--%20Neck%20--%3E%0A%20%20%3Cpath%20d%3D%22M111%2C148%20L145%2C148%20L148%2C176%20Q128%2C186%20108%2C176%20Z%22%20fill%3D%22%23a37b61%22%2F%3E%0A%20%20%3C!--%20Ears%20--%3E%0A%20%20%3Cellipse%20cx%3D%2290%22%20cy%3D%22116%22%20rx%3D%227%22%20ry%3D%2212%22%20fill%3D%22%23a37b61%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22166%22%20cy%3D%22116%22%20rx%3D%227%22%20ry%3D%2212%22%20fill%3D%22%23a37b61%22%2F%3E%0A%20%20%3C!--%20Sculpted%20Head%20%26%20Jawline%20--%3E%0A%20%20%3Cpath%20d%3D%22M92%2C102%20C92%2C68%20164%2C68%20164%2C102%20C164%2C132%20152%2C154%20128%2C158%20C104%2C154%2092%2C132%2092%2C102%20Z%22%20fill%3D%22url(%23faceGrad)%22%2F%3E%0A%20%20%3C!--%20Cheek%20%26%20Nose%20contour%20--%3E%0A%20%20%3Cpath%20d%3D%22M128%2C104%20L125%2C126%20L133%2C127%22%20fill%3D%22none%22%20stroke%3D%22%23a37b61%22%20stroke-width%3D%222.4%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%3C!--%20Eyes%20--%3E%0A%20%20%3Cellipse%20cx%3D%22111%22%20cy%3D%22111%22%20rx%3D%228.5%22%20ry%3D%224.6%22%20fill%3D%22%23f5f2ec%22%2F%3E%0A%20%20%3Cellipse%20cx%3D%22145%22%20cy%3D%22111%22%20rx%3D%228.5%22%20ry%3D%224.6%22%20fill%3D%22%23f5f2ec%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22111%22%20cy%3D%22111%22%20r%3D%224.1%22%20fill%3D%22%233d3326%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22145%22%20cy%3D%22111%22%20r%3D%224.1%22%20fill%3D%22%233d3326%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22109.5%22%20cy%3D%22109.5%22%20r%3D%221.4%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3Ccircle%20cx%3D%22143.5%22%20cy%3D%22109.5%22%20r%3D%221.4%22%20fill%3D%22%23ffffff%22%2F%3E%0A%20%20%3C!--%20Eyebrows%20--%3E%0A%20%20%3Cpath%20d%3D%22M101%2C102%20Q111%2C98%20121%2C102%22%20fill%3D%22none%22%20stroke%3D%22%232a2f3b%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3Cpath%20d%3D%22M135%2C102%20Q145%2C98%20155%2C102%22%20fill%3D%22none%22%20stroke%3D%22%232a2f3b%22%20stroke-width%3D%223.2%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%3C!--%20Mouth%20--%3E%0A%20%20%3Cpath%20d%3D%22M117%2C139%20Q128%2C144%20139%2C139%22%20fill%3D%22none%22%20stroke%3D%22%23a37b61%22%20stroke-width%3D%222.8%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M84%2C110%20C82%2C66%20122%2C52%20162%2C68%20C176%2C74%20178%2C94%20170%2C112%20C164%2C90%20144%2C80%20120%2C84%20C102%2C86%2092%2C98%2084%2C110%20Z%22%20fill%3D%22%233d4557%22%2F%3E%0A%20%20%20%20%20%20%3Cpath%20d%3D%22M98%2C74%20Q134%2C58%20164%2C76%22%20fill%3D%22none%22%20stroke%3D%22%234c556c%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%0A%20%20%20%20%20%20%3Cg%20transform%3D%22translate(202%2C212)%20rotate(-8)%22%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%22-20%22%20y%3D%22-16%22%20width%3D%2238%22%20height%3D%2228%22%20rx%3D%222%22%20fill%3D%22%237a4d2b%22%20stroke%3D%22%23d18140%22%20stroke-width%3D%221.5%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Crect%20x%3D%22-16%22%20y%3D%22-12%22%20width%3D%2230%22%20height%3D%2220%22%20fill%3D%22%23efe4cb%22%2F%3E%0A%20%20%20%20%20%20%20%20%3Cpath%20d%3D%22M10%2C-32%20C22%2C-22%2018%2C-4%206%2C4%22%20fill%3D%22none%22%20stroke%3D%22%23d18140%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%2F%3E%0A%20%20%20%20%20%20%3C%2Fg%3E%0A%20%20%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%22248%22%20height%3D%22248%22%20fill%3D%22none%22%20stroke%3D%22%23d18140%22%20stroke-opacity%3D%220.35%22%20stroke-width%3D%222%22%2F%3E%0A%3C%2Fsvg%3E",
+        "garmentStyle": "ranger-brigandine",
+        "hairStyle": "windswept",
+        "beardStyle": "none",
+        "satchelStyle": "chart-satchel",
+        "signatureProp": "ledger-quill",
+        "buildScale": [
+          0.98,
+          0.97,
+          1.01
+        ],
+        "bareForearms": false,
+        "hasHoodDown": false,
+        "hasPauldrons": true,
+        "skinRgb": [
+          0.82,
+          0.62,
+          0.49
+        ],
+        "hairRgb": [
+          0.24,
+          0.27,
+          0.34
+        ],
+        "garmentRgb": [
+          0.48,
+          0.4,
+          0.25
+        ],
+        "underTunicRgb": [
+          0.43599999999999994,
+          0.35200000000000004,
+          0.2225
+        ],
+        "trimRgb": [
+          0.78,
+          0.48,
+          0.24
+        ],
+        "leatherRgb": [
+          0.48,
+          0.3,
+          0.17
+        ],
+        "claspRgb": [
+          0.78,
+          0.48,
+          0.24
+        ],
+        "claspKind": "bronze-crest",
+        "eyeRgb": [
+          0.24,
+          0.2,
+          0.15
+        ],
+        "genomeSeed": 172317243,
+        "traitSummary": "ranger-brigandine · windswept · ledger-quill"
+      }
     }
   ],
   "quests": [
@@ -704,7 +765,7 @@
     {
       "id": "kv-e1",
       "archetype": "stalker",
-      "name": "Dune-Shale Stalker",
+      "name": "Ochre-Carapace Dune Scorpion",
       "x": -12,
       "z": -8,
       "homeX": -12,
@@ -724,13 +785,13 @@
       "moveSpeed": 6.2,
       "aggroRadius": 17,
       "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
+      "telegraphDuration": 0.58,
       "hasAttackToken": false
     },
     {
       "id": "kv-e2",
-      "archetype": "shardcaster",
-      "name": "Mirage Prism-Singer",
+      "archetype": "hexweaver",
+      "name": "Aeolian Mirage-Cantor",
       "x": 15,
       "z": -9,
       "homeX": 15,
@@ -738,25 +799,25 @@
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 64,
-      "maxHp": 64,
+      "hp": 68,
+      "maxHp": 68,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
       "hitFlashTimer": 0,
       "koTimer": 0,
       "attackDamage": 15,
-      "attackRadius": 12,
-      "moveSpeed": 4.5,
-      "aggroRadius": 17,
-      "preferredRange": 9.5,
-      "telegraphDuration": 0.6,
+      "attackRadius": 13,
+      "moveSpeed": 4.8,
+      "aggroRadius": 19,
+      "preferredRange": 12.5,
+      "telegraphDuration": 0.68,
       "hasAttackToken": false
     },
     {
       "id": "kv-e3",
       "archetype": "colossus",
-      "name": "Sandstone Choir Colossus",
+      "name": "Solar-Disk Sandstone Golem",
       "x": 22,
       "z": 16,
       "homeX": 22,
@@ -781,8 +842,8 @@
     },
     {
       "id": "kv-e4",
-      "archetype": "stalker",
-      "name": "Canyon Wind-Runner",
+      "archetype": "skirmisher",
+      "name": "Sirocco Dune-Slicer",
       "x": -48,
       "z": -20,
       "homeX": -48,
@@ -790,25 +851,25 @@
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 74,
-      "maxHp": 74,
+      "hp": 68,
+      "maxHp": 68,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": -1,
       "hitFlashTimer": 0,
       "koTimer": 0,
-      "attackDamage": 11,
-      "attackRadius": 2.7,
-      "moveSpeed": 6.2,
-      "aggroRadius": 17,
-      "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
+      "attackDamage": 13,
+      "attackRadius": 2.5,
+      "moveSpeed": 7.2,
+      "aggroRadius": 18,
+      "preferredRange": 3.8,
+      "telegraphDuration": 0.4,
       "hasAttackToken": false
     },
     {
       "id": "kv-e5",
-      "archetype": "shardcaster",
-      "name": "Steppe Glass-Caster",
+      "archetype": "charger",
+      "name": "Mesa-Horned Shale-Bull",
       "x": 46,
       "z": 8,
       "homeX": 46,
@@ -816,29 +877,29 @@
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 68,
-      "maxHp": 68,
+      "hp": 112,
+      "maxHp": 112,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
       "hitFlashTimer": 0,
       "koTimer": 0,
-      "attackDamage": 15,
-      "attackRadius": 12,
-      "moveSpeed": 4.5,
-      "aggroRadius": 17,
-      "preferredRange": 9.5,
-      "telegraphDuration": 0.6,
+      "attackDamage": 22,
+      "attackRadius": 3.3,
+      "moveSpeed": 5.2,
+      "aggroRadius": 19,
+      "preferredRange": 7.5,
+      "telegraphDuration": 0.62,
       "hasAttackToken": false
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:17a08ab944758b598a814e7458a33a8b6d09e5878ea205189e1b563a6915fda9",
+    "worldGlbKappa": "sha256:af8c60d931c1de058c59c629f8da43f0502af80469e1ba9f4023b81fc310224a",
     "vdntKappa": "sha256:6594313b15425d44e94c40b83de345bacf3d7852a186de53c860befdcd1f59de",
     "skyKappa": "sha256:b6b8ed9b069f5d9e46547d87aa7c6c50aecde988e5e23307cc0887e18a298543",
-    "triangles": 28209,
-    "vertices": 50131,
-    "glbBytes": 2879364,
+    "triangles": 28275,
+    "vertices": 50257,
+    "glbBytes": 2884388,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 11,
     "importedCatalogAssets": [

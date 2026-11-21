@@ -2,7 +2,7 @@
   "id": "dungeon-oakhaven-cistern-labyrinth",
   "slug": "oakhaven-cistern-labyrinth",
   "name": "The Flooded Siphon Catacombs",
-  "subtitle": "Tier 2 3D Dungeon Delve · Beneath Oakhaven",
+  "subtitle": "Tier 2 Spiral Sluice Rotunda & Flooded Ring · Beneath Oakhaven",
   "cell": [
     0,
     -2,
@@ -16,7 +16,7 @@
   "dungeonStyle": "sunken-cistern",
   "dungeonTier": 2,
   "dungeonEntrances": [],
-  "summary": "A subterranean vaulted sanctuary beneath Oakhaven. Cross the glowing abyss bridge, ignite the three Resonant Seal Braziers, unseal the alcove vaults, and defeat Siphon-Core Leviathan Golem.",
+  "summary": "A grand circular Roman cistern basin where four radial aqueduct causeways converge on a mossy central Lotus Sluice Hub. Cross the four radial aqueduct spans around the Lotus Hub, ring both Sluice Bells, and defeat Siphon-Core Leviathan Golem.",
   "skyAssetId": "blue_lagoon_night",
   "skyUrl": "/verdant/realms/oakhaven-cistern-labyrinth/sky.jpg",
   "glbUrl": "/verdant/realms/oakhaven-cistern-labyrinth/world.glb",
@@ -206,8 +206,8 @@
     "coastDip": 0,
     "rimStart": 42,
     "rimHeight": 2,
-    "waterLevel": -2.2,
-    "hasBridge": true,
+    "waterLevel": -1.6,
+    "hasBridge": false,
     "bridgeDeckY": 1.15,
     "bridgeZMin": 3.6,
     "bridgeZMax": 18.4,
@@ -215,143 +215,89 @@
   },
   "importedCatalogProps": [
     {
-      "id": "oakhaven-cistern-labyrinth-st-w",
-      "assetId": "gothic_statue",
+      "id": "oakhaven-cistern-labyrinth-fern-1",
+      "assetId": "fern_02",
       "source": "polyhaven",
-      "label": "Vestibule Warden W",
+      "label": "Cistern Spore Fern W",
       "position": [
-        -6,
-        21
+        -5.2,
+        3.8
       ],
-      "targetHeight": 3.8,
-      "yaw": 0.3,
-      "tintRgb": [
-        0.38,
-        0.52,
-        0.46
-      ],
-      "maxTriangles": 480
-    },
-    {
-      "id": "oakhaven-cistern-labyrinth-st-e",
-      "assetId": "gothic_statue",
-      "source": "polyhaven",
-      "label": "Vestibule Warden E",
-      "position": [
-        6,
-        21
-      ],
-      "targetHeight": 3.8,
-      "yaw": -0.3,
-      "tintRgb": [
-        0.38,
-        0.52,
-        0.46
-      ],
-      "maxTriangles": 480
-    },
-    {
-      "id": "oakhaven-cistern-labyrinth-st-bw",
-      "assetId": "gothic_statue",
-      "source": "polyhaven",
-      "label": "Sanctum Sentinel W",
-      "position": [
-        -9,
-        -24
-      ],
-      "targetHeight": 4.4,
+      "targetHeight": 2,
       "yaw": 0.4,
       "tintRgb": [
         0.38,
         0.52,
         0.46
       ],
-      "maxTriangles": 500
-    },
-    {
-      "id": "oakhaven-cistern-labyrinth-st-be",
-      "assetId": "gothic_statue",
-      "source": "polyhaven",
-      "label": "Sanctum Sentinel E",
-      "position": [
-        9,
-        -24
-      ],
-      "targetHeight": 4.4,
-      "yaw": -0.4,
-      "tintRgb": [
-        0.38,
-        0.52,
-        0.46
-      ],
-      "maxTriangles": 500
-    },
-    {
-      "id": "oakhaven-cistern-labyrinth-lamp-1",
-      "assetId": "brass_diya_lantern",
-      "source": "polyhaven",
-      "label": "Bridge Torch W",
-      "position": [
-        -3.4,
-        18.2
-      ],
-      "targetHeight": 1.35,
-      "yaw": 0.1,
-      "tintRgb": [
-        0.36,
-        0.88,
-        0.68
-      ],
       "maxTriangles": 340
     },
     {
-      "id": "oakhaven-cistern-labyrinth-lamp-2",
-      "assetId": "brass_diya_lantern",
+      "id": "oakhaven-cistern-labyrinth-fern-2",
+      "assetId": "fern_02",
       "source": "polyhaven",
-      "label": "Bridge Torch E",
+      "label": "Cistern Spore Fern E",
       "position": [
-        3.4,
-        18.2
+        5.2,
+        3.8
       ],
-      "targetHeight": 1.35,
-      "yaw": 1.5,
-      "tintRgb": [
-        0.36,
-        0.88,
-        0.68
-      ],
-      "maxTriangles": 340
-    },
-    {
-      "id": "oakhaven-cistern-labyrinth-lamp-3",
-      "assetId": "Lantern_01",
-      "source": "polyhaven",
-      "label": "Rotunda Lantern W",
-      "position": [
-        -8.5,
-        -3
-      ],
-      "targetHeight": 1.35,
-      "yaw": 0.3,
-      "tintRgb": [
-        0.36,
-        0.88,
-        0.68
-      ],
-      "maxTriangles": 340
-    },
-    {
-      "id": "oakhaven-cistern-labyrinth-lamp-4",
-      "assetId": "Lantern_01",
-      "source": "polyhaven",
-      "label": "Rotunda Lantern E",
-      "position": [
-        8.5,
-        -3
-      ],
-      "targetHeight": 1.35,
+      "targetHeight": 2,
       "yaw": 1.9,
       "tintRgb": [
+        0.38,
+        0.52,
+        0.46
+      ],
+      "maxTriangles": 340
+    },
+    {
+      "id": "oakhaven-cistern-labyrinth-pot-w",
+      "assetId": "ceramic_pot",
+      "source": "polyhaven",
+      "label": "Sluice Amphora W",
+      "position": [
+        -19,
+        2.2
+      ],
+      "targetHeight": 1.35,
+      "yaw": 0.7,
+      "tintRgb": [
+        0.38,
+        0.52,
+        0.46
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "oakhaven-cistern-labyrinth-pot-e",
+      "assetId": "antique_ceramic_vase_01",
+      "source": "polyhaven",
+      "label": "Sluice Amphora E",
+      "position": [
+        19,
+        2.2
+      ],
+      "targetHeight": 1.45,
+      "yaw": 1.5,
+      "tintRgb": [
+        0.38,
+        0.52,
+        0.46
+      ],
+      "maxTriangles": 320
+    },
+    {
+      "id": "oakhaven-cistern-labyrinth-lamp-w",
+      "assetId": "Lantern_01",
+      "source": "polyhaven",
+      "label": "Hub Canal Lamp W",
+      "position": [
+        -4.8,
+        -5.2
+      ],
+      "targetHeight": 1.4,
+      "yaw": 0.2,
+      "tintRgb": [
         0.36,
         0.88,
         0.68
@@ -359,71 +305,34 @@
       "maxTriangles": 340
     },
     {
-      "id": "oakhaven-cistern-labyrinth-estoc",
-      "assetId": "antique_estoc",
+      "id": "oakhaven-cistern-labyrinth-lamp-e",
+      "assetId": "Lantern_01",
       "source": "polyhaven",
-      "label": "Boss Altar Relic Blade",
+      "label": "Hub Canal Lamp E",
       "position": [
-        0,
-        -32
-      ],
-      "yOffset": 1.2,
-      "targetHeight": 2.6,
-      "yaw": 0,
-      "tintRgb": [
-        0.88,
-        0.8,
-        0.56
-      ],
-      "maxTriangles": 360
-    },
-    {
-      "id": "oakhaven-cistern-labyrinth-vase-w",
-      "assetId": "brass_vase_01",
-      "source": "polyhaven",
-      "label": "West Alcove Reliquary",
-      "position": [
-        -18.5,
-        -4
+        4.8,
+        -5.2
       ],
       "targetHeight": 1.4,
-      "yaw": 0.8,
+      "yaw": 2,
       "tintRgb": [
         0.36,
         0.88,
         0.68
       ],
-      "maxTriangles": 320
+      "maxTriangles": 340
     },
     {
-      "id": "oakhaven-cistern-labyrinth-crate-e",
-      "assetId": "old_military_crate",
-      "source": "polyhaven",
-      "label": "East Alcove Vault Crate",
-      "position": [
-        18.5,
-        -4
-      ],
-      "targetHeight": 1.15,
-      "yaw": 0.4,
-      "tintRgb": [
-        0.44,
-        0.38,
-        0.32
-      ],
-      "maxTriangles": 320
-    },
-    {
-      "id": "oakhaven-cistern-labyrinth-rock-1",
+      "id": "oakhaven-cistern-labyrinth-rock-n",
       "assetId": "boulder_01",
       "source": "polyhaven",
-      "label": "Vault Cavern Outcrop",
+      "label": "Mossy Weir Outcrop",
       "position": [
-        -14,
+        -11.5,
         -29
       ],
-      "targetHeight": 3.2,
-      "yaw": 0.9,
+      "targetHeight": 3.1,
+      "yaw": 1.1,
       "tintRgb": [
         0.38,
         0.52,
@@ -435,56 +344,56 @@
   "regions": [
     {
       "id": "dungeon-sanctum",
-      "name": "The Flooded Siphon Catacombs — Vestibule",
-      "subtitle": "Tier 2 Subterranean Vault",
+      "name": "Siphon Intake Quay",
+      "subtitle": "Southern Cistern Entry",
       "center": [
         0,
-        22
+        24
       ],
-      "radius": 14,
-      "ambientMood": "causeway"
+      "radius": 13,
+      "ambientMood": "ironwood"
     },
     {
       "id": "high-causeway",
-      "name": "Abyss Span & Seal Rotunda",
-      "subtitle": "Pillared Acoustic Hall & Treasure Alcoves",
+      "name": "Lotus Sluice Hub & Ring",
+      "subtitle": "Four-Way Radial Aqueduct Moat",
       "center": [
         0,
-        -4
+        -1
       ],
       "radius": 18,
-      "ambientMood": "foundry"
+      "ambientMood": "ironwood"
     },
     {
       "id": "boss-vault",
-      "name": "Siphon-Core Leviathan Golem Sanctum",
-      "subtitle": "Inner Boss Amphitheater & Ascend Portal",
+      "name": "Siphon-Core Leviathan Golem — Drowned Weir Rotunda",
+      "subtitle": "Siphon Leviathan Pool",
       "center": [
         0,
         -26
       ],
-      "radius": 16,
-      "ambientMood": "foundry"
+      "radius": 15,
+      "ambientMood": "ironwood"
     }
   ],
   "fastTravelPoints": [
     {
       "regionId": "dungeon-sanctum",
-      "name": "Dungeon Entry Vestibule",
+      "name": "Siphon Intake Quay",
       "x": 0,
       "z": 26.5
     },
     {
       "regionId": "high-causeway",
-      "name": "Central Seal Rotunda",
+      "name": "Central Lotus Hub",
       "x": 0,
-      "z": -2
+      "z": -1
     },
     {
       "regionId": "boss-vault",
-      "name": "Boss Sanctum Threshold",
+      "name": "Weir Rotunda Threshold",
       "x": 0,
-      "z": -18
+      "z": -19.5
     }
   ],
   "npcs": [],
@@ -493,28 +402,28 @@
       "id": "quest-delve-oakhaven-cistern-labyrinth",
       "title": "Heart of the Flooded Siphon",
       "giverNpcId": "npc-orenna",
-      "guildId": "guild-kiln",
+      "guildId": "guild-causeway",
       "regionId": "boss-vault",
-      "summary": "Conquer The Flooded Siphon Catacombs: ignite the Resonant Seal Braziers, plunder the side treasure vaults, and defeat Siphon-Core Leviathan Golem in the northern Sanctum.",
-      "motif": "subterranean sunken-cistern delve",
+      "summary": "Cross the four radial aqueduct spans around the Lotus Hub, ring both Sluice Bells, and defeat Siphon-Core Leviathan Golem.",
+      "motif": "hydraulic siphon weir rebalancing",
       "renownReward": 310,
       "status": "active",
       "objectives": [
         {
-          "id": "obj-oakhaven-cistern-labyrinth-brazier",
-          "description": "Ignite Resonant Seal Braziers",
-          "kind": "calibrate-beacon",
+          "id": "obj-oakhaven-cistern-labyrinth-primary",
+          "description": "Ring West & East Aqueduct Sluice Bells",
+          "kind": "ring-bell",
           "targetId": "oakhaven-cistern-labyrinth-brazier",
           "targetCoords": [
-            0,
-            -4
+            -17.5,
+            -1
           ],
           "requiredCount": 2,
           "currentCount": 0
         },
         {
           "id": "obj-oakhaven-cistern-labyrinth-boss",
-          "description": "Vanquish Siphon-Core Leviathan Golem",
+          "description": "Topple Siphon-Core Leviathan Golem",
           "kind": "defeat-archetype",
           "targetId": "colossus",
           "targetCoords": [
@@ -530,49 +439,51 @@
   "interactables": [
     {
       "id": "oakhaven-cistern-labyrinth-brazier-w",
-      "kind": "seal-brazier",
-      "name": "West Resonant Seal Brazier",
-      "promptVerb": "Ignite Seal Brazier",
+      "kind": "forge-bell",
+      "name": "West Aqueduct Sluice Bell",
+      "promptVerb": "Ring West Sluice Bell [Bell-Hammer]",
       "regionId": "high-causeway",
       "position": [
-        -8.5,
-        -4.5
+        -17.5,
+        -1
       ],
+      "requiredGear": "bellhammer",
       "activated": false
     },
     {
       "id": "oakhaven-cistern-labyrinth-brazier-e",
-      "kind": "seal-brazier",
-      "name": "East Resonant Seal Brazier",
-      "promptVerb": "Ignite Seal Brazier",
+      "kind": "forge-bell",
+      "name": "East Aqueduct Sluice Bell",
+      "promptVerb": "Ring East Sluice Bell [Bell-Hammer]",
       "regionId": "high-causeway",
       "position": [
-        8.5,
-        -4.5
+        17.5,
+        -1
       ],
+      "requiredGear": "bellhammer",
       "activated": false
     },
     {
       "id": "oakhaven-cistern-labyrinth-chest-w",
       "kind": "vault-chest",
-      "name": "West Alcove Relic Chest",
-      "promptVerb": "Unseal Vault Chest",
+      "name": "Moss-Grown Sluice Coffer",
+      "promptVerb": "Unseal Sluice Coffer",
       "regionId": "high-causeway",
       "position": [
-        -16.5,
-        -4
+        -17.5,
+        -10.5
       ],
       "activated": false
     },
     {
       "id": "oakhaven-cistern-labyrinth-chest-e",
       "kind": "vault-chest",
-      "name": "East Alcove Foundry Coffer",
-      "promptVerb": "Unseal Vault Coffer",
+      "name": "Lotus Conduit Reliquary",
+      "promptVerb": "Unseal Conduit Reliquary",
       "regionId": "high-causeway",
       "position": [
-        16.5,
-        -4
+        17.5,
+        -10.5
       ],
       "activated": false
     },
@@ -584,7 +495,7 @@
       "regionId": "dungeon-sanctum",
       "position": [
         0,
-        30.5
+        30.8
       ],
       "activated": false,
       "targetRealmSlug": "oakhaven"
@@ -606,90 +517,90 @@
   "enemies": [
     {
       "id": "oakhaven-cistern-labyrinth-e1",
-      "archetype": "stalker",
-      "name": "Vault Stone-Stalker",
-      "x": -6.5,
-      "z": 0.5,
-      "homeX": -6.5,
-      "homeZ": 0.5,
+      "archetype": "skirmisher",
+      "name": "Fern-Dart Hopper",
+      "x": 0,
+      "z": 1.5,
+      "homeX": 0,
+      "homeZ": 1.5,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 84,
-      "maxHp": 84,
-      "state": "idle",
-      "stateTimer": 0,
-      "orbitSign": -1,
-      "hitFlashTimer": 0,
-      "koTimer": 0,
-      "attackDamage": 11,
-      "attackRadius": 2.7,
-      "moveSpeed": 6.2,
-      "aggroRadius": 17,
-      "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
-      "hasAttackToken": false
-    },
-    {
-      "id": "oakhaven-cistern-labyrinth-e2",
-      "archetype": "stalker",
-      "name": "Rotunda Skirmisher",
-      "x": 6.5,
-      "z": 0.5,
-      "homeX": 6.5,
-      "homeZ": 0.5,
-      "vx": 0,
-      "vz": 0,
-      "yaw": 0,
-      "hp": 84,
-      "maxHp": 84,
+      "hp": 71,
+      "maxHp": 71,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
       "hitFlashTimer": 0,
       "koTimer": 0,
-      "attackDamage": 11,
-      "attackRadius": 2.7,
-      "moveSpeed": 6.2,
-      "aggroRadius": 17,
-      "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
+      "attackDamage": 13,
+      "attackRadius": 2.5,
+      "moveSpeed": 7.2,
+      "aggroRadius": 18,
+      "preferredRange": 3.8,
+      "telegraphDuration": 0.4,
+      "hasAttackToken": false
+    },
+    {
+      "id": "oakhaven-cistern-labyrinth-e2",
+      "archetype": "hexweaver",
+      "name": "Root-Siphon Weaver",
+      "x": -17.2,
+      "z": 5.5,
+      "homeX": -17.2,
+      "homeZ": 5.5,
+      "vx": 0,
+      "vz": 0,
+      "yaw": 0,
+      "hp": 76,
+      "maxHp": 76,
+      "state": "idle",
+      "stateTimer": 0,
+      "orbitSign": -1,
+      "hitFlashTimer": 0,
+      "koTimer": 0,
+      "attackDamage": 15,
+      "attackRadius": 13,
+      "moveSpeed": 4.8,
+      "aggroRadius": 19,
+      "preferredRange": 12.5,
+      "telegraphDuration": 0.68,
       "hasAttackToken": false
     },
     {
       "id": "oakhaven-cistern-labyrinth-e3",
       "archetype": "shardcaster",
-      "name": "Alcove Prism-Sentinel",
-      "x": -12.5,
-      "z": -5.5,
-      "homeX": -12.5,
-      "homeZ": -5.5,
+      "name": "Mycelial Bell-Medusa",
+      "x": 17.2,
+      "z": 5.5,
+      "homeX": 17.2,
+      "homeZ": 5.5,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 80,
-      "maxHp": 80,
+      "hp": 71,
+      "maxHp": 71,
       "state": "idle",
       "stateTimer": 0,
-      "orbitSign": -1,
+      "orbitSign": 1,
       "hitFlashTimer": 0,
       "koTimer": 0,
       "attackDamage": 15,
       "attackRadius": 12,
       "moveSpeed": 4.5,
-      "aggroRadius": 17,
+      "aggroRadius": 18,
       "preferredRange": 9.5,
-      "telegraphDuration": 0.6,
+      "telegraphDuration": 0.62,
       "hasAttackToken": false
     },
     {
       "id": "oakhaven-cistern-labyrinth-e4",
-      "archetype": "shardcaster",
-      "name": "Sanctum Arc-Weaver",
-      "x": 12.5,
-      "z": -5.5,
-      "homeX": 12.5,
-      "homeZ": -5.5,
+      "archetype": "stalker",
+      "name": "Spore-Antler Stag",
+      "x": 0,
+      "z": -13.5,
+      "homeX": 0,
+      "homeZ": -13.5,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
@@ -700,12 +611,12 @@
       "orbitSign": 1,
       "hitFlashTimer": 0,
       "koTimer": 0,
-      "attackDamage": 15,
-      "attackRadius": 12,
-      "moveSpeed": 4.5,
+      "attackDamage": 11,
+      "attackRadius": 2.7,
+      "moveSpeed": 6.2,
       "aggroRadius": 17,
-      "preferredRange": 9.5,
-      "telegraphDuration": 0.6,
+      "preferredRange": 2.2,
+      "telegraphDuration": 0.58,
       "hasAttackToken": false
     },
     {
@@ -713,14 +624,14 @@
       "archetype": "colossus",
       "name": "Siphon-Core Leviathan Golem",
       "x": 0,
-      "z": -25.5,
+      "z": -26,
       "homeX": 0,
-      "homeZ": -25.5,
+      "homeZ": -26,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 265,
-      "maxHp": 265,
+      "hp": 266,
+      "maxHp": 266,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
@@ -736,24 +647,22 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:5fb22c18677ae5c69a2adb141e02f7280dc0978149d3c7e642214a27572c0442",
+    "worldGlbKappa": "sha256:80959bfe7cc76e0d309f3b39e8dafc23492d056d874ffc9857468ba2b8182694",
     "vdntKappa": "sha256:f4c335d7e9cb7590f511016628d05c643fd07fe3eaf3c7dece420cd0f54bee1e",
     "skyKappa": "sha256:3deabf539a2ee617eed2264c85ddaaf18154043243252848b31af06af08b73c7",
-    "triangles": 18006,
-    "vertices": 28985,
-    "glbBytes": 1853032,
+    "triangles": 12681,
+    "vertices": 21443,
+    "glbBytes": 1542136,
     "atlasTileCount": 4,
-    "importedCatalogModelsCount": 12,
+    "importedCatalogModelsCount": 7,
     "importedCatalogAssets": [
-      "gothic_statue",
-      "brass_diya_lantern",
+      "fern_02",
+      "ceramic_pot",
+      "antique_ceramic_vase_01",
       "Lantern_01",
-      "antique_estoc",
-      "brass_vase_01",
-      "old_military_crate",
       "boulder_01"
     ],
-    "projectModelsRegistered": 10,
+    "projectModelsRegistered": 8,
     "cognitiveKnowledgeIngested": 4,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

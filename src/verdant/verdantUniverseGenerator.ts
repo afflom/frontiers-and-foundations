@@ -1,6 +1,7 @@
 import {
   CANONICAL_REALM_SPECS,
   makeEnemy,
+  synthesizeProceduralDungeonSpec,
   type DungeonArchitecturalStyle,
   type FrontiersRealmSpec,
   type RealmThemeId,
@@ -11,6 +12,10 @@ import {
   synthesizeVerdantCharacter,
 } from './verdantCharacterSynthesizer';
 import { synthesizeScoreFromBrief } from './verdantScoreSchema';
+import {
+  getMonsterSpeciesForTheme,
+  getWorldDifferentiationProfile,
+} from './verdantUnifiedCharter';
 import type { GameNpc, GameQuest, WorldInteractable, WorldRegion } from '../game/worldData';
 
 export interface MacroClimateSample {
@@ -123,14 +128,14 @@ export function sampleMacroClimate(
       sky: [0.38, 0.56, 0.70],
       fog: [0.60, 0.69, 0.75],
       mood: 'coast',
-      dungeonStyle: 'sunken-cistern',
+      dungeonStyle: 'abyssal-grotto',
       biomeTitle: 'Pelagic Archipelago',
     },
     'amber-steppe': {
       sky: [0.56, 0.45, 0.34],
       fog: [0.70, 0.58, 0.44],
       mood: 'ironwood',
-      dungeonStyle: 'catacomb-vault',
+      dungeonStyle: 'echo-tomb',
       biomeTitle: 'Amber Wind-Steppe',
     },
     'glacial-spire': {
@@ -490,16 +495,19 @@ export function synthesizeUniverseCell(
   ];
 
   const hpScale = 1 + (tier - 1) * 0.16;
-  const ePre1 = pick(rng, lex.enemyPrefixes);
-  const ePre2 = pick(rng, lex.enemyPrefixes);
+  const themeProfile = getWorldDifferentiationProfile(climate.theme);
   const enemies = [
-    makeEnemy(`${slug}-e1`, 'stalker', `${ePre1} Stalker`, 12, -8, Math.round(58 * hpScale)),
-    makeEnemy(`${slug}-e2`, 'shardcaster', `${ePre2} Prism-Weaver`, -15, -7, Math.round(54 * hpScale)),
-    makeEnemy(`${slug}-e3`, 'colossus', `${root} Boundary Colossus`, 21, 16, Math.round(165 * hpScale)),
-    makeEnemy(`${slug}-e4`, 'stalker', `${ePre2} Outrider`, -46, -20, Math.round(64 * hpScale)),
-    makeEnemy(`${slug}-e5`, 'shardcaster', `${ePre1} Resonance Caster`, 46, 8, Math.round(62 * hpScale)),
-    makeEnemy(`${slug}-e6`, 'stalker', `${root} Gate-Prowler`, 6, -48, Math.round(66 * hpScale)),
+    makeEnemy(`${slug}-e1`, 'stalker', getMonsterSpeciesForTheme(climate.theme, 'stalker').speciesName, 12, -8, Math.round(58 * hpScale)),
+    makeEnemy(`${slug}-e2`, 'shardcaster', getMonsterSpeciesForTheme(climate.theme, 'shardcaster').speciesName, -15, -7, Math.round(54 * hpScale)),
+    makeEnemy(`${slug}-e3`, 'colossus', `${root} ${getMonsterSpeciesForTheme(climate.theme, 'colossus').speciesName}`, 21, 16, Math.round(165 * hpScale)),
+    makeEnemy(`${slug}-e4`, 'charger', getMonsterSpeciesForTheme(climate.theme, 'charger').speciesName, -46, -20, Math.round(98 * hpScale)),
+    makeEnemy(`${slug}-e5`, 'hexweaver', getMonsterSpeciesForTheme(climate.theme, 'hexweaver').speciesName, 46, 8, Math.round(64 * hpScale)),
+    makeEnemy(`${slug}-e6`, 'skirmisher', getMonsterSpeciesForTheme(climate.theme, 'skirmisher').speciesName, 6, -48, Math.round(62 * hpScale)),
   ];
+  if (quests[0]) {
+    quests[0].title = `${themeProfile.overworldPlotHook.questTitlePrefix} ${root}`;
+    quests[0].motif = themeProfile.overworldPlotHook.motif;
+  }
 
   const soundtrack = synthesizeScoreFromBrief({
     realmSlug: slug,
@@ -591,110 +599,32 @@ export function synthesizeUniverseCell(
  */
 export function synthesizeProceduralDungeon(parentRealm: FrontiersRealmSpec): FrontiersRealmSpec {
   const entrance = parentRealm.dungeonEntrances[0];
+  const profile = getWorldDifferentiationProfile(parentRealm.theme);
   const dungeonSlug = entrance?.dungeonSlug ?? `${parentRealm.slug}-vault`;
   const dungeonName = entrance?.name ?? `${parentRealm.name} — Deep Vault`;
   const tier = entrance?.tier ?? 2;
-  const style = entrance?.style ?? 'catacomb-vault';
+  const style = entrance?.style ?? profile.dungeonStyle;
   const dSeed = hashStringSeed(`dungeon:${parentRealm.seed}:${dungeonSlug}`);
 
-  const soundtrack = synthesizeScoreFromBrief({
-    realmSlug: dungeonSlug,
-    realmName: dungeonName,
-    theme: parentRealm.theme,
-    isDungeon: true,
+  const baseSpec = synthesizeProceduralDungeonSpec({
+    name: dungeonName,
+    slug: dungeonSlug,
+    parentRealmSlug: parentRealm.slug,
+    parentRealmName: parentRealm.name,
+    style,
+    tier,
     seed: dSeed,
   });
 
-  const hpScale = 1 + (tier - 1) * 0.22;
   return {
+    ...baseSpec,
     id: `realm-${dungeonSlug}`,
-    slug: dungeonSlug,
-    name: dungeonName,
-    subtitle: `Tier ${tier} Vault · Beneath ${parentRealm.name}`,
     cell: [parentRealm.cell[0], -1, parentRealm.cell[2]],
-    theme: parentRealm.theme,
-    seed: dSeed,
-    worldHalfExtent: 42,
-    isDungeon: true,
     isGenerated: true,
     isProceduralCell: true,
-    parentRealmSlug: parentRealm.slug,
-    dungeonStyle: style,
-    dungeonTier: tier,
-    summary: `A vaulted subterranean Meridian sanctum beneath ${parentRealm.name}.`,
-    skyAssetId: `procedural-dungeon-${style}`,
     skyUrl: '',
     glbUrl: `/api/verdant/cell/${parentRealm.cell[0]}/${parentRealm.cell[2]}/dungeon.glb`,
     vdntUrl: `/api/verdant/cell/${parentRealm.cell[0]}/${parentRealm.cell[2]}/dungeon.vdnt`,
-    ambientMood: 'foundry',
-    skyFallbackRgb: [0.06, 0.08, 0.11],
-    fogRgb: [0.09, 0.11, 0.15],
-    spawnPoint: [0, 23.0],
-    soundtrack,
-    dungeonEntrances: [],
-    materials: parentRealm.materials,
-    terrainProfile: {
-      macroAmp: 0,
-      macroFreq: 0.05,
-      gorgeDepth: 0,
-      gorgeZ: 11,
-      gorgeWaveAmp: 0,
-      citadelLift: 0,
-      citadelZ: -24,
-      coastDip: 0,
-      rimStart: 42,
-      rimHeight: 0,
-      waterLevel: -4.2,
-      hasBridge: true,
-      bridgeDeckY: 1.05,
-      bridgeZMin: 3.6,
-      bridgeZMax: 18.4,
-      bridgeHalfWidth: 2.8,
-    },
-    importedCatalogProps: [],
-    regions: [
-      { id: 'southern-terrace', name: 'Vault Entry Vestibule', subtitle: 'Ascent Portal', center: [0, 24], radius: 14, ambientMood: 'foundry' },
-      { id: 'high-causeway', name: 'Central Seal Rotunda', subtitle: 'Resonant Chamber', center: [0, -5], radius: 16, ambientMood: 'foundry' },
-      { id: 'northern-watch', name: 'Sanctum Amphitheater', subtitle: 'Guardian Dais', center: [0, -26], radius: 16, ambientMood: 'foundry' },
-    ],
-    fastTravelPoints: [{ regionId: 'southern-terrace', name: 'Vault Entry', x: 0, z: 23.0 }],
-    npcs: [],
-    quests: [],
-    interactables: [
-      {
-        id: `int-${dungeonSlug}-exit`,
-        kind: 'dungeon-exit',
-        name: `Ascend to ${parentRealm.name}`,
-        promptVerb: `Return to ${parentRealm.name}`,
-        regionId: 'southern-terrace',
-        position: [0, 28.5],
-        activated: false,
-        targetRealmSlug: parentRealm.slug,
-      },
-      {
-        id: `int-${dungeonSlug}-seal`,
-        kind: 'waystone-beacon',
-        name: 'Rotunda Keystone Seal',
-        promptVerb: 'Attune Keystone Seal',
-        regionId: 'high-causeway',
-        position: [0, -5.0],
-        activated: false,
-      },
-      {
-        id: `int-${dungeonSlug}-chest`,
-        kind: 'vault-chest',
-        name: 'Sanctum Reliquary Chest',
-        promptVerb: 'Unseal Reliquary Chest',
-        regionId: 'northern-watch',
-        position: [0, -30.5],
-        activated: false,
-      },
-    ],
-    enemies: [
-      makeEnemy(`${dungeonSlug}-e1`, 'stalker', 'Vault Sentinel', -5.5, -4.0, Math.round(70 * hpScale)),
-      makeEnemy(`${dungeonSlug}-e2`, 'shardcaster', 'Crypt Prism-Acolyte', 6.0, -7.5, Math.round(66 * hpScale)),
-      makeEnemy(`${dungeonSlug}-boss`, 'colossus', 'Warden of the Deep Meridian', 0, -25.0, Math.round(210 * hpScale)),
-    ],
   };
 }
 

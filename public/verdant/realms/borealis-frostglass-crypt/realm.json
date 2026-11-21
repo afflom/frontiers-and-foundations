@@ -2,7 +2,7 @@
   "id": "dungeon-borealis-frostglass-crypt",
   "slug": "borealis-frostglass-crypt",
   "name": "The Frostglass Choir Crypt",
-  "subtitle": "Tier 4 3D Dungeon Delve · Beneath Borealis",
+  "subtitle": "Tier 4 Bifurcated Frostglass Cloister & Crevasse Rift · Beneath Borealis",
   "cell": [
     0,
     -4,
@@ -16,12 +16,12 @@
   "dungeonStyle": "glacial-crypt",
   "dungeonTier": 4,
   "dungeonEntrances": [],
-  "summary": "A subterranean vaulted sanctuary beneath Borealis. Cross the glowing abyss bridge, ignite the three Resonant Seal Braziers, unseal the alcove vaults, and defeat Frostglass Choir Archon.",
+  "summary": "A towering crystal cathedral split down its entire spine by a luminous blue-ice crevasse, forcing traversal along mirrored West and East Frostglass Cloisters linked by a central ice-mirror span. Advance down the twin crystalline cloisters flanking the Glacial Rift, tune both Choir Prism Obelisks, and vanquish Frostglass Choir Archon.",
   "skyAssetId": "blaubeuren_night",
   "skyUrl": "/verdant/realms/borealis-frostglass-crypt/sky.jpg",
   "glbUrl": "/verdant/realms/borealis-frostglass-crypt/world.glb",
   "vdntUrl": "/verdant/realms/borealis-frostglass-crypt/world.vdnt",
-  "ambientMood": "causeway",
+  "ambientMood": "coast",
   "skyFallbackRgb": [
     0.08,
     0.14,
@@ -206,8 +206,8 @@
     "coastDip": 0,
     "rimStart": 42,
     "rimHeight": 2,
-    "waterLevel": -2.2,
-    "hasBridge": true,
+    "waterLevel": -2.4,
+    "hasBridge": false,
     "bridgeDeckY": 1.15,
     "bridgeZMin": 3.6,
     "bridgeZMax": 18.4,
@@ -218,13 +218,13 @@
       "id": "borealis-frostglass-crypt-st-w",
       "assetId": "gothic_statue",
       "source": "polyhaven",
-      "label": "Vestibule Warden W",
+      "label": "Rime Choir Sentinel W",
       "position": [
-        -6,
+        -11.5,
         21
       ],
-      "targetHeight": 3.8,
-      "yaw": 0.3,
+      "targetHeight": 4.1,
+      "yaw": 0.25,
       "tintRgb": [
         0.64,
         0.8,
@@ -236,13 +236,13 @@
       "id": "borealis-frostglass-crypt-st-e",
       "assetId": "gothic_statue",
       "source": "polyhaven",
-      "label": "Vestibule Warden E",
+      "label": "Rime Choir Sentinel E",
       "position": [
-        6,
+        11.5,
         21
       ],
-      "targetHeight": 3.8,
-      "yaw": -0.3,
+      "targetHeight": 4.1,
+      "yaw": -0.25,
       "tintRgb": [
         0.64,
         0.8,
@@ -251,87 +251,34 @@
       "maxTriangles": 480
     },
     {
-      "id": "borealis-frostglass-crypt-st-bw",
-      "assetId": "gothic_statue",
+      "id": "borealis-frostglass-crypt-shield-n",
+      "assetId": "kite_shield",
       "source": "polyhaven",
-      "label": "Sanctum Sentinel W",
+      "label": "Borealis Prism Shield",
       "position": [
-        -9,
-        -24
+        0,
+        -32.2
       ],
-      "targetHeight": 4.4,
-      "yaw": 0.4,
+      "yOffset": 1.5,
+      "targetHeight": 1.65,
+      "yaw": 0,
       "tintRgb": [
         0.64,
         0.8,
         0.94
       ],
-      "maxTriangles": 500
-    },
-    {
-      "id": "borealis-frostglass-crypt-st-be",
-      "assetId": "gothic_statue",
-      "source": "polyhaven",
-      "label": "Sanctum Sentinel E",
-      "position": [
-        9,
-        -24
-      ],
-      "targetHeight": 4.4,
-      "yaw": -0.4,
-      "tintRgb": [
-        0.64,
-        0.8,
-        0.94
-      ],
-      "maxTriangles": 500
-    },
-    {
-      "id": "borealis-frostglass-crypt-lamp-1",
-      "assetId": "brass_diya_lantern",
-      "source": "polyhaven",
-      "label": "Bridge Torch W",
-      "position": [
-        -3.4,
-        18.2
-      ],
-      "targetHeight": 1.35,
-      "yaw": 0.1,
-      "tintRgb": [
-        0.54,
-        0.88,
-        0.98
-      ],
       "maxTriangles": 340
     },
     {
-      "id": "borealis-frostglass-crypt-lamp-2",
-      "assetId": "brass_diya_lantern",
-      "source": "polyhaven",
-      "label": "Bridge Torch E",
-      "position": [
-        3.4,
-        18.2
-      ],
-      "targetHeight": 1.35,
-      "yaw": 1.5,
-      "tintRgb": [
-        0.54,
-        0.88,
-        0.98
-      ],
-      "maxTriangles": 340
-    },
-    {
-      "id": "borealis-frostglass-crypt-lamp-3",
+      "id": "borealis-frostglass-crypt-lamp-w",
       "assetId": "Lantern_01",
       "source": "polyhaven",
-      "label": "Rotunda Lantern W",
+      "label": "Mirror Span Lamp W",
       "position": [
-        -8.5,
-        -3
+        -5.8,
+        0.3
       ],
-      "targetHeight": 1.35,
+      "targetHeight": 1.4,
       "yaw": 0.3,
       "tintRgb": [
         0.54,
@@ -341,16 +288,16 @@
       "maxTriangles": 340
     },
     {
-      "id": "borealis-frostglass-crypt-lamp-4",
+      "id": "borealis-frostglass-crypt-lamp-e",
       "assetId": "Lantern_01",
       "source": "polyhaven",
-      "label": "Rotunda Lantern E",
+      "label": "Mirror Span Lamp E",
       "position": [
-        8.5,
-        -3
+        5.8,
+        0.3
       ],
-      "targetHeight": 1.35,
-      "yaw": 1.9,
+      "targetHeight": 1.4,
+      "yaw": 2,
       "tintRgb": [
         0.54,
         0.88,
@@ -359,71 +306,16 @@
       "maxTriangles": 340
     },
     {
-      "id": "borealis-frostglass-crypt-estoc",
-      "assetId": "antique_estoc",
-      "source": "polyhaven",
-      "label": "Boss Altar Relic Blade",
-      "position": [
-        0,
-        -32
-      ],
-      "yOffset": 1.2,
-      "targetHeight": 2.6,
-      "yaw": 0,
-      "tintRgb": [
-        0.88,
-        0.8,
-        0.56
-      ],
-      "maxTriangles": 360
-    },
-    {
-      "id": "borealis-frostglass-crypt-vase-w",
-      "assetId": "brass_vase_01",
-      "source": "polyhaven",
-      "label": "West Alcove Reliquary",
-      "position": [
-        -18.5,
-        -4
-      ],
-      "targetHeight": 1.4,
-      "yaw": 0.8,
-      "tintRgb": [
-        0.54,
-        0.88,
-        0.98
-      ],
-      "maxTriangles": 320
-    },
-    {
-      "id": "borealis-frostglass-crypt-crate-e",
-      "assetId": "old_military_crate",
-      "source": "polyhaven",
-      "label": "East Alcove Vault Crate",
-      "position": [
-        18.5,
-        -4
-      ],
-      "targetHeight": 1.15,
-      "yaw": 0.4,
-      "tintRgb": [
-        0.44,
-        0.38,
-        0.32
-      ],
-      "maxTriangles": 320
-    },
-    {
-      "id": "borealis-frostglass-crypt-rock-1",
+      "id": "borealis-frostglass-crypt-rock-w",
       "assetId": "boulder_01",
       "source": "polyhaven",
-      "label": "Vault Cavern Outcrop",
+      "label": "Glacial Slate Spire",
       "position": [
-        -14,
+        -11.5,
         -29
       ],
-      "targetHeight": 3.2,
-      "yaw": 0.9,
+      "targetHeight": 3.5,
+      "yaw": 1.4,
       "tintRgb": [
         0.64,
         0.8,
@@ -435,56 +327,56 @@
   "regions": [
     {
       "id": "dungeon-sanctum",
-      "name": "The Frostglass Choir Crypt — Vestibule",
-      "subtitle": "Tier 4 Subterranean Vault",
+      "name": "Frostglass Narthex",
+      "subtitle": "Rift Threshold",
       "center": [
         0,
-        22
+        25
       ],
-      "radius": 14,
-      "ambientMood": "causeway"
+      "radius": 13,
+      "ambientMood": "coast"
     },
     {
       "id": "high-causeway",
-      "name": "Abyss Span & Seal Rotunda",
-      "subtitle": "Pillared Acoustic Hall & Treasure Alcoves",
+      "name": "Bifurcated Prism Cloisters",
+      "subtitle": "Twin Crystal Galleries & Mirror Span",
       "center": [
         0,
-        -4
+        0.5
       ],
-      "radius": 18,
-      "ambientMood": "foundry"
+      "radius": 19,
+      "ambientMood": "coast"
     },
     {
       "id": "boss-vault",
-      "name": "Frostglass Choir Archon Sanctum",
-      "subtitle": "Inner Boss Amphitheater & Ascend Portal",
+      "name": "Frostglass Choir Archon — Aurora Choir Octagon",
+      "subtitle": "Crystalline Archon Sanctum",
       "center": [
         0,
         -26
       ],
-      "radius": 16,
-      "ambientMood": "foundry"
+      "radius": 15,
+      "ambientMood": "coast"
     }
   ],
   "fastTravelPoints": [
     {
       "regionId": "dungeon-sanctum",
-      "name": "Dungeon Entry Vestibule",
+      "name": "Frostglass Narthex",
       "x": 0,
       "z": 26.5
     },
     {
       "regionId": "high-causeway",
-      "name": "Central Seal Rotunda",
+      "name": "Mirror-Ice Cross Span",
       "x": 0,
-      "z": -2
+      "z": 0.3
     },
     {
       "regionId": "boss-vault",
-      "name": "Boss Sanctum Threshold",
+      "name": "Aurora Choir Octagon",
       "x": 0,
-      "z": -18
+      "z": -18.5
     }
   ],
   "npcs": [],
@@ -493,21 +385,21 @@
       "id": "quest-delve-borealis-frostglass-crypt",
       "title": "Canticle of the Frozen Crypt",
       "giverNpcId": "npc-orenna",
-      "guildId": "guild-kiln",
+      "guildId": "guild-tideloom",
       "regionId": "boss-vault",
-      "summary": "Conquer The Frostglass Choir Crypt: ignite the Resonant Seal Braziers, plunder the side treasure vaults, and defeat Frostglass Choir Archon in the northern Sanctum.",
-      "motif": "subterranean glacial-crypt delve",
+      "summary": "Advance down the twin crystalline cloisters flanking the Glacial Rift, tune both Choir Prism Obelisks, and vanquish Frostglass Choir Archon.",
+      "motif": "bifurcated frostglass choir alignment",
       "renownReward": 400,
       "status": "active",
       "objectives": [
         {
-          "id": "obj-borealis-frostglass-crypt-brazier",
-          "description": "Ignite Resonant Seal Braziers",
+          "id": "obj-borealis-frostglass-crypt-primary",
+          "description": "Tune West & East Choir Prism Obelisks",
           "kind": "calibrate-beacon",
           "targetId": "borealis-frostglass-crypt-brazier",
           "targetCoords": [
-            0,
-            -4
+            -13.5,
+            0.3
           ],
           "requiredCount": 2,
           "currentCount": 0
@@ -530,49 +422,49 @@
   "interactables": [
     {
       "id": "borealis-frostglass-crypt-brazier-w",
-      "kind": "seal-brazier",
-      "name": "West Resonant Seal Brazier",
-      "promptVerb": "Ignite Seal Brazier",
+      "kind": "waystone-beacon",
+      "name": "West Choir Prism Obelisk",
+      "promptVerb": "Tune West Choir Prism",
       "regionId": "high-causeway",
       "position": [
-        -8.5,
-        -4.5
+        -13.5,
+        0.3
       ],
       "activated": false
     },
     {
       "id": "borealis-frostglass-crypt-brazier-e",
-      "kind": "seal-brazier",
-      "name": "East Resonant Seal Brazier",
-      "promptVerb": "Ignite Seal Brazier",
+      "kind": "waystone-beacon",
+      "name": "East Choir Prism Obelisk",
+      "promptVerb": "Tune East Choir Prism",
       "regionId": "high-causeway",
       "position": [
-        8.5,
-        -4.5
+        13.5,
+        0.3
       ],
       "activated": false
     },
     {
       "id": "borealis-frostglass-crypt-chest-w",
       "kind": "vault-chest",
-      "name": "West Alcove Relic Chest",
-      "promptVerb": "Unseal Vault Chest",
+      "name": "Hoarfrost Reliquary W",
+      "promptVerb": "Unseal Hoarfrost Reliquary",
       "regionId": "high-causeway",
       "position": [
-        -16.5,
-        -4
+        -15.8,
+        -11.5
       ],
       "activated": false
     },
     {
       "id": "borealis-frostglass-crypt-chest-e",
       "kind": "vault-chest",
-      "name": "East Alcove Foundry Coffer",
-      "promptVerb": "Unseal Vault Coffer",
+      "name": "Aurora Lens Coffer E",
+      "promptVerb": "Unseal Aurora Coffer",
       "regionId": "high-causeway",
       "position": [
-        16.5,
-        -4
+        15.8,
+        -11.5
       ],
       "activated": false
     },
@@ -584,7 +476,7 @@
       "regionId": "dungeon-sanctum",
       "position": [
         0,
-        30.5
+        30.8
       ],
       "activated": false,
       "targetRealmSlug": "borealis"
@@ -607,16 +499,16 @@
     {
       "id": "borealis-frostglass-crypt-e1",
       "archetype": "stalker",
-      "name": "Vault Stone-Stalker",
-      "x": -6.5,
-      "z": 0.5,
-      "homeX": -6.5,
-      "homeZ": 0.5,
+      "name": "Rime-Fang Frost-Wolf",
+      "x": -11.5,
+      "z": 9,
+      "homeX": -11.5,
+      "homeZ": 9,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 104,
-      "maxHp": 104,
+      "hp": 114,
+      "maxHp": 114,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": -1,
@@ -627,85 +519,85 @@
       "moveSpeed": 6.2,
       "aggroRadius": 17,
       "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
+      "telegraphDuration": 0.58,
       "hasAttackToken": false
     },
     {
       "id": "borealis-frostglass-crypt-e2",
-      "archetype": "stalker",
-      "name": "Rotunda Skirmisher",
-      "x": 6.5,
-      "z": 0.5,
-      "homeX": 6.5,
-      "homeZ": 0.5,
+      "archetype": "skirmisher",
+      "name": "Icicle-Talon Stalker",
+      "x": 11.5,
+      "z": 9,
+      "homeX": 11.5,
+      "homeZ": 9,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 104,
-      "maxHp": 104,
+      "hp": 114,
+      "maxHp": 114,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
       "hitFlashTimer": 0,
       "koTimer": 0,
-      "attackDamage": 11,
-      "attackRadius": 2.7,
-      "moveSpeed": 6.2,
-      "aggroRadius": 17,
-      "preferredRange": 2.2,
-      "telegraphDuration": 0.6,
+      "attackDamage": 13,
+      "attackRadius": 2.5,
+      "moveSpeed": 7.2,
+      "aggroRadius": 18,
+      "preferredRange": 3.8,
+      "telegraphDuration": 0.4,
       "hasAttackToken": false
     },
     {
       "id": "borealis-frostglass-crypt-e3",
-      "archetype": "shardcaster",
-      "name": "Alcove Prism-Sentinel",
-      "x": -12.5,
-      "z": -5.5,
-      "homeX": -12.5,
-      "homeZ": -5.5,
+      "archetype": "hexweaver",
+      "name": "Hoarfrost Choir Cantor",
+      "x": -11.5,
+      "z": -7.5,
+      "homeX": -11.5,
+      "homeZ": -7.5,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 100,
-      "maxHp": 100,
+      "hp": 120,
+      "maxHp": 120,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": -1,
       "hitFlashTimer": 0,
       "koTimer": 0,
       "attackDamage": 15,
-      "attackRadius": 12,
-      "moveSpeed": 4.5,
-      "aggroRadius": 17,
-      "preferredRange": 9.5,
-      "telegraphDuration": 0.6,
+      "attackRadius": 13,
+      "moveSpeed": 4.8,
+      "aggroRadius": 19,
+      "preferredRange": 12.5,
+      "telegraphDuration": 0.68,
       "hasAttackToken": false
     },
     {
       "id": "borealis-frostglass-crypt-e4",
-      "archetype": "shardcaster",
-      "name": "Sanctum Arc-Weaver",
-      "x": 12.5,
-      "z": -5.5,
-      "homeX": 12.5,
-      "homeZ": -5.5,
+      "archetype": "charger",
+      "name": "Glacier-Horn Tusk-Ram",
+      "x": 11.5,
+      "z": -7.5,
+      "homeX": 11.5,
+      "homeZ": -7.5,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 100,
-      "maxHp": 100,
+      "hp": 172,
+      "maxHp": 172,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
       "hitFlashTimer": 0,
       "koTimer": 0,
-      "attackDamage": 15,
-      "attackRadius": 12,
-      "moveSpeed": 4.5,
-      "aggroRadius": 17,
-      "preferredRange": 9.5,
-      "telegraphDuration": 0.6,
+      "attackDamage": 22,
+      "attackRadius": 3.3,
+      "moveSpeed": 5.2,
+      "aggroRadius": 19,
+      "preferredRange": 7.5,
+      "telegraphDuration": 0.62,
       "hasAttackToken": false
     },
     {
@@ -713,14 +605,14 @@
       "archetype": "colossus",
       "name": "Frostglass Choir Archon",
       "x": 0,
-      "z": -25.5,
+      "z": -26,
       "homeX": 0,
-      "homeZ": -25.5,
+      "homeZ": -26,
       "vx": 0,
       "vz": 0,
       "yaw": 0,
-      "hp": 335,
-      "maxHp": 335,
+      "hp": 439,
+      "maxHp": 439,
       "state": "idle",
       "stateTimer": 0,
       "orbitSign": 1,
@@ -736,24 +628,21 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:4724b2da0280948832008ad12fa37cff47303438d395c4d6157d398a95df0b19",
+    "worldGlbKappa": "sha256:2b03cb4316335fef8095bb326047d845c2a27db3919afe2ed36c06ca2f4895f4",
     "vdntKappa": "sha256:4cd71c3ec6934d138c130f347bc6024ab44f47e0091d11a8c0bdc767500cb87f",
     "skyKappa": "sha256:e4abba20ba678dccf7b17c31a4ca5b7a5f2d216473afd20a9fbe53835d7a5657",
-    "triangles": 15820,
-    "vertices": 24599,
-    "glbBytes": 1863592,
+    "triangles": 11423,
+    "vertices": 19296,
+    "glbBytes": 1635132,
     "atlasTileCount": 3,
-    "importedCatalogModelsCount": 12,
+    "importedCatalogModelsCount": 6,
     "importedCatalogAssets": [
       "gothic_statue",
-      "brass_diya_lantern",
+      "kite_shield",
       "Lantern_01",
-      "antique_estoc",
-      "brass_vase_01",
-      "old_military_crate",
       "boulder_01"
     ],
-    "projectModelsRegistered": 10,
+    "projectModelsRegistered": 7,
     "cognitiveKnowledgeIngested": 4,
     "operatorAdmitted": true,
     "stitchRecoveryVerified": true,

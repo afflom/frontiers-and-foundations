@@ -1,6 +1,12 @@
 import type { GameQuest, GearDefinition, QuestObjectiveKind } from './worldData';
 
-export type EnemyArchetype = 'stalker' | 'shardcaster' | 'colossus';
+export type EnemyArchetype =
+  | 'stalker'
+  | 'shardcaster'
+  | 'colossus'
+  | 'charger'
+  | 'hexweaver'
+  | 'skirmisher';
 
 export type EnemyState = 'idle' | 'approach' | 'orbit' | 'telegraph' | 'attack' | 'recover' | 'ko';
 
@@ -29,6 +35,8 @@ export interface EnemyEntity {
   preferredRange: number;
   telegraphDuration: number;
   hasAttackToken: boolean;
+  phase2?: boolean;
+  slowTimer?: number;
 }
 
 export interface ProjectileEntity {
@@ -43,11 +51,21 @@ export interface ProjectileEntity {
   fromEnemy: boolean;
 }
 
+export interface BossSignatureCastEvent {
+  enemyId: string;
+  x: number;
+  z: number;
+  title: string;
+  rgb: [number, number, number];
+}
+
 export interface EnemyStepEvents {
   playerDamaged: number;
   spawnedProjectiles: ProjectileEntity[];
   telegraphStartedIds: string[];
   heavySlamPositions: Array<[number, number]>;
+  bossPhase2TriggeredIds: string[];
+  bossSignatureCasts: BossSignatureCastEvent[];
 }
 
 export interface PlayerAttackResult {
@@ -228,9 +246,108 @@ export const FAUNA_COMBAT_PROFILES: Record<string, FaunaCombatProfile> = {
   'glacial-frostborn': { speedMult: 0.95, damageMult: 1.14, telegraphMult: 1.12, regenPerSec: 0 },
 };
 
+export interface BossSignatureProfile {
+  archetypeTitle: string;
+  phase2Title: string;
+  signatureMoveName: string;
+  projectilePattern: 'radial' | 'fan' | 'charge-fan';
+  projectileCount: number;
+  projectileSpeed: number;
+  slamRadiusBonus: number;
+  phase2HealBurst: number;
+  phase2SpeedBoost: number;
+  phase2TelegraphMult: number;
+  auraRgb: [number, number, number];
+}
+
+export const BOSS_SIGNATURE_PROFILES: Record<string, BossSignatureProfile> = {
+  'highland-ironclad': {
+    archetypeTitle: 'Basalt Meridian Warden',
+    phase2Title: 'Overcharged Foundry Core',
+    signatureMoveName: 'Seismic Basalt Quake',
+    projectilePattern: 'radial',
+    projectileCount: 4,
+    projectileSpeed: 12.8,
+    slamRadiusBonus: 1.5,
+    phase2HealBurst: 0,
+    phase2SpeedBoost: 1.15,
+    phase2TelegraphMult: 0.86,
+    auraRgb: [0.96, 0.62, 0.22],
+  },
+  'verdant-mycelial': {
+    archetypeTitle: 'Canopy Treant Sovereign',
+    phase2Title: 'Luminous Spore Awakening',
+    signatureMoveName: 'Mycelial Spore Bloom',
+    projectilePattern: 'radial',
+    projectileCount: 5,
+    projectileSpeed: 10.6,
+    slamRadiusBonus: 0.9,
+    phase2HealBurst: 18,
+    phase2SpeedBoost: 1.12,
+    phase2TelegraphMult: 0.9,
+    auraRgb: [0.32, 0.96, 0.58],
+  },
+  'pyroclastic-forge': {
+    archetypeTitle: 'Caldera Furnace Titan',
+    phase2Title: 'Molten Crucible Breach',
+    signatureMoveName: 'Caldera Magma Barrage',
+    projectilePattern: 'radial',
+    projectileCount: 6,
+    projectileSpeed: 13.8,
+    slamRadiusBonus: 1.2,
+    phase2HealBurst: 0,
+    phase2SpeedBoost: 1.18,
+    phase2TelegraphMult: 0.82,
+    auraRgb: [0.98, 0.36, 0.1],
+  },
+  'pelagic-abyssal': {
+    archetypeTitle: 'Reef-Spire Leviathan',
+    phase2Title: 'Abyssal Undertow Surge',
+    signatureMoveName: 'Maelstrom Tide Volley',
+    projectilePattern: 'fan',
+    projectileCount: 5,
+    projectileSpeed: 14.2,
+    slamRadiusBonus: 1.0,
+    phase2HealBurst: 10,
+    phase2SpeedBoost: 1.2,
+    phase2TelegraphMult: 0.85,
+    auraRgb: [0.24, 0.92, 0.94],
+  },
+  'dune-sandstrider': {
+    archetypeTitle: 'Sun-Disk Sandstone Colossus',
+    phase2Title: 'Solar Zenith Overdrive',
+    signatureMoveName: 'Mirage Sun-Lance Charge',
+    projectilePattern: 'charge-fan',
+    projectileCount: 3,
+    projectileSpeed: 16.0,
+    slamRadiusBonus: 1.1,
+    phase2HealBurst: 0,
+    phase2SpeedBoost: 1.28,
+    phase2TelegraphMult: 0.8,
+    auraRgb: [0.98, 0.78, 0.24],
+  },
+  'glacial-frostborn': {
+    archetypeTitle: 'Aurora Obelisk Sovereign',
+    phase2Title: 'Permafrost Prism Resonance',
+    signatureMoveName: 'Frostglass Prism Fan',
+    projectilePattern: 'fan',
+    projectileCount: 5,
+    projectileSpeed: 13.5,
+    slamRadiusBonus: 1.4,
+    phase2HealBurst: 0,
+    phase2SpeedBoost: 1.12,
+    phase2TelegraphMult: 0.88,
+    auraRgb: [0.46, 0.92, 0.99],
+  },
+};
+
+export function getBossSignatureProfile(faunaKit: string): BossSignatureProfile {
+  return BOSS_SIGNATURE_PROFILES[faunaKit] ?? BOSS_SIGNATURE_PROFILES['highland-ironclad'];
+}
+
 /**
  * Steps all 3 distinct enemy behavior policies with attack token pooling, telegraphed strikes,
- * and bespoke ecosystem fauna combat profiles!
+ * bespoke ecosystem fauna combat profiles, and Apex Colossus Phase-2 signature encounters!
  */
 export function stepEnemies(
   enemies: EnemyEntity[],
@@ -246,21 +363,43 @@ export function stepEnemies(
     spawnedProjectiles: [],
     telegraphStartedIds: [],
     heavySlamPositions: [],
+    bossPhase2TriggeredIds: [],
+    bossSignatureCasts: [],
   };
 
   const diff = computeDifficultyMultiplier(completedQuests);
   const fProf = FAUNA_COMBAT_PROFILES[faunaKit] ?? FAUNA_COMBAT_PROFILES['highland-ironclad'];
+  const bossProf = getBossSignatureProfile(faunaKit);
   let activeTokens = enemies.filter((e) => e.hasAttackToken && e.state !== 'ko').length;
 
   for (const e of enemies) {
     if (e.hitFlashTimer > 0) {
       e.hitFlashTimer = Math.max(0, e.hitFlashTimer - dt);
     }
+    if (e.slowTimer && e.slowTimer > 0) {
+      e.slowTimer = Math.max(0, e.slowTimer - dt);
+    }
 
     if (e.state === 'ko') {
       e.koTimer = Math.max(0, e.koTimer - dt);
       e.hasAttackToken = false;
       continue;
+    }
+
+    // Apex Colossus Phase-2 Awakening at <= 50% Vitality
+    if (e.archetype === 'colossus' && !e.phase2 && e.hp > 0 && e.hp <= e.maxHp * 0.5) {
+      e.phase2 = true;
+      events.bossPhase2TriggeredIds.push(e.id);
+      if (bossProf.phase2HealBurst > 0) {
+        e.hp = Math.min(e.maxHp, e.hp + bossProf.phase2HealBurst);
+      }
+      events.bossSignatureCasts.push({
+        enemyId: e.id,
+        x: e.x,
+        z: e.z,
+        title: bossProf.phase2Title,
+        rgb: bossProf.auraRgb,
+      });
     }
 
     // Mycelial/aquatic fauna gently regenerate vitality if left unpressured
@@ -296,11 +435,13 @@ export function stepEnemies(
     }
 
     e.yaw = Math.atan2(dirX, dirZ);
-    const moveSpd = e.moveSpeed * diff.speedScale * fProf.speedMult;
+    const slowMult = e.slowTimer && e.slowTimer > 0 ? 0.52 : 1.0;
+    const bossBoost = e.archetype === 'colossus' && e.phase2 ? bossProf.phase2SpeedBoost : 1.0;
+    const moveSpd = e.moveSpeed * diff.speedScale * fProf.speedMult * slowMult * bossBoost;
 
     if (e.state === 'idle') {
       if (dist <= e.aggroRadius) {
-        e.state = e.archetype === 'stalker' ? 'orbit' : 'approach';
+        e.state = e.archetype === 'stalker' || e.archetype === 'skirmisher' ? 'orbit' : 'approach';
         e.stateTimer = 0.7 * fProf.telegraphMult;
       }
       continue;
@@ -309,8 +450,8 @@ export function stepEnemies(
     if (e.state === 'recover') {
       e.stateTimer -= dt;
       if (e.stateTimer <= 0) {
-        e.state = e.archetype === 'stalker' ? 'orbit' : 'approach';
-        e.stateTimer = 0.6;
+        e.state = e.archetype === 'stalker' || e.archetype === 'skirmisher' ? 'orbit' : 'approach';
+        e.stateTimer = e.archetype === 'colossus' && e.phase2 ? 0.42 : e.archetype === 'skirmisher' ? 0.44 : 0.6;
       }
       continue;
     }
@@ -319,7 +460,7 @@ export function stepEnemies(
       e.stateTimer -= dt;
       if (e.stateTimer <= 0) {
         e.state = 'attack';
-        e.stateTimer = 0.22;
+        e.stateTimer = e.archetype === 'charger' ? 0.34 : 0.22;
 
         if (e.archetype === 'shardcaster') {
           events.spawnedProjectiles.push({
@@ -329,20 +470,93 @@ export function stepEnemies(
             z: e.z + dirZ * 1.0,
             vx: dirX * 15.5,
             vz: dirZ * 15.5,
-            damage: Math.round(e.attackDamage * diff.damageScale),
+            damage: Math.round(e.attackDamage * diff.damageScale * fProf.damageMult),
             life: 2.6,
             fromEnemy: true,
           });
+        } else if (e.archetype === 'hexweaver') {
+          // Area-denial 3-bolt harmonic fan spread forcing lateral evasion
+          const baseAng = Math.atan2(dirX, dirZ);
+          const dmg = Math.round(e.attackDamage * 0.78 * diff.damageScale * fProf.damageMult);
+          for (let hi = -1; hi <= 1; hi++) {
+            const ang = baseAng + hi * 0.28;
+            const hx = Math.sin(ang);
+            const hz = Math.cos(ang);
+            events.spawnedProjectiles.push({
+              id: `hex-${e.id}-${Date.now()}-${hi + 1}-${Math.round(Math.random() * 999)}`,
+              x: e.x + hx * 1.1,
+              y: 1.5,
+              z: e.z + hz * 1.1,
+              vx: hx * 12.6,
+              vz: hz * 12.6,
+              damage: dmg,
+              life: 2.7,
+              fromEnemy: true,
+            });
+          }
         } else {
-          // Stalker lunge or Colossus heavy slam
+          // Melee / Rush archetypes: stalker, skirmisher, charger, or Apex Colossus
+          let effectiveAttackRadius = e.attackRadius;
           if (e.archetype === 'stalker') {
-            e.vx += dirX * 11.5;
-            e.vz += dirZ * 11.5;
+            e.vx += dirX * 11.5 * slowMult;
+            e.vz += dirZ * 11.5 * slowMult;
+          } else if (e.archetype === 'charger') {
+            // High-momentum bull-rush slam straight along line of sight
+            e.vx += dirX * 18.8 * slowMult;
+            e.vz += dirZ * 18.8 * slowMult;
+            effectiveAttackRadius += 0.7;
+            events.heavySlamPositions.push([e.x + dirX * 2.2, e.z + dirZ * 2.2]);
+          } else if (e.archetype === 'skirmisher') {
+            // Agile dart-in slash immediately followed by an evasive backstep spring
+            e.vx += dirX * 9.0 * slowMult;
+            e.vz += dirZ * 9.0 * slowMult;
           } else if (e.archetype === 'colossus') {
             events.heavySlamPositions.push([e.x, e.z]);
+            if (e.phase2) {
+              effectiveAttackRadius += bossProf.slamRadiusBonus;
+              events.bossSignatureCasts.push({
+                enemyId: e.id,
+                x: e.x,
+                z: e.z,
+                title: bossProf.signatureMoveName,
+                rgb: bossProf.auraRgb,
+              });
+              const baseAngle = Math.atan2(dirX, dirZ);
+              const count = bossProf.projectileCount;
+              const projDmg = Math.round(e.attackDamage * 0.65 * diff.damageScale * fProf.damageMult);
+              if (bossProf.projectilePattern === 'charge-fan') {
+                e.vx += dirX * 14.0 * slowMult;
+                e.vz += dirZ * 14.0 * slowMult;
+              }
+              for (let pi = 0; pi < count; pi++) {
+                const ang =
+                  bossProf.projectilePattern === 'radial'
+                    ? baseAngle + (pi * Math.PI * 2) / count
+                    : baseAngle + (pi - (count - 1) / 2) * 0.28;
+                const px = Math.sin(ang);
+                const pz = Math.cos(ang);
+                events.spawnedProjectiles.push({
+                  id: `boss-proj-${e.id}-${Date.now()}-${pi}-${Math.round(Math.random() * 999)}`,
+                  x: e.x + px * 1.4,
+                  y: 1.55,
+                  z: e.z + pz * 1.4,
+                  vx: px * bossProf.projectileSpeed,
+                  vz: pz * bossProf.projectileSpeed,
+                  damage: projDmg,
+                  life: 2.5,
+                  fromEnemy: true,
+                });
+              }
+            }
           }
-          if (!playerInvuln && dist <= e.attackRadius + 0.85) {
-            events.playerDamaged += Math.round(e.attackDamage * diff.damageScale);
+          if (!playerInvuln && dist <= effectiveAttackRadius + 0.85) {
+            events.playerDamaged += Math.round(e.attackDamage * diff.damageScale * fProf.damageMult);
+          }
+          if (e.archetype === 'skirmisher') {
+            // Backstep spring out of immediate counter-cleave range
+            e.vx -= dirX * 10.5 * slowMult;
+            e.vz -= dirZ * 10.5 * slowMult;
+            e.orbitSign = e.orbitSign === 1 ? -1 : 1;
           }
         }
       }
@@ -353,7 +567,17 @@ export function stepEnemies(
       e.stateTimer -= dt;
       if (e.stateTimer <= 0) {
         e.state = 'recover';
-        e.stateTimer = e.archetype === 'colossus' ? 1.15 : 0.75;
+        const baseRec =
+          e.archetype === 'colossus'
+            ? e.phase2
+              ? 0.85
+              : 1.15
+            : e.archetype === 'charger'
+              ? 1.05
+              : e.archetype === 'skirmisher'
+                ? 0.55
+                : 0.75;
+        e.stateTimer = baseRec * (e.slowTimer && e.slowTimer > 0 ? 1.35 : 1.0);
         if (e.hasAttackToken) {
           e.hasAttackToken = false;
           activeTokens = Math.max(0, activeTokens - 1);
@@ -362,7 +586,7 @@ export function stepEnemies(
       continue;
     }
 
-    // Distinct movement policies per archetype
+    // Distinct movement policies per archetype (all 6 tactical roles)
     if (e.archetype === 'stalker') {
       // Flanker / Orbiter policy: strafe tangentially while closing to flank distance
       const perpX = -dirZ * e.orbitSign;
@@ -376,6 +600,71 @@ export function stepEnemies(
 
       e.stateTimer -= dt;
       if (e.stateTimer <= 0 && dist <= e.preferredRange + 1.4 && activeTokens < diff.tokenBudget) {
+        e.hasAttackToken = true;
+        activeTokens += 1;
+        e.state = 'telegraph';
+        e.stateTimer = e.telegraphDuration;
+        events.telegraphStartedIds.push(e.id);
+      }
+    } else if (e.archetype === 'skirmisher') {
+      // Fast hit-and-run ambusher: wide aggressive weave then sudden close-in slash
+      const perpX = -dirZ * e.orbitSign;
+      const perpZ = dirX * e.orbitSign;
+      const closeBias = dist > 4.2 ? 0.92 : 0.25;
+      const mx = perpX * 0.68 + dirX * closeBias;
+      const mz = perpZ * 0.68 + dirZ * closeBias;
+      const mLen = Math.hypot(mx, mz) || 1;
+      e.x += (mx / mLen) * moveSpd * 1.16 * dt;
+      e.z += (mz / mLen) * moveSpd * 1.16 * dt;
+
+      e.stateTimer -= dt;
+      if (e.stateTimer <= 0 && dist <= 4.4 && activeTokens < diff.tokenBudget) {
+        e.hasAttackToken = true;
+        activeTokens += 1;
+        e.state = 'telegraph';
+        e.stateTimer = e.telegraphDuration * 0.82;
+        events.telegraphStartedIds.push(e.id);
+      }
+    } else if (e.archetype === 'charger') {
+      // Armored bull-rush bruiser: squares up at mid-range then launches a telegraphed straight rush
+      if (dist > 8.5) {
+        e.x += dirX * moveSpd * 0.88 * dt;
+        e.z += dirZ * moveSpd * 0.88 * dt;
+      } else if (dist < 4.0) {
+        e.x -= dirX * moveSpd * 0.4 * dt;
+        e.z -= dirZ * moveSpd * 0.4 * dt;
+      } else {
+        const perpX = -dirZ * e.orbitSign;
+        const perpZ = dirX * e.orbitSign;
+        e.x += perpX * moveSpd * 0.35 * dt;
+        e.z += perpZ * moveSpd * 0.35 * dt;
+      }
+
+      e.stateTimer -= dt;
+      if (e.stateTimer <= 0 && dist <= 11.5 && activeTokens < diff.tokenBudget) {
+        e.hasAttackToken = true;
+        activeTokens += 1;
+        e.state = 'telegraph';
+        e.stateTimer = e.telegraphDuration;
+        events.telegraphStartedIds.push(e.id);
+      }
+    } else if (e.archetype === 'hexweaver') {
+      // Area-denial tactical caster: orbits at 10-14m and fires 3-bolt harmonic fan spreads
+      if (dist < 8.5) {
+        e.x -= dirX * moveSpd * 0.82 * dt;
+        e.z -= dirZ * moveSpd * 0.82 * dt;
+      } else if (dist > 15.0) {
+        e.x += dirX * moveSpd * 0.72 * dt;
+        e.z += dirZ * moveSpd * 0.72 * dt;
+      } else {
+        const perpX = -dirZ * e.orbitSign;
+        const perpZ = dirX * e.orbitSign;
+        e.x += perpX * moveSpd * 0.65 * dt;
+        e.z += perpZ * moveSpd * 0.65 * dt;
+      }
+
+      e.stateTimer -= dt;
+      if (e.stateTimer <= 0 && dist <= 17.5 && activeTokens < diff.tokenBudget) {
         e.hasAttackToken = true;
         activeTokens += 1;
         e.state = 'telegraph';
@@ -406,17 +695,18 @@ export function stepEnemies(
         events.telegraphStartedIds.push(e.id);
       }
     } else {
-      // Colossus: Heavy line-of-sight charger & area-slam sentinel
+      // Colossus: Heavy line-of-sight charger & bespoke ecosystem Apex Sentinel
+      const engageRange = e.phase2 ? e.attackRadius + 3.2 : e.attackRadius + 0.5;
       if (dist > e.preferredRange - 0.6) {
         e.x += dirX * moveSpd * dt;
         e.z += dirZ * moveSpd * dt;
       }
       e.stateTimer -= dt;
-      if (e.stateTimer <= 0 && dist <= e.attackRadius + 0.5 && activeTokens < diff.tokenBudget) {
+      if (e.stateTimer <= 0 && dist <= engageRange && activeTokens < diff.tokenBudget) {
         e.hasAttackToken = true;
         activeTokens += 1;
         e.state = 'telegraph';
-        e.stateTimer = e.telegraphDuration;
+        e.stateTimer = e.telegraphDuration * (e.phase2 ? bossProf.phase2TelegraphMult : 1.0);
         events.telegraphStartedIds.push(e.id);
       }
     }

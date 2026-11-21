@@ -40,7 +40,10 @@ export const NPC_COLLISION_RADIUS = 0.58;
 
 export function getEnemyCollisionRadius(archetype: EnemyArchetype): number {
   if (archetype === 'colossus') return 1.48;
+  if (archetype === 'charger') return 1.02;
+  if (archetype === 'hexweaver') return 0.78;
   if (archetype === 'shardcaster') return 0.72;
+  if (archetype === 'skirmisher') return 0.66;
   return 0.76;
 }
 
@@ -97,27 +100,22 @@ export function buildRealmCollisionMap(
   const circles: CircleCollider[] = [];
 
   if (spec.isDungeon) {
-    // 1. Abyss Chasm Pit Barriers (z: 4.0..18.0 everywhere outside the bridge |x| <= 2.35)
-    // Allows projectiles to fly across the open chasm while preventing entities from walking on air!
-    boxes.push({
-      minX: -22.5,
-      maxX: -2.4,
-      minZ: 4.0,
-      maxZ: 18.0,
-      blocksProjectiles: false,
-      label: 'dungeon-chasm-west',
-    });
-    boxes.push({
-      minX: 2.4,
-      maxX: 22.5,
-      minZ: 4.0,
-      maxZ: 18.0,
-      blocksProjectiles: false,
-      label: 'dungeon-chasm-east',
-    });
+    // 1. Topology-Driven Dungeon Hazard & Chasm Pit Barriers (1:1 with verdantUnifiedCharter.ts!)
+    // Allows projectiles to fly across open pits/chasms while preventing entities from walking on air!
+    const dgPlan = synthesizeDungeonEcosystem(spec);
+    for (const hz of dgPlan.hazardZones) {
+      if (!hz.blocksWalking) continue;
+      boxes.push({
+        minX: hz.minX,
+        maxX: hz.maxX,
+        minZ: hz.minZ,
+        maxZ: hz.maxZ,
+        blocksProjectiles: false,
+        label: `dungeon-hazard-${hz.id}`,
+      });
+    }
 
     // 2. Bespoke 3D Dungeon Static Colliders (1:1 with verdantDungeonCatalog.ts, verdantCatalogCompiler.ts & verdantProceduralGlb.ts!)
-    const dgPlan = synthesizeDungeonEcosystem(spec);
     for (const part of dgPlan.structures) {
       if (part.collider === 'none') continue;
       if (part.collider === 'circle') {

@@ -529,12 +529,16 @@ function buildDungeonMesh(spec: FrontiersRealmSpec, mb: MeshBuilder): void {
   const floorCol: Rgb = mixRgb(pal.road, [0.18, 0.20, 0.24], 0.48);
   const dgPlan = synthesizeDungeonEcosystem(spec);
 
-  // Entry vestibule floor (z: 18..34)
-  mb.addBox(0, 0.5, 26, 22, 1.0, 16, floorCol);
-  // Central rotunda floor (z: -14..4)
-  mb.addBox(0, 0.5, -5, 42, 1.0, 18, floorCol);
-  // Boss sanctum stepped amphitheater (z: -38..-14)
-  mb.addBox(0, 1.0, -26, 22, 2.0, 24, floorCol);
+  // Topology-driven walkable floor slabs matching each bespoke dungeon floorplan
+  for (const w of dgPlan.walkableZones) {
+    const cx = (w.minX + w.maxX) * 0.5;
+    const cz = (w.minZ + w.maxZ) * 0.5;
+    const sx = Math.max(0.8, w.maxX - w.minX);
+    const sz = Math.max(0.8, w.maxZ - w.minZ);
+    const sy = Math.max(0.9, w.elevation + 0.6);
+    const col = w.material === 'timber' ? pal.trunk : w.material === 'stone' ? pal.masonry : floorCol;
+    mb.addBox(cx, w.elevation - sy * 0.5, cz, sx, sy, sz, col);
+  }
 
   const colorForPart = (p: StructurePrimitive): Rgb => {
     if (p.rgb) return p.rgb;

@@ -10,6 +10,17 @@ import {
   getCanonicalSoundtrackForTheme,
   type RealmSoundtrackSpec,
 } from './verdantScoreSchema';
+import {
+  hashStringSeed,
+  synthesizeVerdantCharacter,
+} from './verdantCharacterSynthesizer';
+import {
+  dungeonTopologyHeightAt,
+  evaluateGeomorphologyElevation,
+  getDungeonTopologyCharter,
+  getMonsterSpeciesForTheme,
+  getWorldDifferentiationProfile,
+} from './verdantUnifiedCharter';
 
 export type RealmThemeId =
   | 'citadel-highlands'
@@ -216,21 +227,7 @@ export function worldGlobalHeightAt(worldX: number, worldZ: number): number {
  */
 export function realmTerrainHeightAt(spec: FrontiersRealmSpec, x: number, z: number): number {
   if (spec.isDungeon) {
-    // Multi-chamber vaulted interior layout:
-    // Entry Vestibule (z: 18..34) -> Abyss Chasm (z: 4..18) -> Seal Rotunda (z: -14..4)
-    // -> East/West Treasure Alcoves (|x| > 11, z: -10..2) -> Stepped Boss Sanctum (z: -38..-14)
-    const inChasmBand = z > 4.2 && z < 17.8;
-    if (inChasmBand) {
-      const edgeT = Math.min(z - 4.2, 17.8 - z);
-      const drop = Math.min(1, edgeT / 2.4);
-      return lerp(1.0, -4.4, drop);
-    }
-    if (z <= -14) {
-      // Gentle stepped rise into the northern Boss Sanctum amphitheater
-      const riseT = Math.max(0, Math.min(1, (-14 - z) / 14));
-      return 1.0 + riseT * 1.1;
-    }
-    return 1.0;
+    return dungeonTopologyHeightAt(spec.dungeonStyle ?? 'catacomb-vault', x, z);
   }
 
   const p = spec.terrainProfile;
@@ -246,15 +243,10 @@ export function realmTerrainHeightAt(spec: FrontiersRealmSpec, x: number, z: num
   const riverZ = realmRiverCenterZ(spec, x);
   const gorgeDist = Math.abs(z - riverZ);
   const gorgeSpanFade = 1 - smoothstep(52, 82, Math.abs(x));
-  // Broad gentle outer bank slope + deeper central swimming channel
   const gorgeCut =
     (Math.exp(-(gorgeDist * gorgeDist) / 42) * -p.gorgeDepth * 0.78 +
       Math.exp(-(gorgeDist * gorgeDist) / 14) * -p.gorgeDepth * 0.28) *
     gorgeSpanFade;
-
-  // Southeastern coastal cove basin sloping naturally into the river mouth (zero sharp edges)
-  const coastDist = Math.hypot((x - 36) * 0.92, (z - 34) * 1.05);
-  const coastDip = Math.exp(-(coastDist * coastDist) / 420) * -p.coastDip * 1.15;
 
   const citDist = Math.hypot(x, z - p.citadelZ);
   const citLift = Math.exp(-(citDist * citDist) / 195) * p.citadelLift;
@@ -262,33 +254,9 @@ export function realmTerrainHeightAt(spec: FrontiersRealmSpec, x: number, z: num
   const northWatchDist = Math.hypot(x, z + 56);
   const northWatchLift = Math.exp(-(northWatchDist * northWatchDist) / 280) * (p.citadelLift * 0.85);
 
-  // Integrated Local Climbable Mountain Massifs & Foothill Ridges (part of the terrain!)
-  // Placed in open outer quadrants away from roads, bridge, citadel, and settlement landmarks,
-  // with broad walkable foothill approaches (slope ~0.30..0.58) so players can hike UP into them!
-  const peakAmp =
-    spec.theme === 'glacial-spire'
-      ? 1.18
-      : spec.theme === 'obsidian-crucible'
-        ? 1.12
-        : spec.theme === 'pelagic-spires'
-          ? 0.88
-          : 1.0;
-
-  const nwPeakDist = Math.hypot((x + 48) * 0.82, (z + 56) * 0.92);
-  const nwSubRidge = Math.hypot((x + 68) * 0.85, (z + 36) * 0.85);
-  const nePeakDist = Math.hypot((x - 50) * 0.84, (z + 52) * 0.90);
-  const neSubRidge = Math.hypot((x - 70) * 0.9, (z + 28) * 0.85);
-  const swPeakDist = Math.hypot((x + 56) * 0.85, (z - 52) * 0.88);
-  const ridgeDetail = 1.0 + Math.sin(x * 0.09 + z * 0.08 + seedPhase) * 0.14;
-
-  const mountainRangeLift =
-    peakAmp *
-    ridgeDetail *
-    (Math.exp(-(nwPeakDist * nwPeakDist) / 560) * 13.8 +
-      Math.exp(-(nwSubRidge * nwSubRidge) / 420) * 8.4 +
-      Math.exp(-(nePeakDist * nePeakDist) / 520) * 12.6 +
-      Math.exp(-(neSubRidge * neSubRidge) / 380) * 7.8 +
-      Math.exp(-(swPeakDist * swPeakDist) / 520) * 11.4);
+  // Model-First Unified Charter Geomorphology: 6 distinct landform signatures
+  // (Twin-Ridge Gorge, Terraced Basin Delta, Ring Caldera Crater, Archipelago Atoll, Stepped Canyon Mesas, Glacial Fjord Cirque)
+  const geo = evaluateGeomorphologyElevation(spec.theme, x, z, seedPhase, p.coastDip);
 
   const spawnDist = Math.hypot(x - spec.spawnPoint[0], z - spec.spawnPoint[1]);
   const spawnFlat = Math.exp(-(spawnDist * spawnDist) / 110);
@@ -305,7 +273,15 @@ export function realmTerrainHeightAt(spec: FrontiersRealmSpec, x: number, z: num
   const dungeonEntranceDist = Math.hypot(x + 14, z + 34);
   const dungeonFlat = Math.exp(-(dungeonEntranceDist * dungeonEntranceDist) / 95);
 
-  let h = macro + gorgeCut + coastDip + citLift + northWatchLift + mountainRangeLift;
+  let h = macro + gorgeCut + geo.basinDip + citLift + northWatchLift + geo.mountainLift;
+
+  // Stepped mesa / limestone terrace sculpting for geomorphologies that specify terraceSteps > 0
+  if (geo.terraceSteps > 0 && h > 2.2) {
+    const stepH = geo.terraceSteps;
+    const quantized = Math.floor(h / stepH) * stepH + smoothstep(0.18, 0.82, (h % stepH) / stepH) * stepH;
+    h = lerp(h, quantized, 0.34);
+  }
+
   h = lerp(h, 0.9, spawnFlat * 0.88);
   h = lerp(h, 0.65, westFlat * 0.82);
   h = lerp(h, 1.85, farWestFlat * 0.82);
@@ -321,7 +297,6 @@ export function realmTerrainHeightAt(spec: FrontiersRealmSpec, x: number, z: num
     h = lerp(h, roadTarget, corrBlend * 0.78);
   } else if (onEwCorridor) {
     const corrBlend = 1 - smoothstep(3.8, 8.5, Math.abs(z));
-    // Only flatten mountain lift above water, never erase the river gorge!
     if (h > 1.2) {
       h = lerp(h, 1.45, corrBlend * 0.78);
     }
@@ -342,8 +317,11 @@ export function realmTerrainHeightAt(spec: FrontiersRealmSpec, x: number, z: num
 }
 
 export function realmSurfaceHeightAt(spec: FrontiersRealmSpec, x: number, z: number): number {
-  const p = spec.terrainProfile;
   const base = realmTerrainHeightAt(spec, x, z);
+  if (spec.isDungeon) {
+    return base;
+  }
+  const p = spec.terrainProfile;
   if (
     p.hasBridge &&
     Math.abs(x) <= p.bridgeHalfWidth &&
@@ -376,8 +354,25 @@ export function makeEnemy(
   z: number,
   hp: number,
 ): EnemyEntity {
-  const isColossus = archetype === 'colossus';
-  const isCaster = archetype === 'shardcaster';
+  const statsByArchetype: Record<
+    EnemyArchetype,
+    {
+      attackDamage: number;
+      attackRadius: number;
+      moveSpeed: number;
+      aggroRadius: number;
+      preferredRange: number;
+      telegraphDuration: number;
+    }
+  > = {
+    stalker: { attackDamage: 11, attackRadius: 2.7, moveSpeed: 6.2, aggroRadius: 17, preferredRange: 2.2, telegraphDuration: 0.58 },
+    shardcaster: { attackDamage: 15, attackRadius: 12.0, moveSpeed: 4.5, aggroRadius: 18, preferredRange: 9.5, telegraphDuration: 0.62 },
+    colossus: { attackDamage: 26, attackRadius: 4.4, moveSpeed: 3.3, aggroRadius: 20, preferredRange: 3.6, telegraphDuration: 0.95 },
+    charger: { attackDamage: 22, attackRadius: 3.3, moveSpeed: 5.2, aggroRadius: 19, preferredRange: 7.5, telegraphDuration: 0.62 },
+    hexweaver: { attackDamage: 15, attackRadius: 13.0, moveSpeed: 4.8, aggroRadius: 19, preferredRange: 12.5, telegraphDuration: 0.68 },
+    skirmisher: { attackDamage: 13, attackRadius: 2.5, moveSpeed: 7.2, aggroRadius: 18, preferredRange: 3.8, telegraphDuration: 0.40 },
+  };
+  const st = statsByArchetype[archetype] ?? statsByArchetype.stalker;
   return {
     id,
     archetype,
@@ -396,12 +391,12 @@ export function makeEnemy(
     orbitSign: x >= 0 ? 1 : -1,
     hitFlashTimer: 0,
     koTimer: 0,
-    attackDamage: isColossus ? 26 : isCaster ? 15 : 11,
-    attackRadius: isColossus ? 4.4 : isCaster ? 12.0 : 2.7,
-    moveSpeed: isColossus ? 3.3 : isCaster ? 4.5 : 6.2,
-    aggroRadius: isColossus ? 20 : 17,
-    preferredRange: isColossus ? 3.6 : isCaster ? 9.5 : 2.2,
-    telegraphDuration: isColossus ? 0.95 : 0.6,
+    attackDamage: st.attackDamage,
+    attackRadius: st.attackRadius,
+    moveSpeed: st.moveSpeed,
+    aggroRadius: st.aggroRadius,
+    preferredRange: st.preferredRange,
+    telegraphDuration: st.telegraphDuration,
     hasAttackToken: false,
   };
 }
@@ -715,12 +710,12 @@ export const CANONICAL_REALM_SPECS: FrontiersRealmSpec[] = [
       { id: 'int-oak-chest', kind: 'vault-chest', name: 'Reservoir Sluice Coffer', promptVerb: 'Unseal Sluice Coffer', regionId: 'western-ruins', position: [-54, -22], activated: false },
     ],
     enemies: [
-      makeEnemy('oak-e1', 'stalker', 'Fen Root-Stalker', -13, -7, 62),
-      makeEnemy('oak-e2', 'stalker', 'Sluice Crawler', 12, -9, 62),
-      makeEnemy('oak-e3', 'shardcaster', 'Cistern Prism-Weaver', -22, -11, 56),
-      makeEnemy('oak-e4', 'colossus', 'Moss-Bound Aqueduct Golem', 24, 15, 165),
-      makeEnemy('oak-e5', 'stalker', 'Reservoir Stalker', -46, -19, 68),
-      makeEnemy('oak-e6', 'shardcaster', 'Spillway Arc-Channeler', 46, 8, 64),
+      makeEnemy('oak-e1', 'stalker', 'Spore-Antler Stag', -13, -7, 62),
+      makeEnemy('oak-e2', 'skirmisher', 'Fern-Mantle Dartstrider', 12, -9, 58),
+      makeEnemy('oak-e3', 'hexweaver', 'Mycelial Chorus-Weaver', -22, -11, 64),
+      makeEnemy('oak-e4', 'colossus', 'Elder Aqueduct Treant-Warden', 24, 15, 165),
+      makeEnemy('oak-e5', 'charger', 'Root-Horned Sluice Boar', -46, -19, 96),
+      makeEnemy('oak-e6', 'shardcaster', 'Bioluminescent Spore-Medusa', 46, 8, 64),
     ],
   },
   {
@@ -868,12 +863,12 @@ export const CANONICAL_REALM_SPECS: FrontiersRealmSpec[] = [
       { id: 'int-cin-chest', kind: 'vault-chest', name: 'Tempered Ingot Vault', promptVerb: 'Unseal Ingot Vault', regionId: 'western-ruins', position: [-54, -22], activated: false },
     ],
     enemies: [
-      makeEnemy('cin-e1', 'stalker', 'Slag-Hound Skirmisher', -11, -7, 68),
-      makeEnemy('cin-e2', 'shardcaster', 'Obsidian Prism-Caster', 14, -8, 62),
-      makeEnemy('cin-e3', 'shardcaster', 'Ember Refractory', -20, -10, 62),
-      makeEnemy('cin-e4', 'colossus', 'Cinder Caldera Colossus', 20, 14, 190),
-      makeEnemy('cin-e5', 'stalker', 'Basalt Vent-Runner', -48, -18, 72),
-      makeEnemy('cin-e6', 'shardcaster', 'Bellows Arc-Smith', 48, 8, 68),
+      makeEnemy('cin-e1', 'stalker', 'Magma-Scale Salamander', -11, -7, 68),
+      makeEnemy('cin-e2', 'charger', 'Anvil-Brow Slag-Bull', 14, -8, 108),
+      makeEnemy('cin-e3', 'hexweaver', 'Fumarole Ember-Cantor', -20, -10, 68),
+      makeEnemy('cin-e4', 'colossus', 'Caldera Bellows Titan', 20, 14, 190),
+      makeEnemy('cin-e5', 'skirmisher', 'Cinder-Vane Ash-Flanker', -48, -18, 66),
+      makeEnemy('cin-e6', 'shardcaster', 'Molten Crucible Censer', 48, 8, 68),
     ],
   },
   {
@@ -1019,11 +1014,12 @@ export const CANONICAL_REALM_SPECS: FrontiersRealmSpec[] = [
       { id: 'int-gw-chest', kind: 'vault-chest', name: 'Shoal Navigator Strongbox', promptVerb: 'Unseal Navigator Strongbox', regionId: 'eastern-ridge', position: [54, 10], activated: false },
     ],
     enemies: [
-      makeEnemy('gw-e1', 'stalker', 'Reef-Scale Stalker', 12, -8, 60),
-      makeEnemy('gw-e2', 'shardcaster', 'Salt-Prism Caster', -15, -7, 58),
-      makeEnemy('gw-e3', 'colossus', 'Shoal Basalt Guardian', 20, 16, 170),
-      makeEnemy('gw-e4', 'stalker', 'Breakwater Skirmisher', -46, -20, 66),
-      makeEnemy('gw-e5', 'shardcaster', 'Tide-Glass Weaver', 48, 8, 64),
+      makeEnemy('gw-e1', 'stalker', 'Coral-Carapace Tide-Crab', 12, -8, 62),
+      makeEnemy('gw-e2', 'shardcaster', 'Pelagic Shoal Manta', -15, -7, 58),
+      makeEnemy('gw-e3', 'colossus', 'Abyssal Reef-Spire Leviathan', 20, 16, 170),
+      makeEnemy('gw-e4', 'skirmisher', 'Kelp-Blade Skimmer', -46, -20, 62),
+      makeEnemy('gw-e5', 'hexweaver', 'Brine-Bell Siren-Weaver', 48, 8, 66),
+      makeEnemy('gw-e6', 'charger', 'Tidal Shell-Rammer', -18, 18, 98),
     ],
   },
   {
@@ -1169,11 +1165,11 @@ export const CANONICAL_REALM_SPECS: FrontiersRealmSpec[] = [
       { id: 'int-kv-chest', kind: 'vault-chest', name: 'Saffron Caravan Strongbox', promptVerb: 'Unseal Caravan Strongbox', regionId: 'eastern-ridge', position: [54, 10], activated: false },
     ],
     enemies: [
-      makeEnemy('kv-e1', 'stalker', 'Dune-Shale Stalker', -12, -8, 70),
-      makeEnemy('kv-e2', 'shardcaster', 'Mirage Prism-Singer', 15, -9, 64),
-      makeEnemy('kv-e3', 'colossus', 'Sandstone Choir Colossus', 22, 16, 195),
-      makeEnemy('kv-e4', 'stalker', 'Canyon Wind-Runner', -48, -20, 74),
-      makeEnemy('kv-e5', 'shardcaster', 'Steppe Glass-Caster', 46, 8, 68),
+      makeEnemy('kv-e1', 'stalker', 'Ochre-Carapace Dune Scorpion', -12, -8, 70),
+      makeEnemy('kv-e2', 'hexweaver', 'Aeolian Mirage-Cantor', 15, -9, 68),
+      makeEnemy('kv-e3', 'colossus', 'Solar-Disk Sandstone Golem', 22, 16, 195),
+      makeEnemy('kv-e4', 'skirmisher', 'Sirocco Dune-Slicer', -48, -20, 68),
+      makeEnemy('kv-e5', 'charger', 'Mesa-Horned Shale-Bull', 46, 8, 112),
     ],
   },
   {
@@ -1319,14 +1315,70 @@ export const CANONICAL_REALM_SPECS: FrontiersRealmSpec[] = [
       { id: 'int-bor-chest', kind: 'vault-chest', name: 'Star-Dial Relic Coffer', promptVerb: 'Unseal Relic Coffer', regionId: 'western-ruins', position: [-54, -22], activated: false },
     ],
     enemies: [
-      makeEnemy('bor-e1', 'stalker', 'Rime-Fang Stalker', -12, -8, 74),
-      makeEnemy('bor-e2', 'shardcaster', 'Frostglass Prism-Caster', 14, -9, 68),
-      makeEnemy('bor-e3', 'colossus', 'Rime-Bound Glacier Colossus', 22, 16, 210),
-      makeEnemy('bor-e4', 'stalker', 'Fjord Stalker', -46, -20, 76),
-      makeEnemy('bor-e5', 'shardcaster', 'Aurora Refraction Sentinel', 48, 8, 72),
+      makeEnemy('bor-e1', 'stalker', 'Frostglass Hoar-Wolf', -12, -8, 74),
+      makeEnemy('bor-e2', 'shardcaster', 'Aurora Prism-Wraith', 14, -9, 68),
+      makeEnemy('bor-e3', 'colossus', 'Aurora Obelisk Sovereign', 22, 16, 210),
+      makeEnemy('bor-e4', 'charger', 'Glacial Tusk-Mammoth', -46, -20, 122),
+      makeEnemy('bor-e5', 'hexweaver', 'Rime-Choir Canticle-Weaver', 48, 8, 74),
+      makeEnemy('bor-e6', 'skirmisher', 'Ice-Shard Crest-Stalker', 18, 18, 70),
     ],
   },
 ];
+
+// Hydrate every outer-realm canonical NPC with a unique, biome-attuned Verdant character genome
+// and 1:1 portrait SVG so zero outer-realm NPCs clone Vaelmor's 4 starter archetypes.
+{
+  const roleByNpcId: Record<string, 'warden' | 'artisan' | 'scholar' | 'navigator' | 'scout'> = {
+    'npc-maren': 'warden',
+    'npc-haldor': 'artisan',
+    'npc-brenna': 'artisan',
+    'npc-soren': 'navigator',
+    'npc-zara': 'scholar',
+    'npc-astrid': 'scout',
+  };
+  const usedCombos = new Set<string>();
+  for (const realm of CANONICAL_REALM_SPECS) {
+    if (realm.slug === 'vaelmor') continue;
+    realm.npcs = realm.npcs.map((npc, idx) => {
+      if (npc.appearance) return npc;
+      let salt = 0;
+      let synth = synthesizeVerdantCharacter({
+        id: npc.id,
+        seed: hashStringSeed(`${realm.slug}:${npc.id}:${idx}:${salt}`),
+        theme: realm.theme,
+        realmName: realm.name,
+        regionId: npc.regionId,
+        position: npc.position,
+        biomeSkyRgb: realm.skyFallbackRgb,
+        roleHint: roleByNpcId[npc.id] ?? 'scholar',
+      });
+      // Guarantee every outer-realm canonical NPC has a distinct garment+prop combination
+      let comboKey = `${synth.appearance.garmentStyle}|${synth.appearance.signatureProp}`;
+      while (usedCombos.has(comboKey) && salt < 24) {
+        salt += 1;
+        synth = synthesizeVerdantCharacter({
+          id: npc.id,
+          seed: hashStringSeed(`${realm.slug}:${npc.id}:${idx}:div-${salt * 97}`),
+          theme: realm.theme,
+          realmName: realm.name,
+          regionId: npc.regionId,
+          position: npc.position,
+          biomeSkyRgb: realm.skyFallbackRgb,
+          roleHint: roleByNpcId[npc.id] ?? 'scholar',
+        });
+        comboKey = `${synth.appearance.garmentStyle}|${synth.appearance.signatureProp}`;
+      }
+      usedCombos.add(comboKey);
+      return {
+        ...npc,
+        portraitUrl: synth.npc.portraitUrl,
+        cloakHex: synth.npc.cloakHex,
+        trimHex: synth.npc.trimHex,
+        appearance: synth.appearance,
+      };
+    });
+  }
+}
 
 /**
  * Pure model-centric 3D Dungeon Delve Synthesizer.
@@ -1431,27 +1483,77 @@ export function synthesizeProceduralDungeonSpec(params: {
   };
 
   const cfg = matByStyle[style];
-  const bossName =
-    params.bossName ||
-    (style === 'geothermal-depths'
-      ? 'Magma-Heart Foundry Warden'
-      : style === 'sunken-cistern'
-        ? 'Abyssal Sluice Leviathan-Golem'
-        : style === 'abyssal-grotto'
-          ? 'Abyssal Shoal Leviathan'
-          : style === 'echo-tomb'
-            ? 'Grand Wind-Harp Automaton'
-            : style === 'glacial-crypt'
-              ? 'Frostglass Choir Archon'
-              : 'The Meridian Vault Colossus');
+  const charter = getDungeonTopologyCharter(style);
+  const profile = getWorldDifferentiationProfile(theme);
+  const bossSpecies = getMonsterSpeciesForTheme(theme, 'colossus');
+  const bossName = params.bossName || bossSpecies.speciesName;
   const questId = `quest-delve-${slug}`;
-  const bossHp = 195 + tier * 35;
+  const tierHpScale = 1 + (tier - 1) * 0.18;
+  const waterLevel = charter.hazardZones[0]?.surfaceY ?? -2.4;
+
+  const importedCatalogProps: ImportedCatalogPropPlacement[] = charter.propSlots.map((slot) => ({
+    id: `${slug}-${slot.idSuffix}`,
+    assetId: slot.assetId,
+    source: 'polyhaven',
+    label: slot.label,
+    position: slot.position,
+    yOffset: slot.yOffset,
+    targetHeight: slot.targetHeight,
+    yaw: slot.yaw,
+    tintRgb:
+      slot.assetId === 'Lantern_01' || slot.assetId === 'brass_diya_lantern' || slot.assetId === 'brass_vase_01'
+        ? cfg.lampTint
+        : cfg.statueTint,
+    maxTriangles: slot.maxTriangles ?? 420,
+  }));
+
+  const interactables: WorldInteractable[] = [
+    ...charter.interactableSlots.map((slot) => ({
+      id: `${slug}-${slot.idSuffix}`,
+      kind: slot.kind,
+      name: slot.name,
+      promptVerb: slot.promptVerb,
+      regionId: slot.regionId,
+      position: slot.position,
+      requiredGear: slot.requiredGear,
+      activated: false,
+    })),
+    {
+      id: `${slug}-ascend-entry`,
+      kind: 'dungeon-exit' as const,
+      name: `Ascend to ${params.parentRealmName || params.parentRealmSlug}`,
+      promptVerb: `Return to ${params.parentRealmName || 'Surface Realm'}`,
+      regionId: 'dungeon-sanctum' as const,
+      position: charter.ascendEntryPosition,
+      activated: false,
+      targetRealmSlug: params.parentRealmSlug,
+    },
+    {
+      id: `${slug}-ascend-boss`,
+      kind: 'dungeon-exit' as const,
+      name: `Sanctum Ascend Portal (${params.parentRealmName || params.parentRealmSlug})`,
+      promptVerb: `Ascend to ${params.parentRealmName || 'Surface Realm'}`,
+      regionId: 'boss-vault' as const,
+      position: charter.ascendBossPosition,
+      activated: false,
+      targetRealmSlug: params.parentRealmSlug,
+    },
+  ];
+
+  const enemies: EnemyEntity[] = charter.enemySlots.map((slot) => {
+    const species = getMonsterSpeciesForTheme(theme, slot.archetype);
+    const enemyName = slot.idSuffix === 'boss' ? bossName : species.speciesName;
+    const hp = Math.round(slot.hpBase * tierHpScale);
+    return makeEnemy(`${slug}-${slot.idSuffix}`, slot.archetype, enemyName, slot.position[0], slot.position[1], hp);
+  });
+
+  const qt = charter.questTemplate;
 
   return {
     id: `dungeon-${slug}`,
     slug,
     name: params.name,
-    subtitle: `Tier ${tier} 3D Dungeon Delve · Beneath ${params.parentRealmName || params.parentRealmSlug}`,
+    subtitle: `Tier ${tier} ${charter.title} · Beneath ${params.parentRealmName || params.parentRealmSlug}`,
     cell: [0, -tier, 0],
     theme,
     seed,
@@ -1463,15 +1565,15 @@ export function synthesizeProceduralDungeonSpec(params: {
     dungeonEntrances: [],
     summary:
       params.summary ||
-      `A subterranean vaulted sanctuary beneath ${params.parentRealmName || params.parentRealmSlug}. Cross the glowing abyss bridge, ignite the three Resonant Seal Braziers, unseal the alcove vaults, and defeat ${bossName}.`,
+      `${charter.architecturalSummary} ${qt.summaryTemplate.replace('{bossName}', bossName)}`,
     skyAssetId: cfg.skyAssetId,
     skyUrl: `/verdant/realms/${slug}/sky.jpg`,
     glbUrl: `/verdant/realms/${slug}/world.glb`,
     vdntUrl: `/verdant/realms/${slug}/world.vdnt`,
-    ambientMood: style === 'geothermal-depths' ? 'foundry' : 'causeway',
+    ambientMood: style === 'geothermal-depths' ? 'foundry' : style === 'abyssal-grotto' || style === 'glacial-crypt' ? 'coast' : 'causeway',
     skyFallbackRgb: cfg.skyFallbackRgb,
     fogRgb: cfg.fogRgb,
-    spawnPoint: [0, 26.5],
+    spawnPoint: charter.spawnPoint,
     soundtrack: getCanonicalSoundtrackForTheme(theme, true, slug, params.name, seed),
     materials: cfg.materials,
     terrainProfile: {
@@ -1485,88 +1587,55 @@ export function synthesizeProceduralDungeonSpec(params: {
       coastDip: 0,
       rimStart: 42,
       rimHeight: 2.0,
-      waterLevel: -2.2,
-      hasBridge: true,
+      waterLevel,
+      hasBridge: false,
       bridgeDeckY: 1.15,
       bridgeZMin: 3.6,
       bridgeZMax: 18.4,
       bridgeHalfWidth: 2.65,
     },
-    importedCatalogProps: [
-      { id: `${slug}-st-w`, assetId: 'gothic_statue', source: 'polyhaven', label: 'Vestibule Warden W', position: [-6.0, 21.0], targetHeight: 3.8, yaw: 0.3, tintRgb: cfg.statueTint, maxTriangles: 480 },
-      { id: `${slug}-st-e`, assetId: 'gothic_statue', source: 'polyhaven', label: 'Vestibule Warden E', position: [6.0, 21.0], targetHeight: 3.8, yaw: -0.3, tintRgb: cfg.statueTint, maxTriangles: 480 },
-      { id: `${slug}-st-bw`, assetId: 'gothic_statue', source: 'polyhaven', label: 'Sanctum Sentinel W', position: [-9.0, -24.0], targetHeight: 4.4, yaw: 0.4, tintRgb: cfg.statueTint, maxTriangles: 500 },
-      { id: `${slug}-st-be`, assetId: 'gothic_statue', source: 'polyhaven', label: 'Sanctum Sentinel E', position: [9.0, -24.0], targetHeight: 4.4, yaw: -0.4, tintRgb: cfg.statueTint, maxTriangles: 500 },
-      { id: `${slug}-lamp-1`, assetId: 'brass_diya_lantern', source: 'polyhaven', label: 'Bridge Torch W', position: [-3.4, 18.2], targetHeight: 1.35, yaw: 0.1, tintRgb: cfg.lampTint, maxTriangles: 340 },
-      { id: `${slug}-lamp-2`, assetId: 'brass_diya_lantern', source: 'polyhaven', label: 'Bridge Torch E', position: [3.4, 18.2], targetHeight: 1.35, yaw: 1.5, tintRgb: cfg.lampTint, maxTriangles: 340 },
-      { id: `${slug}-lamp-3`, assetId: 'Lantern_01', source: 'polyhaven', label: 'Rotunda Lantern W', position: [-8.5, -3.0], targetHeight: 1.35, yaw: 0.3, tintRgb: cfg.lampTint, maxTriangles: 340 },
-      { id: `${slug}-lamp-4`, assetId: 'Lantern_01', source: 'polyhaven', label: 'Rotunda Lantern E', position: [8.5, -3.0], targetHeight: 1.35, yaw: 1.9, tintRgb: cfg.lampTint, maxTriangles: 340 },
-      { id: `${slug}-estoc`, assetId: 'antique_estoc', source: 'polyhaven', label: 'Boss Altar Relic Blade', position: [0, -32.0], yOffset: 1.2, targetHeight: 2.6, yaw: 0.0, tintRgb: [0.88, 0.80, 0.56], maxTriangles: 360 },
-      { id: `${slug}-vase-w`, assetId: 'brass_vase_01', source: 'polyhaven', label: 'West Alcove Reliquary', position: [-18.5, -4.0], targetHeight: 1.4, yaw: 0.8, tintRgb: cfg.lampTint, maxTriangles: 320 },
-      { id: `${slug}-crate-e`, assetId: 'old_military_crate', source: 'polyhaven', label: 'East Alcove Vault Crate', position: [18.5, -4.0], targetHeight: 1.15, yaw: 0.4, tintRgb: [0.44, 0.38, 0.32], maxTriangles: 320 },
-      { id: `${slug}-rock-1`, assetId: 'boulder_01', source: 'polyhaven', label: 'Vault Cavern Outcrop', position: [-14.0, -29.0], targetHeight: 3.2, yaw: 0.9, tintRgb: cfg.statueTint, maxTriangles: 400 },
-    ],
-    regions: [
-      { id: 'dungeon-sanctum', name: `${params.name} — Vestibule`, subtitle: `Tier ${tier} Subterranean Vault`, center: [0, 22], radius: 14, ambientMood: 'causeway' },
-      { id: 'high-causeway', name: 'Abyss Span & Seal Rotunda', subtitle: 'Pillared Acoustic Hall & Treasure Alcoves', center: [0, -4], radius: 18, ambientMood: 'foundry' },
-      { id: 'boss-vault', name: `${bossName} Sanctum`, subtitle: 'Inner Boss Amphitheater & Ascend Portal', center: [0, -26], radius: 16, ambientMood: 'foundry' },
-    ],
-    fastTravelPoints: [
-      { regionId: 'dungeon-sanctum', name: 'Dungeon Entry Vestibule', x: 0, z: 26.5 },
-      { regionId: 'high-causeway', name: 'Central Seal Rotunda', x: 0, z: -2.0 },
-      { regionId: 'boss-vault', name: 'Boss Sanctum Threshold', x: 0, z: -18.0 },
-    ],
+    importedCatalogProps,
+    regions: charter.regions.map((r) => ({
+      ...r,
+      name: r.id === 'boss-vault' ? `${bossName} — ${r.name}` : r.name,
+    })),
+    fastTravelPoints: charter.fastTravelPoints,
     npcs: [],
     quests: [
       {
         id: questId,
         title: params.questTitle || `Delve: ${params.name}`,
         giverNpcId: 'npc-orenna',
-        guildId: 'guild-kiln',
+        guildId: profile.guildId,
         regionId: 'boss-vault',
-        summary: `Conquer ${params.name}: ignite the Resonant Seal Braziers, plunder the side treasure vaults, and defeat ${bossName} in the northern Sanctum.`,
-        motif: `subterranean ${style} delve`,
+        summary: qt.summaryTemplate.replace('{bossName}', bossName),
+        motif: qt.motif,
         renownReward: 220 + tier * 45,
         status: 'active',
         objectives: [
-          { id: `obj-${slug}-brazier`, description: 'Ignite Resonant Seal Braziers', kind: 'calibrate-beacon', targetId: `${slug}-brazier`, targetCoords: [0, -4], requiredCount: 2, currentCount: 0 },
-          { id: `obj-${slug}-boss`, description: `Vanquish ${bossName}`, kind: 'defeat-archetype', targetId: 'colossus', targetCoords: [0, -26], requiredCount: 1, currentCount: 0 },
+          {
+            id: `obj-${slug}-primary`,
+            description: qt.objective1Description,
+            kind: qt.objective1Kind,
+            targetId: `${slug}-${qt.objective1TargetSuffix}`,
+            targetCoords: qt.objective1Coords,
+            requiredCount: qt.objective1Required,
+            currentCount: 0,
+          },
+          {
+            id: `obj-${slug}-boss`,
+            description: qt.objective2Template.replace('{bossName}', bossName),
+            kind: 'defeat-archetype',
+            targetId: 'colossus',
+            targetCoords: charter.bossPosition,
+            requiredCount: 1,
+            currentCount: 0,
+          },
         ],
       },
     ],
-    interactables: [
-      { id: `${slug}-brazier-w`, kind: 'seal-brazier', name: 'West Resonant Seal Brazier', promptVerb: 'Ignite Seal Brazier', regionId: 'high-causeway', position: [-8.5, -4.5], activated: false },
-      { id: `${slug}-brazier-e`, kind: 'seal-brazier', name: 'East Resonant Seal Brazier', promptVerb: 'Ignite Seal Brazier', regionId: 'high-causeway', position: [8.5, -4.5], activated: false },
-      { id: `${slug}-chest-w`, kind: 'vault-chest', name: 'West Alcove Relic Chest', promptVerb: 'Unseal Vault Chest', regionId: 'high-causeway', position: [-16.5, -4.0], activated: false },
-      { id: `${slug}-chest-e`, kind: 'vault-chest', name: 'East Alcove Foundry Coffer', promptVerb: 'Unseal Vault Coffer', regionId: 'high-causeway', position: [16.5, -4.0], activated: false },
-      {
-        id: `${slug}-ascend-entry`,
-        kind: 'dungeon-exit',
-        name: `Ascend to ${params.parentRealmName || params.parentRealmSlug}`,
-        promptVerb: `Return to ${params.parentRealmName || 'Surface Realm'}`,
-        regionId: 'dungeon-sanctum',
-        position: [0, 30.5],
-        activated: false,
-        targetRealmSlug: params.parentRealmSlug,
-      },
-      {
-        id: `${slug}-ascend-boss`,
-        kind: 'dungeon-exit',
-        name: `Sanctum Ascend Portal (${params.parentRealmName || params.parentRealmSlug})`,
-        promptVerb: `Ascend to ${params.parentRealmName || 'Surface Realm'}`,
-        regionId: 'boss-vault',
-        position: [0, -33.5],
-        activated: false,
-        targetRealmSlug: params.parentRealmSlug,
-      },
-    ],
-    enemies: [
-      makeEnemy(`${slug}-e1`, 'stalker', 'Vault Stone-Stalker', -6.5, 0.5, 64 + tier * 10),
-      makeEnemy(`${slug}-e2`, 'stalker', 'Rotunda Skirmisher', 6.5, 0.5, 64 + tier * 10),
-      makeEnemy(`${slug}-e3`, 'shardcaster', 'Alcove Prism-Sentinel', -12.5, -5.5, 60 + tier * 10),
-      makeEnemy(`${slug}-e4`, 'shardcaster', 'Sanctum Arc-Weaver', 12.5, -5.5, 60 + tier * 10),
-      makeEnemy(`${slug}-boss`, 'colossus', bossName, 0, -25.5, bossHp),
-    ],
+    interactables,
+    enemies,
   };
 }
 
@@ -1784,29 +1853,47 @@ export function synthesizeProceduralRealmSpec(params: {
   };
 
   const pal = paletteByTheme[theme];
+  const profile = getWorldDifferentiationProfile(theme);
   const npcId = `npc-${slug}-warden`;
-  const npcName = params.npcName || `Surveyor ${params.name.split(' ')[0]} Vane`;
-  const npcTitle = params.npcTitle || 'Frontier Cell Cartographer';
   const questId = `quest-${slug}-charter`;
+  const synthesizedWarden = synthesizeVerdantCharacter({
+    id: npcId,
+    seed: hashStringSeed(`synth-realm:${slug}:${seed}`),
+    theme,
+    realmName: params.name,
+    regionId: 'southern-terrace',
+    position: [-3.2, 15.6],
+    biomeSkyRgb: pal.skyFallbackRgb,
+    questId,
+    roleHint: 'warden',
+  });
+  const wardenNpc: GameNpc = {
+    ...synthesizedWarden.npc,
+    name: params.npcName || synthesizedWarden.npc.name,
+    title: params.npcTitle || synthesizedWarden.npc.title,
+    guildId: profile.guildId,
+    guildName: profile.guildAffiliationName,
+    greeting: params.npcGreeting || synthesizedWarden.npc.greeting,
+  };
   const dungeonEntrances: DungeonEntranceSpec[] = params.linkedDungeonSlug
     ? [
         {
           id: `ent-${slug}-vault`,
           dungeonSlug: params.linkedDungeonSlug,
           name: params.linkedDungeonName || `${params.name} Subterranean Vault`,
-          subtitle: `Tier 2 Vault · Beneath ${params.name}`,
+          subtitle: `Tier 2 ${profile.dungeonStyle} · Beneath ${params.name}`,
           position: [-14, -34],
           tier: 2,
-          style: theme === 'obsidian-crucible' ? 'geothermal-depths' : theme === 'glacial-spire' ? 'glacial-crypt' : 'catacomb-vault',
+          style: profile.dungeonStyle,
         },
       ]
     : [];
 
   const interactables: WorldInteractable[] = [
     { id: `int-${slug}-pier`, kind: 'resonance-pier', name: `${params.name} Causeway Pier`, promptVerb: 'Sound Causeway Pier [Bell-Hammer]', regionId: 'high-causeway', position: [0, 5.2], requiredGear: 'bellhammer', activated: false },
-    { id: `int-${slug}-waystone`, kind: 'waystone-beacon', name: `${params.name} Crown Waystone`, promptVerb: 'Attune Meridian Waystone', regionId: 'high-causeway', position: [0, -10.5], activated: false },
+    { id: `int-${slug}-waystone`, kind: 'waystone-beacon', name: `${params.name} ${profile.overworldPlotHook.landmarkFocus}`, promptVerb: profile.overworldPlotHook.primaryVerb, regionId: 'high-causeway', position: [0, -10.5], activated: false },
     { id: `int-${slug}-bell`, kind: 'forge-bell', name: `${params.name} Frontier Bell`, promptVerb: 'Ring Frontier Bell [Bell-Hammer]', regionId: 'ashen-kiln', position: [-25, -8], requiredGear: 'bellhammer', activated: false },
-    { id: `int-${slug}-chest`, kind: 'vault-chest', name: `${params.name} Frontier Coffer`, promptVerb: 'Unseal Frontier Coffer', regionId: 'western-ruins', position: [-54, -22], activated: false },
+    { id: `int-${slug}-chest`, kind: 'vault-chest', name: `${params.name} ${profile.overworldPlotHook.relicFlavor}`, promptVerb: 'Unseal Frontier Coffer', regionId: 'western-ruins', position: [-54, -22], activated: false },
   ];
 
   if (params.linkedDungeonSlug) {
@@ -1826,7 +1913,7 @@ export function synthesizeProceduralRealmSpec(params: {
     id: `realm-${slug}`,
     slug,
     name: params.name,
-    subtitle: `Cell (${cx}, ${cy}, ${cz}) · Autonomous Verdant Frontier`,
+    subtitle: `Cell (${cx}, ${cy}, ${cz}) · ${profile.geomorphology.title}`,
     cell: [cx, cy, cz],
     theme,
     seed,
@@ -1836,7 +1923,7 @@ export function synthesizeProceduralRealmSpec(params: {
     soundtrack: getCanonicalSoundtrackForTheme(theme, false, slug, params.name, seed),
     summary:
       params.summary ||
-      `An expansive Frontier Meridian Cell charted at (${cx}, ${cy}, ${cz}), compiled with Poly Haven CC0 PBR geology, customized photogrammetry landmarks, outer frontier monoliths, and Stitch 2-of-3 parity custody.`,
+      `${profile.geomorphology.summary} Charted at Cell (${cx}, ${cy}, ${cz}) under ${profile.guildAffiliationName}.`,
     skyAssetId: pal.skyAssetId,
     skyUrl: `/verdant/realms/${slug}/sky.jpg`,
     glbUrl: `/verdant/realms/${slug}/world.glb`,
@@ -1857,7 +1944,7 @@ export function synthesizeProceduralRealmSpec(params: {
       coastDip: 2.5,
       rimStart: 92,
       rimHeight: 3.0,
-      waterLevel: -0.85,
+      waterLevel: profile.geomorphology.waterLevelDefault,
       hasBridge: true,
       bridgeDeckY: 1.6,
       bridgeZMin: -3.4,
@@ -1866,7 +1953,7 @@ export function synthesizeProceduralRealmSpec(params: {
     },
     importedCatalogProps: pal.props,
     regions: [
-      { id: 'high-causeway', name: `${params.name} Crown`, subtitle: 'Northern Citadel & Waystone', center: [0, -14], radius: 18, ambientMood: pal.ambientMood },
+      { id: 'high-causeway', name: `${params.name} Crown`, subtitle: profile.overworldPlotHook.landmarkFocus, center: [0, -14], radius: 18, ambientMood: pal.ambientMood },
       { id: 'ashen-kiln', name: 'Western Resonance Basin', subtitle: 'Frontier Foundry & Bell Pavilion', center: [-25, -6], radius: 18, ambientMood: 'foundry' },
       { id: 'ironwood-reaches', name: 'Eastern Frontier Reaches', subtitle: 'Wilderness Grove & Outpost', center: [25, -6], radius: 18, ambientMood: 'ironwood' },
       { id: 'salt-loom', name: 'Southeastern Shoal', subtitle: 'Tidal Headland & Pier', center: [24, 24], radius: 20, ambientMood: 'coast' },
@@ -1882,65 +1969,35 @@ export function synthesizeProceduralRealmSpec(params: {
       { regionId: 'western-ruins', name: 'Western Standing Stones', x: -49, z: -18 },
       { regionId: 'eastern-ridge', name: 'Eastern Survey Overlook', x: 48, z: 10 },
     ],
-    npcs: [
-      {
-        id: npcId,
-        name: npcName,
-        title: npcTitle,
-        guildId: 'guild-causeway',
-        guildName: 'Meridian Waywright Compact',
-        regionId: 'southern-terrace',
-        portraitUrl: '/src/assets/images/ff_npc_kaelen_1795129454573.jpg',
-        position: [-3.2, 15.6],
-        cloakHex: 0x3b6778,
-        trimHex: 0xe0b35a,
-        greeting:
-          params.npcGreeting ||
-          `You made it through the Stitch meridian to ${params.name}. Help us anchor the Crown Waystone and sound the Causeway Pier before the dusk tremor hits.`,
-        cognitiveDrive: `Establish a permanent federated survey charter across ${params.name}.`,
-        concealedSecret: `Detected an unrecorded acoustic echo linking Cell (${cx},${cy},${cz}) to Vaelmor’s subterranean vaults.`,
-        speechCadence: 'Measured, enthusiastic, speaks in surveyor bearings and stone acoustics.',
-        beliefs: ['Every uncharted cell becomes a foundation once its waystone sings.'],
-        choices: [
-          {
-            id: `${slug}-c1`,
-            label: 'Where should we begin anchoring this frontier?',
-            reply:
-              'Cross the Causeway Pier and sound it with your Bell-Hammer, then attune the Crown Waystone on the northern terrace.',
-            thought: 'Recording the Waywright’s bearing onto the Meridian ledger.',
-            renownGain: 30,
-            advancesQuestId: questId,
-          },
-        ],
-      },
-    ],
+    npcs: [wardenNpc],
     quests: [
       {
         id: questId,
-        title: params.questTitle || `Anchoring ${params.name}`,
+        title: params.questTitle || `${profile.overworldPlotHook.questTitlePrefix} ${params.name}`,
         giverNpcId: npcId,
-        guildId: 'guild-causeway',
+        guildId: profile.guildId,
         regionId: 'high-causeway',
         summary:
           params.questSummary ||
-          `Survey the newly compiled cell of ${params.name}: sound the Causeway Pier with your Bell-Hammer and attune the Crown Waystone.`,
-        motif: params.questMotif || 'meridian frontier cartography',
+          `Survey the newly compiled cell of ${params.name}: consult ${wardenNpc.name}, sound the Causeway Pier, and ${profile.overworldPlotHook.primaryVerb.toLowerCase()}.`,
+        motif: params.questMotif || profile.overworldPlotHook.motif,
         renownReward: 200,
         status: 'active',
         objectives: [
-          { id: `obj-${slug}-1`, description: `Speak with ${npcName}`, kind: 'talk-npc', targetId: npcId, targetCoords: [-3.2, 15.6], requiredCount: 1, currentCount: 0 },
+          { id: `obj-${slug}-1`, description: `Speak with ${wardenNpc.name}`, kind: 'talk-npc', targetId: npcId, targetCoords: [-3.2, 15.6], requiredCount: 1, currentCount: 0 },
           { id: `obj-${slug}-2`, description: 'Sound the Causeway Pier [Bell-Hammer]', kind: 'ring-bell', targetId: `int-${slug}-pier`, targetCoords: [0, 5.2], requiredCount: 1, currentCount: 0 },
-          { id: `obj-${slug}-3`, description: 'Attune the Crown Waystone', kind: 'calibrate-beacon', targetId: `int-${slug}-waystone`, targetCoords: [0, -10.5], requiredCount: 1, currentCount: 0 },
+          { id: `obj-${slug}-3`, description: profile.overworldPlotHook.primaryVerb, kind: 'calibrate-beacon', targetId: `int-${slug}-waystone`, targetCoords: [0, -10.5], requiredCount: 1, currentCount: 0 },
         ],
       },
     ],
     interactables,
     enemies: [
-      makeEnemy(`${slug}-e1`, 'stalker', `${params.name.split(' ')[0]} Skirmisher`, -13, -8, 66),
-      makeEnemy(`${slug}-e2`, 'shardcaster', 'Meridian Prism-Caster', 14, -7, 62),
-      makeEnemy(`${slug}-e3`, 'colossus', 'Frontier Basalt Warden', 20, 15, 185),
-      makeEnemy(`${slug}-e4`, 'stalker', 'Outer Ridge Stalker', -46, -18, 70),
-      makeEnemy(`${slug}-e5`, 'shardcaster', 'Monolith Arc-Weaver', 48, 8, 66),
+      makeEnemy(`${slug}-e1`, 'stalker', getMonsterSpeciesForTheme(theme, 'stalker').speciesName, -13, -8, 66),
+      makeEnemy(`${slug}-e2`, 'skirmisher', getMonsterSpeciesForTheme(theme, 'skirmisher').speciesName, 14, -7, 62),
+      makeEnemy(`${slug}-e3`, 'colossus', getMonsterSpeciesForTheme(theme, 'colossus').speciesName, 20, 15, 185),
+      makeEnemy(`${slug}-e4`, 'charger', getMonsterSpeciesForTheme(theme, 'charger').speciesName, -46, -18, 102),
+      makeEnemy(`${slug}-e5`, 'hexweaver', getMonsterSpeciesForTheme(theme, 'hexweaver').speciesName, 48, 8, 68),
+      makeEnemy(`${slug}-e6`, 'shardcaster', getMonsterSpeciesForTheme(theme, 'shardcaster').speciesName, 6, -46, 64),
     ],
   };
 }

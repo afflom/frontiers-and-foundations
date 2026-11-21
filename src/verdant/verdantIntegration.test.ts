@@ -129,8 +129,8 @@ describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 23 MCP Tool
     );
   });
 
-  it('exposes all 23 real verdant-uorc.wasm-backed MCP tools including extensible ecosystem & dungeon catalogs, procedural UniverseCell & character synthesis, HD character rigs, score, questline, NPC cast, relic arsenal, and Stitch tools', async () => {
-    assert.equal(VERDANT_MCP_TOOLS.length, 23, 'Expected 23 Verdant MCP tools');
+  it('exposes all 31 real verdant-uorc.wasm-backed MCP tools including unified Model-of-Models, 22-Manager Extended Observer Diversity & Cohesion KPIs, M16/M17 Lifecycle Gate, Refinement Agenda, Ratchet Cycle & Verdant Automate, Uniform Refinement API, extensible catalogs, procedural UniverseCell & character synthesis, HD rigs, score, questline, NPC cast, relic arsenal, and Stitch tools', async () => {
+    assert.equal(VERDANT_MCP_TOOLS.length, 31, 'Expected 31 Verdant MCP tools');
 
     const mcp = new VerdantMcpHost(process.cwd());
     await mcp.ensureReady();
@@ -247,7 +247,7 @@ describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 23 MCP Tool
     };
     assert.ok(hdRefine.realmsRefined >= 12, `Expected >=12 realms refined, got ${hdRefine.realmsRefined}`);
     assert.ok(hdRefine.rigsCompiled >= 10, `Expected >=10 HD rigs compiled, got ${hdRefine.rigsCompiled}`);
-    assert.equal(hdRefine.distinctArchetypes.length, 4, 'All 4 distinct portrait archetypes must be compiled');
+    assert.ok(hdRefine.distinctArchetypes.length >= 4, 'All 4 canonical portrait archetypes plus synthesized outer-realm genomes must be compiled');
     assert.equal(hdRefine.operatorDecision?.admitted, true);
     assert.match(hdRefine.refinementKappa, /^sha256:[0-9a-f]{64}$/);
 
@@ -356,6 +356,147 @@ describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 23 MCP Tool
     assert.ok(magmaDg.dungeonArchitecture.thermalVentCount >= 5);
     assert.match(grottoDg.dungeonKappa, /^sha256:[0-9a-f]{64}$/);
     assert.ok(grottoDg.projectModel);
+
+    // Verify bespoke Biome Relic synthesis via Verdant MCP tool #24
+    const synthRelic = (await mcp.handleToolCall(
+      'verdant_synthesize_relic',
+      { realmSlug: 'cinderfall', rarity: 'Sovereign', seed: 7777, brief: 'caldera assault' },
+      null,
+    )) as {
+      relic: { name: string; rarity: string; perkId: string; sigilSvg: string; auraRgb: number[] };
+      relicKappa: string;
+      projectModel: unknown;
+    };
+    assert.equal(synthRelic.relic.rarity, 'Sovereign');
+    assert.equal(synthRelic.relic.perkId, 'ember-cleave');
+    assert.ok(synthRelic.relic.sigilSvg.startsWith('data:image/svg+xml;utf8,'));
+    assert.equal(synthRelic.relic.auraRgb.length, 3);
+    assert.match(synthRelic.relicKappa, /^sha256:[0-9a-f]{64}$/);
+    assert.ok(synthRelic.projectModel);
+
+    // Verify unified Model-of-Models inspection (MCP tool #25)
+    const modelInspect = (await mcp.handleToolCall(
+      'verdant_inspect_model_of_models',
+      { partSlot: 'stage-environment' },
+      null,
+    )) as {
+      summary: { rootModelId: string; totalModels: number; partsPopulated: number; totalParts: number };
+      partModels: unknown[];
+    };
+    assert.equal(modelInspect.summary.rootModelId, 'frontiers:root:game-model');
+    assert.equal(modelInspect.summary.partsPopulated, 8);
+    assert.equal(modelInspect.summary.totalParts, 8);
+    assert.ok(modelInspect.summary.totalModels >= 70);
+    assert.ok(modelInspect.partModels.length >= 12);
+
+    // Verify Extended Verdant Observer/Manager Pattern + Diversity & Cohesion KPIs (MCP tool #26)
+    const kpiRes = (await mcp.handleToolCall(
+      'verdant_observer_diversity_kpis',
+      { includeManagers: true },
+      null,
+    )) as {
+      managersCount: number;
+      wasmManagersCount: number;
+      frontiersManagersCount: number;
+      kpis: { allPassed: boolean; diversityIndex: number; cohesionIndex: number; clonePairsTotal: number; kpis: unknown[] };
+    };
+    assert.equal(kpiRes.wasmManagersCount, 13, 'Must merge all 13 native verdant-uorc.wasm VSM Managers');
+    assert.equal(kpiRes.frontiersManagersCount, 10, 'Must register all 10 Frontiers Domain Managers');
+    assert.equal(kpiRes.managersCount, 23, 'Expected 23 total VSM Managers');
+    assert.equal(kpiRes.kpis.kpis.length, 13);
+    assert.equal(kpiRes.kpis.allPassed, true);
+    assert.equal(kpiRes.kpis.clonePairsTotal, 0);
+    assert.ok(kpiRes.kpis.diversityIndex >= 80);
+    assert.ok(kpiRes.kpis.cohesionIndex >= 90);
+
+    // Verify M16 Observer Refinement Agenda (MCP tool #27)
+    const agendaRes = (await mcp.handleToolCall(
+      'verdant_observer_refinement_agenda',
+      { includeManagers: false },
+      null,
+    )) as {
+      agenda: { spec: string; cohesionIndex: number; partHealth: unknown[]; proposals: unknown[] };
+      managersCount: number;
+    };
+    assert.equal(agendaRes.agenda.spec, 'verdant/observer-refinement-agenda/1');
+    assert.equal(agendaRes.agenda.partHealth.length, 8);
+    assert.ok(agendaRes.agenda.proposals.length >= 1);
+    assert.equal(agendaRes.managersCount, 23);
+
+    // Verify M16 Observer Ratchet Cycle (MCP tool #28)
+    const ratchetRes = (await mcp.handleToolCall(
+      'verdant_run_ratchet_cycle',
+      { targetTier: 4, reason: 'Integration test M16 Observer Ratchet Cycle' },
+      null,
+    )) as {
+      report: {
+        ok: boolean;
+        cycleNumber: number;
+        watermarkAdvanced: boolean;
+        refinementReport: { after: { resolutionTier: number; definitionScore: number; rootKappaDigest: string } };
+      };
+      projectModel: unknown;
+    };
+    assert.equal(ratchetRes.report.ok, true);
+    assert.equal(ratchetRes.report.cycleNumber, 1);
+    assert.equal(ratchetRes.report.watermarkAdvanced, true);
+    assert.equal(ratchetRes.report.refinementReport.after.resolutionTier, 4);
+    assert.ok(ratchetRes.projectModel, 'Ratchet cycle snapshot must be registered in verdant-uorc.wasm');
+
+    // Verify Uniform Refinement API via MCP tool #29 (Tier 4 Sovereign Ultra-Def)
+    const uniformRefine = (await mcp.handleToolCall(
+      'verdant_refine_model_api',
+      { targetTier: 4, enforceDiversity: true, reason: 'Integration test uniform Tier 4 escalation' },
+      null,
+    )) as {
+      report: {
+        ok: boolean;
+        modelsRefined: number;
+        after: { resolutionTier: number; definitionScore: number; diversityIndex: number; rootKappaDigest: string };
+      };
+      projectModel: unknown;
+    };
+    assert.equal(uniformRefine.report.ok, true);
+    assert.equal(uniformRefine.report.after.resolutionTier, 4);
+    assert.ok(uniformRefine.report.after.definitionScore >= 90);
+    assert.ok(uniformRefine.report.modelsRefined >= 60);
+    assert.match(uniformRefine.report.after.rootKappaDigest, /^sha256:[0-9a-f]{64}$/);
+    assert.ok(uniformRefine.projectModel, 'Sealed Model-of-Models must be registered in verdant-uorc.wasm');
+
+    // Verify M16/M17 Lifecycle Gate MCP tool
+    const gateRes = (await mcp.handleToolCall('verdant_lifecycle_gate', {}, null)) as {
+      report: { spec: string; passedChecks: number; totalChecks: number; allPassed: boolean };
+      watermarks: { spec: string; minTotalModels: number };
+    };
+    assert.equal(gateRes.report.spec, 'verdant/lifecycle-gate-report/1');
+    assert.equal(gateRes.report.totalChecks, 7);
+    assert.equal(gateRes.report.passedChecks, 7);
+    assert.equal(gateRes.report.allPassed, true);
+    assert.equal(gateRes.watermarks.spec, 'prism/parametric-ratchet/2');
+
+    // Verify M16/M17 Verdant Automate Pipeline MCP tool
+    const autoRes = (await mcp.handleToolCall(
+      'verdant_automate',
+      { targetTier: 4, reason: 'Integration test M17 automate pipeline' },
+      null,
+    )) as {
+      report: {
+        spec: string;
+        allPassed: boolean;
+        passedStages: number;
+        totalStages: number;
+        automateKappaHex: string;
+        lifecycleGate: { allPassed: boolean; passedChecks: number; totalChecks: number };
+      };
+      projectModel: unknown;
+    };
+    assert.equal(autoRes.report.spec, 'verdant/automate-report/1');
+    assert.equal(autoRes.report.allPassed, true);
+    assert.equal(autoRes.report.passedStages, 4);
+    assert.equal(autoRes.report.totalStages, 4);
+    assert.equal(autoRes.report.lifecycleGate.allPassed, true);
+    assert.match(autoRes.report.automateKappaHex, /^auto:[0-9a-f]{8}$/);
+    assert.ok(autoRes.projectModel, 'M17 Automate snapshot must be registered in verdant-uorc.wasm');
   });
 
   it('produces distinct orchestral soundtracks across themes and dungeons without monotonous drones', () => {

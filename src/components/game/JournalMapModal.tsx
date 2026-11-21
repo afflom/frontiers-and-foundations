@@ -17,7 +17,16 @@ import {
   type EquippedRelic,
   type GearUpgradeTiers,
   type RemotePlayerState,
+  type WorldPing,
+  type WorldPingKind,
 } from '../../game/multiplayerTypes';
+import {
+  DEFAULT_ROOM_CODE,
+  buildInviteUrl,
+  filterSameRealmBanners,
+  filterSameRealmPlayers,
+  generatePrivateRoomCode,
+} from '../../game/multiplayerState';
 
 import type {
   DungeonArchitecturalStyle,
@@ -30,6 +39,22 @@ import {
 } from '../../verdant/verdantScoreSchema';
 import { sampleMacroClimate } from '../../verdant/verdantUniverseGenerator';
 import type { VerdantAudioState } from '../../verdant/verdantAudioEngine';
+import type {
+  ObserverRefinementAgenda,
+  ObserverSnapshot,
+  VerdantVsmManagerSpec,
+} from '../../verdant/verdantObserverManager';
+import {
+  SEMANTIC_VECTOR_AXES,
+  type ModelLineageReport,
+  type VerdantModelNode,
+  type VerdantPartSlot,
+  type VerdantResolutionTier,
+} from '../../verdant/verdantModelOfModels';
+import {
+  DIRECTED_JOURNEY_MILESTONES,
+  type JourneyProgressSummary,
+} from '../../verdant/verdantJourneyModel';
 
 export type AtlasTab = 'chronicle' | 'map' | 'dungeons' | 'forge' | 'guilds' | 'codex';
 
@@ -40,8 +65,12 @@ interface JournalMapModalProps {
   npcs: GameNpc[];
   guilds: GuildCharter[];
   pledgedGuildId: string;
+  playerCallsign: string;
+  roomCode: string;
+  realmConnected: boolean;
   banners: FoundationBanner[];
   remotePlayers: RemotePlayerState[];
+  worldPings: WorldPing[];
   materials: CraftingMaterials;
   gearTiers: GearUpgradeTiers;
   relics: EquippedRelic[];
@@ -49,6 +78,8 @@ interface JournalMapModalProps {
   playerX: number;
   playerZ: number;
   playerYaw: number;
+  playerHp: number;
+  playerMaxHp: number;
   renown: number;
   seekingRumor: boolean;
   rumorError: string | null;
@@ -81,9 +112,29 @@ interface JournalMapModalProps {
   onNextTrack?: () => void;
   onSelectTrack?: (track: RealmSoundtrackSpec) => void;
   onPledgeGuild: (guildId: string) => void;
+  onUpdateCallsign: (nextName: string) => void;
+  onSwitchRoom: (nextRoomCode: string) => void;
+  onWarpToAlly: (ally: RemotePlayerState) => void;
+  onSummonParty: () => void;
+  onDropPing: (kind?: WorldPingKind, label?: string) => void;
   onUpgradeGear: (gearId: GearSlotId) => void;
   onToggleRelic: (relicId: string) => void;
   onForgeEmergentRelic: () => void;
+  modelObserverSnapshot?: ObserverSnapshot | null;
+  observerAgenda?: ObserverRefinementAgenda | null;
+  observerManagers?: VerdantVsmManagerSpec[];
+  refiningWorldModel?: boolean;
+  onRefineWorldModel?: (
+    targetTier?: VerdantResolutionTier,
+    partSlot?: VerdantPartSlot,
+    modelId?: string,
+  ) => void;
+  onRunRatchetCycle?: () => void;
+  onRunAutomate?: () => void;
+  onInspectPartModels?: (partSlot: VerdantPartSlot) => VerdantModelNode[];
+  onInspectModelLineage?: (modelId: string) => ModelLineageReport | null;
+  journeySummary?: JourneyProgressSummary | null;
+  onReplayPrologue?: () => void;
   onClose: () => void;
 }
 
@@ -150,8 +201,12 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
   npcs,
   guilds,
   pledgedGuildId,
+  playerCallsign,
+  roomCode,
+  realmConnected,
   banners,
   remotePlayers,
+  worldPings,
   materials,
   gearTiers,
   relics,
@@ -159,6 +214,8 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
   playerX,
   playerZ,
   playerYaw,
+  playerHp,
+  playerMaxHp,
   renown,
   seekingRumor,
   rumorError,
@@ -186,13 +243,36 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
   onNextTrack,
   onSelectTrack,
   onPledgeGuild,
+  onUpdateCallsign,
+  onSwitchRoom,
+  onWarpToAlly,
+  onSummonParty,
+  onDropPing,
   onUpgradeGear,
   onToggleRelic,
   onForgeEmergentRelic,
+  modelObserverSnapshot,
+  observerAgenda,
+  observerManagers,
+  refiningWorldModel,
+  onRefineWorldModel,
+  onRunRatchetCycle,
+  onRunAutomate,
+  onInspectPartModels,
+  onInspectModelLineage,
+  journeySummary,
+  onReplayPrologue,
   onClose,
 }) => {
   const [showAllSongs, setShowAllSongs] = useState(false);
+  const [showManagers, setShowManagers] = useState(false);
+  const [showAuditLedger, setShowAuditLedger] = useState(false);
+  const [inspectedPart, setInspectedPart] = useState<VerdantPartSlot | null>(null);
+  const [inspectedModelId, setInspectedModelId] = useState<string | null>(null);
   const [tab, setTab] = useState<AtlasTab>(initialTab);
+  const [callsignDraft, setCallsignDraft] = useState(playerCallsign);
+  const [roomInput, setRoomInput] = useState('');
+  const [copiedInvite, setCopiedInvite] = useState(false);
   const [newRealmName, setNewRealmName] = useState('');
   const [newRealmTheme, setNewRealmTheme] = useState<RealmThemeId>('glacial-spire');
   const [newRealmBrief, setNewRealmBrief] = useState('');
@@ -206,6 +286,15 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
   const activeFastTravelPoints = activeRealm.fastTravelPoints;
   const overworldRealms = realms.filter((r) => !r.isDungeon);
   const dungeons = realms.filter((r) => r.isDungeon);
+  const sameRealmAllies = filterSameRealmPlayers(remotePlayers, activeRealm.slug);
+  const sameRealmBanners = filterSameRealmBanners(banners, activeRealm.slug);
+  const sameRealmPings = worldPings.filter(
+    (p) => p.realmSlug === activeRealm.slug && p.expiresAt > Date.now(),
+  );
+  const inviteUrl =
+    typeof window !== 'undefined'
+      ? buildInviteUrl(window.location.origin, window.location.pathname, roomCode)
+      : `?room=${roomCode}`;
   const mapHalfSpan = activeRealm.isDungeon
     ? 42
     : Math.max(58, Math.min(82, (activeRealm.worldHalfExtent || 112) * 0.68));
@@ -223,7 +312,7 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
                 ['map', 'World Map'],
                 ['dungeons', 'Dungeons'],
                 ['forge', 'Forge'],
-                ['guilds', 'Guilds'],
+                ['guilds', `Party & Guilds (${1 + remotePlayers.length})`],
                 ['codex', 'Codex'],
               ] as Array<[AtlasTab, string]>
             ).map(([id, label]) => (
@@ -266,18 +355,82 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
                     Waywright’s Chronicle
                   </h2>
                   <p className="text-xs text-[#9ca7b5] mt-0.5">
-                    Track chartered quests across Vaelmor or seek fresh emergent frontier rumors.
+                    Stabilize Vaelmor’s failing Meridian Arch, fulfill regional charters, or seek emergent frontier rumors.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  disabled={seekingRumor}
-                  onClick={onSeekEmergentQuest}
-                  className="px-4 py-2 rounded-sm bg-[#5ea38c] hover:bg-[#6eb59e] disabled:opacity-50 text-[#0e1513] font-display text-xs font-bold uppercase tracking-[0.1em] cursor-pointer"
-                >
-                  {seekingRumor ? 'Consulting Waystones...' : 'Seek Frontier Rumor'}
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  {onReplayPrologue && (
+                    <button
+                      type="button"
+                      data-testid="chronicle-replay-prologue-btn"
+                      onClick={onReplayPrologue}
+                      className="px-3.5 py-2 rounded-sm bg-[#19222d] hover:bg-[#233040] border border-[#d4a253]/35 text-[#ece8df] font-display text-xs font-semibold uppercase tracking-[0.09em] cursor-pointer"
+                    >
+                      Replay Prologue
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={seekingRumor}
+                    onClick={onSeekEmergentQuest}
+                    className="px-4 py-2 rounded-sm bg-[#5ea38c] hover:bg-[#6eb59e] disabled:opacity-50 text-[#0e1513] font-display text-xs font-bold uppercase tracking-[0.1em] cursor-pointer"
+                  >
+                    {seekingRumor ? 'Consulting Waystones...' : 'Seek Frontier Rumor'}
+                  </button>
+                </div>
               </div>
+
+              {journeySummary && (
+                <div
+                  data-testid="chronicle-journey-roadmap"
+                  className="p-3.5 rounded-sm bg-[#10161f] border border-[#d4a253]/28 space-y-2.5"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-[#d4a253] font-semibold">
+                        Waywright Expedition Roadmap · {journeySummary.completedCount}/{journeySummary.totalCount} Complete ({journeySummary.completionPct}%)
+                      </p>
+                      <p className="text-xs text-[#c7d1dd] mt-0.5">
+                        {journeySummary.currentChapterTitle}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {DIRECTED_JOURNEY_MILESTONES.map((m) => {
+                      const done = journeySummary.completedIds.includes(m.id);
+                      const isCurrent = journeySummary.activeMilestone?.id === m.id;
+                      return (
+                        <div
+                          key={m.id}
+                          className={`px-3 py-2 rounded-sm border text-xs ${
+                            done
+                              ? 'bg-[#121c1a] border-[#5ea38c]/40 text-[#bce3d5]'
+                              : isCurrent
+                                ? 'bg-[#1b222c] border-[#d4a253]/65 text-[#f3efe6]'
+                                : 'bg-[#131922] border-white/10 text-[#97a4b3]'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2 text-[10px] font-mono uppercase tracking-[0.12em]">
+                            <span>
+                              {done ? '✓ ' : `${m.stepNumber}. `}
+                              {m.actLabel}
+                            </span>
+                            <span className={isCurrent ? 'text-[#e8c378]' : 'opacity-75'}>
+                              {m.keybindBadge}
+                            </span>
+                          </div>
+                          <p className="font-display font-semibold text-[11px] mt-0.5 text-[#f3efe6]">
+                            {m.title}
+                          </p>
+                          <p className="text-[11px] opacity-85 leading-snug mt-0.5">
+                            {m.controlHint}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {rumorError && (
                 <div className="px-3.5 py-2 rounded-sm bg-[#2b1a1a] border border-[#d96b6b]/40 text-xs text-[#f0b4b4]">
@@ -444,8 +597,8 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
                       />
                     ))}
 
-                    {/* Live Remote Multiplayer Waywrights */}
-                    {remotePlayers.map((rp) => (
+                    {/* Live Remote Multiplayer Waywrights (Same Realm) */}
+                    {sameRealmAllies.map((rp) => (
                       <g key={rp.id}>
                         <circle
                           cx={mc(rp.x)}
@@ -470,8 +623,28 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
                       </g>
                     ))}
 
-                    {/* Foundation Banners */}
-                    {banners.map((b) => (
+                    {/* Active Tactical World Pings (Same Realm) */}
+                    {sameRealmPings.map((ping) => {
+                      const col =
+                        ping.kind === 'danger' ? '#f2604b' : ping.kind === 'loot' ? '#f2c96b' : '#52d6f4';
+                      return (
+                        <g key={ping.id}>
+                          <circle
+                            cx={mc(ping.x)}
+                            cy={mc(ping.z)}
+                            r="10"
+                            fill="none"
+                            stroke={col}
+                            strokeWidth="2"
+                            strokeDasharray="3 2"
+                          />
+                          <circle cx={mc(ping.x)} cy={mc(ping.z)} r="3" fill={col} />
+                        </g>
+                      );
+                    })}
+
+                    {/* Foundation Banners (Same Realm) */}
+                    {sameRealmBanners.map((b) => (
                       <polygon
                         key={b.id}
                         points={`${mc(b.position[0])},${mc(b.position[1]) - 6} ${mc(b.position[0]) + 5},${mc(b.position[1]) + 4} ${mc(b.position[0]) - 5},${mc(b.position[1]) + 4}`}
@@ -756,7 +929,7 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
                     <span className="w-2.5 h-2.5 rounded-full bg-white inline-block" /> You
                   </span>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#78d5f5] inline-block" /> Live Allies ({remotePlayers.length})
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#78d5f5] inline-block" /> Allies Here ({sameRealmAllies.length}/{remotePlayers.length})
                   </span>
                   <span className="inline-flex items-center gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#5ea38c] inline-block" /> Waywright NPC
@@ -1155,54 +1328,346 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {relics.map((r) => (
-                    <div
-                      key={r.id}
-                      className={`p-3.5 rounded-sm border flex items-start justify-between gap-3 ${
-                        r.equipped
-                          ? 'bg-[#1a222b] border-[#d4a253]/55'
-                          : 'bg-[#151b23] border-white/10'
-                      }`}
-                    >
-                      <div>
-                        <p className="text-[10px] uppercase tracking-[0.14em] text-[#5ea38c] font-semibold">
-                          {r.origin}
-                        </p>
-                        <h4 className="font-display text-xs font-bold text-[#f3efe6] mt-0.5">
-                          {r.name}
-                        </h4>
-                        <p className="text-[11px] text-[#aeb9c6] mt-1">{r.description}</p>
-                        <p className="font-mono text-[11px] text-[#e8c374] mt-1.5">
-                          {formatRelicBonus(r)}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => onToggleRelic(r.id)}
-                        className={`shrink-0 px-2.5 py-1.5 rounded-sm text-[10px] font-display font-bold uppercase tracking-[0.08em] cursor-pointer ${
+                  {relics.map((r) => {
+                    const rarityTone =
+                      r.rarity === 'Sovereign'
+                        ? 'bg-[#362614] border-[#f0bd5e]/60 text-[#ffd784]'
+                        : r.rarity === 'Resonant'
+                          ? 'bg-[#162724] border-[#5ea38c]/55 text-[#8ee3c5]'
+                          : 'bg-[#1d222c] border-white/15 text-[#c0cbd8]';
+                    return (
+                      <div
+                        key={r.id}
+                        data-testid={`relic-card-${r.id}`}
+                        className={`p-3.5 rounded-sm border flex items-start justify-between gap-3 ${
                           r.equipped
-                            ? 'bg-[#2a333f] text-[#cfd7e2] hover:bg-[#34404f]'
-                            : 'bg-[#d4a253] text-[#14110b] hover:bg-[#e1b366]'
+                            ? 'bg-[#1a222b] border-[#d4a253]/55 shadow-[0_6px_18px_rgba(0,0,0,0.35)]'
+                            : 'bg-[#151b23] border-white/10'
                         }`}
                       >
-                        {r.equipped ? 'Equipped' : 'Equip'}
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-start gap-3 min-w-0">
+                          {r.sigilSvg ? (
+                            <img
+                              src={r.sigilSvg}
+                              alt={`${r.name} sigil`}
+                              className="w-12 h-12 rounded-sm shrink-0 border border-white/12 bg-[#12161d]"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-sm shrink-0 border border-[#d4a253]/35 bg-[#1b2029] flex items-center justify-center font-mono text-[10px] text-[#e8c374]">
+                              {r.resonanceHz ? `${r.resonanceHz}Hz` : 'SIGIL'}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {r.rarity && (
+                                <span
+                                  className={`px-1.5 py-0.5 rounded-[2px] border text-[9px] font-mono font-bold uppercase tracking-[0.1em] ${rarityTone}`}
+                                >
+                                  {r.rarity}
+                                </span>
+                              )}
+                              {r.resonanceHz && (
+                                <span className="font-mono text-[9px] text-[#8fa0b2]">
+                                  {r.resonanceHz} Hz
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] uppercase tracking-[0.12em] text-[#5ea38c] font-semibold mt-1 truncate">
+                              {r.origin}
+                            </p>
+                            <h4 className="font-display text-xs font-bold text-[#f3efe6] mt-0.5">
+                              {r.name}
+                            </h4>
+                            <p className="text-[11px] text-[#aeb9c6] mt-1 leading-snug">
+                              {r.description}
+                            </p>
+                            <p className="font-mono text-[11px] text-[#e8c374] mt-1.5">
+                              {formatRelicBonus(r)}
+                            </p>
+                            {r.perkLabel && (
+                              <div className="mt-1.5 pt-1.5 border-t border-white/8">
+                                <p className="text-[10px] font-mono uppercase tracking-[0.08em] text-[#7ad8eb] font-semibold">
+                                  Active Perk · {r.perkLabel}
+                                </p>
+                                {r.perkDescription && (
+                                  <p className="text-[10px] text-[#9cb0c2] mt-0.5 leading-snug">
+                                    {r.perkDescription}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onToggleRelic(r.id)}
+                          className={`shrink-0 px-2.5 py-1.5 rounded-sm text-[10px] font-display font-bold uppercase tracking-[0.08em] cursor-pointer ${
+                            r.equipped
+                              ? 'bg-[#2a333f] text-[#cfd7e2] hover:bg-[#34404f]'
+                              : 'bg-[#d4a253] text-[#14110b] hover:bg-[#e1b366]'
+                          }`}
+                        >
+                          {r.equipped ? 'Equipped' : 'Equip'}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
           )}
 
           {tab === 'guilds' && (
-            <div className="space-y-5">
+            <div className="space-y-6">
+              {/* Live Co-op Fellowship, Expedition Room & Invite Controls */}
+              <div
+                data-testid="fellowship-panel"
+                className="rounded-sm border border-[#52d6f4]/35 bg-[#111822] p-4 space-y-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-2 h-2 rounded-full ${realmConnected ? 'bg-[#5ea38c]' : 'bg-[#d4a253]'}`}
+                      />
+                      <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#7ed9ee] font-semibold">
+                        Live Co-op Expedition · Room {roomCode}
+                      </p>
+                    </div>
+                    <h2 className="font-display text-lg font-bold text-[#f3efe6] mt-0.5">
+                      Fellowship &amp; Shared Meridian
+                    </h2>
+                    <p className="text-xs text-[#9eb0c2] mt-0.5">
+                      Share your Expedition link so friends join your exact room. Fight bosses together,
+                      mend nearby allies with your Mortar Lantern [3], drop Rally Beacons [G], and warp into
+                      each other&apos;s realms or 3D dungeons.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      data-testid="copy-invite-btn"
+                      onClick={() => {
+                        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                          void navigator.clipboard.writeText(inviteUrl).catch(() => {});
+                        }
+                        setCopiedInvite(true);
+                        window.setTimeout(() => setCopiedInvite(false), 2200);
+                      }}
+                      className="px-3.5 py-2 rounded-sm bg-[#52d6f4] hover:bg-[#70e1fa] text-[#0c141c] font-display text-xs font-bold uppercase tracking-[0.1em] cursor-pointer"
+                    >
+                      {copiedInvite ? 'Invite Link Copied' : 'Copy Invite Link'}
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="summon-party-btn"
+                      onClick={onSummonParty}
+                      className="px-3.5 py-2 rounded-sm bg-[#d4a253] hover:bg-[#e1b366] text-[#14110b] font-display text-xs font-bold uppercase tracking-[0.1em] cursor-pointer"
+                    >
+                      Summon Party Here
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDropPing('rally', 'Rally Here')}
+                      className="px-3 py-2 rounded-sm bg-[#192531] hover:bg-[#223344] border border-[#52d6f4]/35 text-[#88dff5] font-display text-xs font-semibold uppercase tracking-[0.08em] cursor-pointer"
+                    >
+                      Rally Ping [G]
+                    </button>
+                  </div>
+                </div>
+
+                {/* Callsign & Private/Public Room Switcher */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-white/10">
+                  <form
+                    className="bg-[#151d28] border border-white/10 rounded-sm p-3 space-y-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (callsignDraft.trim().length >= 2) {
+                        onUpdateCallsign(callsignDraft.trim());
+                      }
+                    }}
+                  >
+                    <label
+                      htmlFor="waywright-callsign-input"
+                      className="block text-[10px] font-mono uppercase tracking-[0.14em] text-[#b4c2d1]"
+                    >
+                      Your Waywright Callsign
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="waywright-callsign-input"
+                        data-testid="callsign-input"
+                        type="text"
+                        maxLength={24}
+                        value={callsignDraft}
+                        onChange={(e) => setCallsignDraft(e.target.value)}
+                        className="flex-1 min-w-0 px-2.5 py-1.5 rounded-sm bg-[#0d1218] border border-white/15 focus:border-[#d4a253] text-xs text-[#f3efe6] outline-none"
+                      />
+                      <button
+                        type="submit"
+                        data-testid="save-callsign-btn"
+                        className="px-3 py-1.5 rounded-sm bg-[#25303f] hover:bg-[#314054] border border-[#d4a253]/40 text-xs font-semibold text-[#f0cd80] cursor-pointer"
+                      >
+                        Update Name
+                      </button>
+                    </div>
+                  </form>
+
+                  <form
+                    className="bg-[#151d28] border border-white/10 rounded-sm p-3 space-y-2"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (roomInput.trim().length >= 3) {
+                        onSwitchRoom(roomInput.trim());
+                        setRoomInput('');
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="expedition-room-input"
+                        className="text-[10px] font-mono uppercase tracking-[0.14em] text-[#b4c2d1]"
+                      >
+                        Expedition Room Code
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          data-testid="create-private-room-btn"
+                          onClick={() => onSwitchRoom(generatePrivateRoomCode())}
+                          className="text-[10px] font-mono text-[#7ed9ee] hover:text-[#b4effc] underline cursor-pointer"
+                        >
+                          New Private Room
+                        </button>
+                        {roomCode !== DEFAULT_ROOM_CODE && (
+                          <button
+                            type="button"
+                            onClick={() => onSwitchRoom(DEFAULT_ROOM_CODE)}
+                            className="text-[10px] font-mono text-[#d4a253] hover:text-[#f0c778] underline cursor-pointer"
+                          >
+                            Open Meridian
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="expedition-room-input"
+                        data-testid="room-code-input"
+                        type="text"
+                        maxLength={18}
+                        value={roomInput}
+                        onChange={(e) => setRoomInput(e.target.value.toUpperCase())}
+                        placeholder={`Current: ${roomCode}`}
+                        className="flex-1 min-w-0 px-2.5 py-1.5 rounded-sm bg-[#0d1218] border border-white/15 focus:border-[#52d6f4] font-mono text-xs text-[#f3efe6] placeholder:text-[#6f7e8f] outline-none"
+                      />
+                      <button
+                        type="submit"
+                        data-testid="join-room-btn"
+                        disabled={roomInput.trim().length < 3}
+                        className="px-3 py-1.5 rounded-sm bg-[#233342] hover:bg-[#2d4357] disabled:opacity-40 border border-[#52d6f4]/40 text-xs font-semibold text-[#9be8fb] cursor-pointer"
+                      >
+                        Join Room
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Live Party Roster */}
+                <div className="space-y-2 pt-2 border-t border-white/10">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-display text-xs font-bold uppercase tracking-[0.14em] text-[#7ed9ee]">
+                      Active Waywrights in {roomCode} ({1 + remotePlayers.length})
+                    </h3>
+                    <span className="font-mono text-[10px] text-[#8fa0b2] truncate max-w-[320px]">
+                      {inviteUrl}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    {/* Local Player Card */}
+                    <div className="px-3 py-2.5 rounded-sm bg-[#17202b] border border-[#d4a253]/45 flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-[#d4a253]" />
+                          <span className="text-xs font-bold text-[#f6f1e6] truncate">
+                            {playerCallsign}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-[2px] bg-[#d4a253]/20 text-[9px] font-mono uppercase text-[#f0cd80]">
+                            You
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#9fb0c2] mt-0.5 truncate">
+                          {activeRealm.name} · ({Math.round(playerX)}, {Math.round(playerZ)})
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-mono text-[10px] text-[#7fd1b6] tabular-nums">
+                          {Math.round(playerHp)}/{playerMaxHp} HP
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Connected Remote Allies */}
+                    {remotePlayers.length === 0 ? (
+                      <div className="px-3 py-2.5 rounded-sm bg-[#151b23] border border-white/8 flex items-center text-xs text-[#94a3b4]">
+                        No other Waywrights in {roomCode} yet — copy the invite link above to play
+                        together!
+                      </div>
+                    ) : (
+                      remotePlayers.map((ally) => {
+                        const inSameRealm = (ally.realmSlug || 'vaelmor') === activeRealm.slug;
+                        const dist = Math.round(Math.hypot(ally.x - playerX, ally.z - playerZ));
+                        const allyHp = ally.hp ?? 100;
+                        const allyMaxHp = Math.max(1, ally.maxHp ?? 100);
+                        return (
+                          <div
+                            key={ally.id}
+                            data-testid={`roster-ally-${ally.id}`}
+                            className="px-3 py-2.5 rounded-sm bg-[#151d26] border border-[#52d6f4]/30 flex items-center justify-between gap-3"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`w-2 h-2 rounded-full ${
+                                    inSameRealm ? 'bg-[#52d6f4]' : 'bg-[#d4a253]'
+                                  }`}
+                                />
+                                <span className="text-xs font-bold text-[#edf5fa] truncate">
+                                  {ally.name}
+                                </span>
+                                <span className="font-mono text-[10px] text-[#7fd1b6] tabular-nums">
+                                  {allyHp}/{allyMaxHp} HP
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-[#9cb0c4] mt-0.5 truncate">
+                                {ally.realmName || ally.realmSlug || 'Vaelmor Meridian'}
+                                {inSameRealm ? ` · ${dist}m away` : ' · Different Realm'}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              data-testid={`warp-ally-${ally.id}`}
+                              onClick={() => onWarpToAlly(ally)}
+                              className="px-2.5 py-1.5 rounded-sm bg-[#d4a253] hover:bg-[#e1b366] text-[#14110b] font-display text-[10px] font-bold uppercase tracking-[0.08em] cursor-pointer shrink-0"
+                            >
+                              {inSameRealm ? 'Meet Up' : 'Warp To'}
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <h2 className="font-display text-lg font-bold text-[#f3efe6]">
                   Federated Frontier Guilds
                 </h2>
                 <p className="text-xs text-[#9ca7b5] mt-0.5">
                   Pledge allegiance and raise Foundation Banners with your Brass Way-Compass [4].
-                  Guild prosperity and banners sync live across all connected Waywrights.
+                  Guild prosperity and banners sync live across your Expedition Room.
                 </p>
               </div>
 
@@ -1292,7 +1757,611 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
           )}
 
           {tab === 'codex' && (
-            <div className="space-y-4">
+            <div className="space-y-5">
+              {/* Unified World Charter — Single Model of Models & Verdant Observer/Manager Refinement */}
+              {modelObserverSnapshot && (
+                <div className="rounded-sm border border-[#d4a253]/35 bg-[#151b24] p-4 space-y-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.18em] text-[#d4a253] font-semibold">
+                        Verdant Generative Charter · Model of Models
+                      </p>
+                      <h2 className="font-display text-base font-bold text-[#f3efe6] mt-0.5">
+                        Tier {modelObserverSnapshot.summary.resolutionTier} · {modelObserverSnapshot.kpis.resolutionLabel}
+                      </h2>
+                      <p className="text-xs text-[#9ca7b5] mt-1">
+                        {modelObserverSnapshot.summary.totalModels} composed models ·{' '}
+                        {modelObserverSnapshot.graphEdgeCount} semantic links (
+                        {modelObserverSnapshot.crossPartEdgeCount} cross-part) ·{' '}
+                        {modelObserverSnapshot.summary.partsPopulated}/{modelObserverSnapshot.summary.totalParts} Verdant Cognitive Parts ·{' '}
+                        {modelObserverSnapshot.managersCount} VSM Managers ({modelObserverSnapshot.wasmManagersCount} Engine +{' '}
+                        {modelObserverSnapshot.frontiersManagersCount} Frontiers)
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {onRunAutomate && (
+                        <button
+                          type="button"
+                          data-testid="run-automate-btn"
+                          disabled={Boolean(refiningWorldModel)}
+                          onClick={() => onRunAutomate()}
+                          className="px-3.5 py-2 rounded-sm border border-[#7ad4f7]/65 bg-[#7ad4f7]/16 hover:bg-[#7ad4f7]/26 text-[#d9f3ff] text-xs font-semibold tracking-wide transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {refiningWorldModel ? 'Automating…' : 'Run Verdant Automate'}
+                        </button>
+                      )}
+                      {onRunRatchetCycle && (
+                        <button
+                          type="button"
+                          data-testid="run-ratchet-btn"
+                          disabled={Boolean(refiningWorldModel)}
+                          onClick={() => onRunRatchetCycle()}
+                          className="px-3.5 py-2 rounded-sm border border-[#66dc9d]/60 bg-[#66dc9d]/14 hover:bg-[#66dc9d]/24 text-[#c8f7dc] text-xs font-semibold tracking-wide transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {refiningWorldModel ? 'Running Ratchet…' : 'Run Ratchet Cycle'}
+                        </button>
+                      )}
+                      {onRefineWorldModel && (
+                        <button
+                          type="button"
+                          data-testid="uniform-refine-btn"
+                          disabled={Boolean(refiningWorldModel)}
+                          onClick={() => onRefineWorldModel(4)}
+                          className="px-3.5 py-2 rounded-sm border border-[#d4a253]/70 bg-[#d4a253]/18 hover:bg-[#d4a253]/28 text-[#f5dfb0] text-xs font-semibold tracking-wide transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {refiningWorldModel
+                            ? 'Refining…'
+                            : modelObserverSnapshot.summary.resolutionTier < 4
+                              ? 'Refine to Tier 4'
+                              : 'Sovereign Pass'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* M16/M17 Lifecycle Gate, Constructive Health Score & Monotonic Watermark Bar */}
+                  <div
+                    data-testid="codex-lifecycle-gate-bar"
+                    className="rounded-sm bg-[#0f141b] border border-white/10 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-[11px]"
+                  >
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span
+                        data-testid="codex-lifecycle-gate-badge"
+                        className={`font-mono font-semibold ${
+                          modelObserverSnapshot.lifecycleGatePassed
+                            ? 'text-[#66dc9d]'
+                            : 'text-[#f28749]'
+                        }`}
+                      >
+                        Lifecycle Gate {modelObserverSnapshot.lifecycleChecksPassed}/
+                        {modelObserverSnapshot.lifecycleChecksTotal}
+                      </span>
+                      <span className="text-[#8d99a8]">·</span>
+                      <span className="font-mono text-[#7ad4f7] tabular-nums">
+                        Refinement Score{' '}
+                        {modelObserverSnapshot.overallRefinementScorePermille}‰
+                      </span>
+                      <span className="text-[#8d99a8]">·</span>
+                      <span className="font-mono text-[#c2ccd8] tabular-nums">
+                        Watermarks: Div ≥{modelObserverSnapshot.watermarks.minDiversityIndex} · Coh ≥
+                        {modelObserverSnapshot.watermarks.minCohesionIndex} · Def ≥
+                        {modelObserverSnapshot.watermarks.minDefinitionScore}
+                      </span>
+                    </div>
+                    <span className="font-mono text-[10px] text-[#8e9aa9]">
+                      {modelObserverSnapshot.watermarks.spec}
+                    </span>
+                  </div>
+
+                  {/* Summary Metrics Row */}
+                  <div className="grid grid-cols-2 sm:grid-cols-6 gap-2.5">
+                    <div className="rounded-sm bg-[#0f141b] border border-white/10 p-2.5">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-[#8d99a8]">Cohesion KPI</p>
+                      <p className="font-mono text-lg font-bold text-[#7ad4f7] tabular-nums mt-0.5">
+                        {modelObserverSnapshot.kpis.cohesionIndex}
+                        <span className="text-xs text-[#8d99a8] font-normal">/100</span>
+                      </p>
+                    </div>
+                    <div className="rounded-sm bg-[#0f141b] border border-white/10 p-2.5">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-[#8d99a8]">Diversity KPI</p>
+                      <p className="font-mono text-lg font-bold text-[#66dc9d] tabular-nums mt-0.5">
+                        {modelObserverSnapshot.kpis.diversityIndex}
+                        <span className="text-xs text-[#8d99a8] font-normal">/100</span>
+                      </p>
+                    </div>
+                    <div className="rounded-sm bg-[#0f141b] border border-white/10 p-2.5">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-[#8d99a8]">Definition</p>
+                      <p className="font-mono text-lg font-bold text-[#e8c468] tabular-nums mt-0.5">
+                        {modelObserverSnapshot.summary.definitionScore}
+                        <span className="text-xs text-[#8d99a8] font-normal">/100</span>
+                      </p>
+                    </div>
+                    <div className="rounded-sm bg-[#0f141b] border border-white/10 p-2.5">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-[#8d99a8]">Graph Links</p>
+                      <p
+                        data-testid="codex-graph-edge-count"
+                        className="font-mono text-lg font-bold text-[#a9c7ff] tabular-nums mt-0.5"
+                      >
+                        {modelObserverSnapshot.graphEdgeCount}
+                        <span className="text-[10px] text-[#8d99a8] font-normal ml-1">
+                          ({modelObserverSnapshot.crossPartEdgeCount} x-part)
+                        </span>
+                      </p>
+                    </div>
+                    <div className="rounded-sm bg-[#0f141b] border border-white/10 p-2.5">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-[#8d99a8]">Clones</p>
+                      <p className="font-mono text-lg font-bold text-[#f3efe6] tabular-nums mt-0.5">
+                        {modelObserverSnapshot.kpis.clonePairsTotal}
+                        <span className="text-xs text-[#66dc9d] font-normal ml-1.5">
+                          {modelObserverSnapshot.kpis.clonePairsTotal === 0 ? 'Bespoke' : 'Needs Pass'}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="rounded-sm bg-[#0f141b] border border-white/10 p-2.5">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-[#8d99a8]">Root Seal</p>
+                      <p
+                        data-testid="codex-root-kappa"
+                        className="font-mono text-[11px] text-[#c2ccd8] truncate mt-1.5"
+                        title={modelObserverSnapshot.summary.kappaDigest}
+                      >
+                        {modelObserverSnapshot.summary.kappaDigest.slice(0, 14)}…
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 12 Diversity, Cohesion, Graph & vTensor KPI Gates */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" data-testid="codex-kpi-grid">
+                    {modelObserverSnapshot.kpis.kpis.map((kpi) => (
+                      <div
+                        key={kpi.id}
+                        className="rounded-sm bg-[#10151d] border border-white/8 px-3 py-2 flex items-center justify-between gap-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-[#e6dfd1] truncate">{kpi.label}</p>
+                          <p className="text-[11px] text-[#8e9aa9] truncate">{kpi.detail}</p>
+                        </div>
+                        <span
+                          className={`font-mono text-xs font-bold tabular-nums shrink-0 ${
+                            kpi.passed ? 'text-[#66dc9d]' : 'text-[#f28749]'
+                          }`}
+                        >
+                          {kpi.value}
+                          {kpi.unit === '%' ? '%' : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* M16 Observer Refinement Agenda */}
+                  {observerAgenda && observerAgenda.proposals.length > 0 && (
+                    <div className="rounded-sm bg-[#10151d] border border-white/10 p-3 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-[10px] uppercase tracking-[0.16em] text-[#d4a253] font-semibold">
+                          Observer Refinement Agenda · {observerAgenda.proposals.length}{' '}
+                          {observerAgenda.proposals.length === 1 ? 'Proposal' : 'Proposals'}
+                        </p>
+                        <span className="text-[10px] font-mono text-[#8e9aa9] tabular-nums">
+                          {observerAgenda.criticalCount} critical · {observerAgenda.highCount} high
+                        </span>
+                      </div>
+                      <div className="space-y-1.5">
+                        {observerAgenda.proposals.slice(0, 4).map((prop) => (
+                          <div
+                            key={prop.proposalId}
+                            className="rounded-sm bg-[#151b24] border border-white/8 px-2.5 py-2 flex items-start justify-between gap-3"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span
+                                  className={`font-mono text-[9px] uppercase px-1.5 py-0.5 rounded-sm border ${
+                                    prop.priority === 'critical'
+                                      ? 'border-[#f26b5b]/50 text-[#f7a298] bg-[#f26b5b]/12'
+                                      : prop.priority === 'high'
+                                        ? 'border-[#f2b349]/50 text-[#f6d08b] bg-[#f2b349]/12'
+                                        : 'border-[#66dc9d]/40 text-[#9cecc0] bg-[#66dc9d]/10'
+                                  }`}
+                                >
+                                  {prop.priority}
+                                </span>
+                                <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 rounded-sm border border-white/12 text-[#b8c4d4]">
+                                  {prop.vsmSystem}
+                                </span>
+                                <span className="font-mono text-[10px] text-[#8e9aa9] truncate">
+                                  {prop.owningManagerId}
+                                </span>
+                              </div>
+                              <p className="text-xs font-medium text-[#e6dfd1] mt-1">{prop.title}</p>
+                            </div>
+                            <span className="font-mono text-[11px] tabular-nums text-[#d4a253] shrink-0">
+                              {prop.currentValue} → {prop.targetValue}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* M16/M17 Pinpoint Observer Diagnoses (Click to jump straight into Model Inspector) */}
+                      {observerAgenda.pinpointDiagnoses.length > 0 && (
+                        <div className="pt-2 border-t border-white/8 space-y-1.5">
+                          <p className="text-[10px] uppercase tracking-[0.14em] text-[#7ad4f7] font-semibold">
+                            Pinpoint Observer Diagnoses ({observerAgenda.pinpointDiagnoses.length})
+                          </p>
+                          <div className="space-y-1">
+                            {observerAgenda.pinpointDiagnoses.slice(0, 3).map((diag) => (
+                              <button
+                                key={diag.diagnosisId}
+                                type="button"
+                                onClick={() => {
+                                  setInspectedPart(diag.partSlot);
+                                  setInspectedModelId(diag.modelId);
+                                }}
+                                className="w-full text-left rounded-sm bg-[#131922] hover:bg-[#192230] border border-white/8 hover:border-[#7ad4f7]/45 px-2.5 py-1.5 flex items-center justify-between gap-2 transition-colors cursor-pointer"
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-[11px] font-medium text-[#e6dfd1] truncate">
+                                    <span className="font-mono text-[#7ad4f7] mr-1.5">
+                                      [{diag.partSlot}]
+                                    </span>
+                                    {diag.modelTitle} — {diag.cause}
+                                  </p>
+                                  <p className="text-[10px] text-[#8e9aa9] truncate">
+                                    {diag.recommendedAction}
+                                  </p>
+                                </div>
+                                <span className="font-mono text-[10px] text-[#e8c468] shrink-0 tabular-nums">
+                                  {diag.currentScore} → {diag.targetScore}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 21 VSM S1-S5 Managers Orchestration Strip */}
+                  {observerManagers && observerManagers.length > 0 && (
+                    <div className="rounded-sm bg-[#10151d] border border-white/10 p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[10px] uppercase tracking-[0.16em] text-[#9ca7b5] font-semibold">
+                          VSM Manager Orchestration ({observerManagers.length} Managers · S1–S5)
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setShowManagers((v) => !v)}
+                          className="text-[11px] font-mono text-[#d4a253] hover:text-[#f0c77c] cursor-pointer"
+                        >
+                          {showManagers ? 'Hide Roster' : 'Inspect Roster'}
+                        </button>
+                      </div>
+                      {showManagers && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                          {observerManagers
+                            .filter((m) => m.origin === 'frontiers-extension')
+                            .map((mgr) => (
+                              <div
+                                key={mgr.managerId}
+                                className="rounded-sm bg-[#151b24] border border-white/8 px-2.5 py-1.5"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs font-semibold text-[#e6dfd1] truncate">
+                                    {mgr.name}
+                                  </span>
+                                  <span className="font-mono text-[9px] text-[#7ad4f7] shrink-0">
+                                    {mgr.vsmSystem} · p={mgr.basisPrime}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-[#8e9aa9] truncate mt-0.5">
+                                  {mgr.citedAuthority}
+                                </p>
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Sealed Prism Refinement Audit Ledger */}
+                  {modelObserverSnapshot.recentAuditEntries.length > 0 && (
+                    <div
+                      data-testid="codex-audit-ledger"
+                      className="rounded-sm bg-[#10151d] border border-[#66dc9d]/30 p-3 space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[10px] uppercase tracking-[0.16em] text-[#66dc9d] font-semibold">
+                          Sealed Prism Refinement Ledger ({modelObserverSnapshot.auditLedgerCount}{' '}
+                          {modelObserverSnapshot.auditLedgerCount === 1 ? 'Pass' : 'Passes'})
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setShowAuditLedger((v) => !v)}
+                          className="text-[11px] font-mono text-[#66dc9d] hover:text-[#a9f5cd] cursor-pointer"
+                        >
+                          {showAuditLedger ? 'Collapse Ledger' : 'Inspect Seals'}
+                        </button>
+                      </div>
+                      <div className="space-y-1.5">
+                        {(showAuditLedger
+                          ? modelObserverSnapshot.recentAuditEntries
+                          : modelObserverSnapshot.recentAuditEntries.slice(0, 2)
+                        ).map((entry) => (
+                          <div
+                            key={`${entry.passNumber}-${entry.nextKappaDigest}`}
+                            className="rounded-sm bg-[#151b24] border border-white/8 px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px]"
+                          >
+                            <div className="min-w-0">
+                              <span className="font-mono text-[#d4a253] font-semibold mr-2">
+                                Pass #{entry.passNumber}
+                              </span>
+                              <span className="text-[#e6dfd1]">{entry.scope}</span>
+                              <span className="text-[#8e9aa9] ml-2">
+                                ({entry.modelsRefined} models · {entry.graphEdgesVerified} links)
+                              </span>
+                            </div>
+                            <span className="font-mono text-[10px] text-[#7ad4f7] tabular-nums">
+                              {entry.prevKappaDigest.slice(0, 10)} → {entry.nextKappaDigest.slice(0, 12)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 8 Canonical Verdant Cognitive Parts (Clickable for Live Sub-Model & Lineage Inspection) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {modelObserverSnapshot.summary.parts.map((part) => {
+                      const isSelected = inspectedPart === part.partSlot;
+                      return (
+                        <div
+                          key={part.partSlot}
+                          className={`rounded-sm bg-[#10151d] border p-2.5 flex items-center justify-between gap-2 transition-colors ${
+                            isSelected ? 'border-[#7ad4f7]/65 bg-[#131c27]' : 'border-white/10'
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            data-testid={`inspect-part-${part.partSlot}`}
+                            onClick={() => {
+                              if (isSelected) {
+                                setInspectedPart(null);
+                                setInspectedModelId(null);
+                              } else {
+                                setInspectedPart(part.partSlot);
+                                const firstModel = onInspectPartModels?.(part.partSlot)?.[0];
+                                setInspectedModelId(firstModel?.modelId ?? null);
+                              }
+                            }}
+                            className="min-w-0 text-left flex-1 cursor-pointer"
+                          >
+                            <p className="text-[10px] font-mono uppercase tracking-wider text-[#d4a253]">
+                              {part.partSlot}
+                            </p>
+                            <p className="text-xs font-medium text-[#e6dfd1] truncate">{part.title}</p>
+                            <p className="text-[11px] text-[#8e9aa9] mt-0.5 tabular-nums">
+                              {part.modelCount} models · Tier {part.meanResolutionTier} · Def{' '}
+                              {part.meanDefinitionScore} · {part.uniqueFeatureTokens} traits
+                            </p>
+                          </button>
+                          {onRefineWorldModel && (
+                            <button
+                              type="button"
+                              disabled={Boolean(refiningWorldModel)}
+                              onClick={() => onRefineWorldModel(4, part.partSlot)}
+                              className="shrink-0 px-2.5 py-1 rounded-sm border border-white/15 bg-white/5 hover:border-[#d4a253]/50 hover:text-[#f5dfb0] text-[11px] text-[#c2ccd8] transition-colors cursor-pointer disabled:opacity-50"
+                            >
+                              Refine
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Interactive Sub-Model, 8D vTensor Vector & Cross-Part Lineage Inspector */}
+                  {inspectedPart && onInspectPartModels && (() => {
+                    const partModels = onInspectPartModels(inspectedPart);
+                    const activeModelId =
+                      inspectedModelId && partModels.some((m) => m.modelId === inspectedModelId)
+                        ? inspectedModelId
+                        : (inspectedModelId ?? partModels[0]?.modelId ?? null);
+                    const lineage =
+                      activeModelId && onInspectModelLineage
+                        ? onInspectModelLineage(activeModelId)
+                        : null;
+                    const activeModel = lineage?.model ?? partModels[0] ?? null;
+
+                    return (
+                      <div
+                        data-testid="codex-model-inspector"
+                        className="rounded-sm bg-[#0d1219] border border-[#7ad4f7]/40 p-3.5 space-y-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-[0.16em] text-[#7ad4f7] font-semibold">
+                              Model Graph &amp; Lineage Inspector · {inspectedPart} ({partModels.length})
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setInspectedPart(null);
+                              setInspectedModelId(null);
+                            }}
+                            className="text-[11px] font-mono text-[#9ca7b5] hover:text-[#f3efe6] cursor-pointer"
+                          >
+                            Close Inspector
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                          {/* Sub-model selector list */}
+                          <div className="md:col-span-5 max-h-56 overflow-y-auto space-y-1 pr-1">
+                            {partModels.slice(0, 24).map((m) => {
+                              const selected = activeModel?.modelId === m.modelId;
+                              return (
+                                <button
+                                  key={m.modelId}
+                                  type="button"
+                                  data-testid={`model-node-${m.modelId}`}
+                                  onClick={() => setInspectedModelId(m.modelId)}
+                                  className={`w-full text-left px-2.5 py-1.5 rounded-sm border transition-colors cursor-pointer ${
+                                    selected
+                                      ? 'bg-[#172331] border-[#7ad4f7]/60 text-[#f3efe6]'
+                                      : 'bg-[#121822] border-white/8 hover:border-white/20 text-[#b8c4d4]'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs font-medium truncate">{m.title}</span>
+                                    <span className="font-mono text-[10px] text-[#e8c468] shrink-0 tabular-nums">
+                                      T{m.resolutionTier} · {m.definitionScore}
+                                    </span>
+                                  </div>
+                                  <p className="font-mono text-[10px] text-[#7d8a9a] truncate">
+                                    {m.kind} · {m.modelId}
+                                  </p>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          {/* Selected model details: 8D vTensor vector, genome & relational lineage */}
+                          {activeModel && (
+                            <div className="md:col-span-7 rounded-sm bg-[#131923] border border-white/10 p-3 space-y-3">
+                              <div className="flex flex-wrap items-start justify-between gap-2">
+                                <div className="min-w-0">
+                                  <p className="font-mono text-[10px] text-[#d4a253] truncate">
+                                    {activeModel.modelId} · v{activeModel.version}
+                                  </p>
+                                  <h3 className="font-display text-sm font-bold text-[#f3efe6]">
+                                    {activeModel.title}
+                                  </h3>
+                                  <p className="text-[11px] text-[#8e9aa9] mt-0.5 truncate">
+                                    Generator: {activeModel.generativeGenome.generator} · Seed #
+                                    {activeModel.generativeGenome.seed.toString(16).slice(0, 8)}
+                                  </p>
+                                </div>
+                                {onRefineWorldModel && (
+                                  <button
+                                    type="button"
+                                    data-testid="refine-single-model-btn"
+                                    disabled={Boolean(refiningWorldModel)}
+                                    onClick={() => onRefineWorldModel(4, undefined, activeModel.modelId)}
+                                    className="shrink-0 px-2.5 py-1 rounded-sm border border-[#d4a253]/60 bg-[#d4a253]/15 hover:bg-[#d4a253]/25 text-[#f5dfb0] text-[11px] font-semibold cursor-pointer disabled:opacity-50"
+                                  >
+                                    Refine Model
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* 8D vTensor Semantic Vector Profile */}
+                              <div>
+                                <p className="text-[10px] uppercase tracking-[0.14em] text-[#9ca7b5] font-semibold mb-1.5">
+                                  8D vTensor Semantic Vector
+                                </p>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                                  {SEMANTIC_VECTOR_AXES.map((axis, idx) => {
+                                    const val = activeModel.semanticVector[idx] ?? 0;
+                                    const pct = Math.round(val * 100);
+                                    return (
+                                      <div
+                                        key={axis}
+                                        className="rounded-sm bg-[#0f141c] border border-white/8 px-2 py-1"
+                                      >
+                                        <div className="flex items-center justify-between text-[10px]">
+                                          <span className="text-[#9ca7b5] capitalize">{axis}</span>
+                                          <span className="font-mono text-[#7ad4f7] tabular-nums">
+                                            {val.toFixed(2)}
+                                          </span>
+                                        </div>
+                                        <div className="mt-1 h-1 rounded-sm bg-white/10 overflow-hidden">
+                                          <div
+                                            className="h-full bg-[#7ad4f7]"
+                                            style={{ width: `${pct}%` }}
+                                          />
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Cross-Part Relational Lineage */}
+                              {lineage && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-white/8">
+                                  <div>
+                                    <p className="text-[10px] uppercase tracking-[0.14em] text-[#66dc9d] font-semibold mb-1">
+                                      Dependencies ({lineage.upstream.length})
+                                    </p>
+                                    {lineage.upstream.length === 0 ? (
+                                      <p className="text-[11px] text-[#7d8a9a]">Root leaf primitive</p>
+                                    ) : (
+                                      <div className="space-y-1 max-h-24 overflow-y-auto">
+                                        {lineage.upstream.slice(0, 8).map((u, idx) => (
+                                          <button
+                                            key={`${u.node.modelId}-${u.relation}-${idx}`}
+                                            type="button"
+                                            onClick={() => {
+                                              if (u.node.partSlot !== 'root') {
+                                                setInspectedPart(u.node.partSlot);
+                                              }
+                                              setInspectedModelId(u.node.modelId);
+                                            }}
+                                            className="w-full text-left text-[11px] px-2 py-1 rounded-sm bg-[#0f141c] hover:bg-[#182230] border border-white/8 flex items-center justify-between gap-2 cursor-pointer"
+                                          >
+                                            <span className="text-[#c8d4e3] truncate">
+                                              {u.node.title}
+                                            </span>
+                                            <span className="font-mono text-[9px] text-[#66dc9d] shrink-0">
+                                              {u.relation}
+                                            </span>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div>
+                                    <p className="text-[10px] uppercase tracking-[0.14em] text-[#d4a253] font-semibold mb-1">
+                                      Dependents ({lineage.downstream.length})
+                                    </p>
+                                    {lineage.downstream.length === 0 ? (
+                                      <p className="text-[11px] text-[#7d8a9a]">Terminal consumer</p>
+                                    ) : (
+                                      <div className="space-y-1 max-h-24 overflow-y-auto">
+                                        {lineage.downstream.slice(0, 8).map((d, idx) => (
+                                          <button
+                                            key={`${d.node.modelId}-${d.relation}-${idx}`}
+                                            type="button"
+                                            onClick={() => {
+                                              if (d.node.partSlot !== 'root') {
+                                                setInspectedPart(d.node.partSlot);
+                                              }
+                                              setInspectedModelId(d.node.modelId);
+                                            }}
+                                            className="w-full text-left text-[11px] px-2 py-1 rounded-sm bg-[#0f141c] hover:bg-[#182230] border border-white/8 flex items-center justify-between gap-2 cursor-pointer"
+                                          >
+                                            <span className="text-[#c8d4e3] truncate">
+                                              {d.node.title}
+                                            </span>
+                                            <span className="font-mono text-[9px] text-[#d4a253] shrink-0">
+                                              {d.relation}
+                                            </span>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
               <div>
                 <h2 className="font-display text-lg font-bold text-[#f3efe6]">
                   Codex of the Shattered Meridian

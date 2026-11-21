@@ -46,26 +46,27 @@ describe('Verdant Solid Collision Engine', () => {
     assert.equal(obeliskHit.collided, true);
   });
 
-  it('blocks player from walking through 3D dungeon pillars, walls, and abyss chasm pits while keeping bridge and alcoves open', () => {
+  it('blocks player from walking through 3D dungeon pillars, walls, and twin-span abyss chasms while keeping both viaduct spans and rotunda open', () => {
     const dungeon = CANONICAL_DUNGEON_SPECS[0];
     const map = buildRealmCollisionMap(dungeon, dungeon.interactables);
 
-    // Colonnade pillar at (10.6, -4.0) must block player
-    const pillarHit = resolveCircleVsWorld(10.6, -4.0, PLAYER_COLLISION_RADIUS, 1.0, map);
-    assert.equal(pillarHit.collided, true);
-    assert.ok(Math.hypot(pillarHit.x - 10.6, pillarHit.z - -4.0) > 1.0);
+    // Stepping into the center split chasm (x=0, z=11.0) must be blocked
+    const centerChasmHit = resolveCircleVsWorld(0, 11.0, PLAYER_COLLISION_RADIUS, 1.0, map);
+    assert.equal(centerChasmHit.collided, true);
 
-    // Stepping off the stone bridge into the Abyss Chasm (x=5.0, z=11.0) must be blocked
-    const chasmHit = resolveCircleVsWorld(5.0, 11.0, PLAYER_COLLISION_RADIUS, 1.0, map);
-    assert.equal(chasmHit.collided, true);
+    // Stepping into the east abyss pit (x=12.0, z=11.0) must be blocked
+    const eastChasmHit = resolveCircleVsWorld(12.0, 11.0, PLAYER_COLLISION_RADIUS, 1.0, map);
+    assert.equal(eastChasmHit.collided, true);
 
-    // Center of the stone bridge (x=0, z=11.0) must be smoothly walkable
-    const bridgePass = resolveCircleVsWorld(0, 11.0, PLAYER_COLLISION_RADIUS, 1.0, map);
-    assert.equal(bridgePass.collided, false);
+    // Both twin viaduct spans (x=-4.6, z=11.0) and (x=4.6, z=11.0) must be smoothly walkable
+    const westSpanPass = resolveCircleVsWorld(-4.6, 11.0, PLAYER_COLLISION_RADIUS, 1.0, map);
+    assert.equal(westSpanPass.collided, false);
+    const eastSpanPass = resolveCircleVsWorld(4.6, 11.0, PLAYER_COLLISION_RADIUS, 1.0, map);
+    assert.equal(eastSpanPass.collided, false);
 
-    // Alcove passage at (12.2, -6.5) between north jamb (-9.2) and central column (-4.0) must be passable
-    const alcovePass = resolveCircleVsWorld(12.2, -6.5, PLAYER_COLLISION_RADIUS, 1.0, map);
-    assert.equal(alcovePass.collided, false);
+    // Reliquary cross-hall center (0, -3.5) must remain passable
+    const hallPass = resolveCircleVsWorld(0, -3.5, PLAYER_COLLISION_RADIUS, 1.0, map);
+    assert.equal(hallPass.collided, false);
   });
 
   it('enforces solid body separation between player, NPCs, and enemies so entities never overlap', () => {
@@ -104,14 +105,14 @@ describe('Verdant Solid Collision Engine', () => {
     );
   });
 
-  it('stops projectiles on solid masonry walls and pillars while allowing flight across open chasms', () => {
+  it('stops projectiles on solid masonry walls while allowing flight across open twin-span chasms', () => {
     const dungeon = CANONICAL_DUNGEON_SPECS[0];
     const map = buildRealmCollisionMap(dungeon, dungeon.interactables);
 
-    // Solid colonnade pillar blocks projectile
-    assert.equal(isProjectileBlockedByWorld(10.6, -4.0, 1.2, 0.35, map), true);
-    // Open chasm airspace does NOT block flying projectile
-    assert.equal(isProjectileBlockedByWorld(5.5, 11.0, 1.2, 0.35, map), false);
+    // Open center chasm airspace does NOT block flying projectile
+    assert.equal(isProjectileBlockedByWorld(0.0, 11.0, 1.2, 0.35, map), false);
+    // Open east chasm airspace does NOT block flying projectile
+    assert.equal(isProjectileBlockedByWorld(12.0, 11.0, 1.2, 0.35, map), false);
     // Dungeon outer wall blocks projectile
     assert.equal(isProjectileBlockedByWorld(22.0, -4.0, 1.2, 0.35, map), true);
   });

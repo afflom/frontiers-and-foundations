@@ -41,6 +41,20 @@ import {
   type VerdantCatalogExtensionEntry,
 } from './verdantEcosystemCatalog';
 import { synthesizeDungeonEcosystem } from './verdantDungeonCatalog';
+import {
+  synthesizeBiomeRelic,
+  type RelicRarity,
+  type SynthesizedVerdantRelic,
+} from './verdantRelicCatalog';
+import {
+  FrontiersVerdantObserver,
+  type UniformRefinementOptions,
+} from './verdantObserverManager';
+import {
+  VERDANT_PART_SLOTS,
+  type VerdantPartSlot,
+  type VerdantResolutionTier,
+} from './verdantModelOfModels';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WasmExports = Record<string, any> & { memory: WebAssembly.Memory };
@@ -417,6 +431,176 @@ export const VERDANT_MCP_TOOLS = [
       },
     },
   },
+  {
+    name: 'verdant_synthesize_relic',
+    description:
+      'Procedurally synthesize a biome-attuned Verdant Survey Relic with a procedural SVG sigil crest, rarity tier, active combat/traversal resonance perk, Waywright 3D aura RGB, and registered RelicArtifact Project Model in verdant-uorc.wasm sealed with Prism kappa().',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        realmSlug: { type: 'string', description: 'Host realm or dungeon slug (e.g. vaelmor, cinderfall, glasswater, borealis).' },
+        theme: {
+          type: 'string',
+          enum: [
+            'citadel-highlands',
+            'sunken-aqueducts',
+            'obsidian-crucible',
+            'pelagic-spires',
+            'amber-steppe',
+            'glacial-spire',
+          ],
+          description: 'Optional ecosystem theme override.',
+        },
+        rarity: {
+          type: 'string',
+          enum: ['Chartered', 'Resonant', 'Sovereign'],
+          description: 'Optional rarity tier.',
+        },
+        seed: { type: 'integer', description: 'Optional deterministic seed.' },
+        brief: { type: 'string', description: 'Optional forging focus or tactical intent.' },
+      },
+    },
+  },
+  {
+    name: 'verdant_inspect_model_of_models',
+    description:
+      'Inspect the single unified Frontiers and Foundations Model-of-Models (root summary, 8 canonical Verdant Cognitive Parts, or a specific partSlot/modelId) with full generative genomes, feature signatures, resolution tiers, definition scores, and Prism kappa digests.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        partSlot: {
+          type: 'string',
+          enum: [...VERDANT_PART_SLOTS],
+          description: 'Optional Verdant Cognitive Part slot to list child models for.',
+        },
+        modelId: {
+          type: 'string',
+          description: 'Optional exact modelId URN to inspect in full detail.',
+        },
+        includeTree: {
+          type: 'boolean',
+          description: 'Set true to include the full nested Model-of-Models tree.',
+        },
+      },
+    },
+  },
+  {
+    name: 'verdant_observer_diversity_kpis',
+    description:
+      'Evaluate the Extended Verdant Observer/Manager Pattern (13 native verdant-uorc.wasm VSM Managers + 10 Frontiers Domain Managers = 23 VSM S1-S5 Managers) and report all 13 Diversity, Cohesion, Relational Graph Integrity, vTensor Semantic Spread, Dungeon Topology, Monster Ecology, Story Conservation, Sibling Uniqueness, Uniform Resolution, Part Coverage, Anti-Trope Novelty, Genome Provenance, and Gamer Journey Experience KPIs.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        includeManagers: {
+          type: 'boolean',
+          description: 'Include the full 23-Manager VSM S1-S5 registry (default true).',
+        },
+      },
+    },
+  },
+  {
+    name: 'verdant_observer_refinement_agenda',
+    description:
+      'Synthesize the M16/M17 Verdant Observer prioritized refinement agenda with per-manager constructive health (0..1000‰), pinpoint diagnoses, sealed agendaKappaHex, and proposals across all 8 Cognitive Parts and 23 VSM S1-S5 Managers.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        includeManagers: {
+          type: 'boolean',
+          description: 'Include the full 23-Manager VSM S1-S5 registry (default true).',
+        },
+      },
+    },
+  },
+  {
+    name: 'verdant_lifecycle_gate',
+    description:
+      'Execute the lifted in-process M16/M17 Verdant Lifecycle Gate (7 structural & semantic checks: total-ownership, immutability-seal, relational-graph-closure, story-conservation-closure, diversity-and-anti-clone, multiplayer-federation-isolation, gamer-journey-closure) and return a sealed verdant/lifecycle-gate-report/1.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'verdant_automate',
+    description:
+      'Execute the M16/M17 lifted Verdant Self-Automation Pipeline (pinpoint-diagnose -> ratchet-refine -> lifecycle-gate -> watermark-ratchet), advance monotonic parametric watermarks, register the sealed automate snapshot inside verdant-uorc.wasm, and return verdant/automate-report/1.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        targetTier: {
+          type: 'integer',
+          enum: [1, 2, 3, 4],
+          description: 'Target uniform resolution tier (1..4, defaults to escalating up to Tier 4 Sovereign Ultra-Def).',
+        },
+        partSlot: {
+          type: 'string',
+          enum: [...VERDANT_PART_SLOTS],
+          description: 'Optional single Cognitive Part slot to focus the automate pipeline on.',
+        },
+        reason: {
+          type: 'string',
+          description: 'Optional audit reason for the automate pipeline run.',
+        },
+      },
+    },
+  },
+  {
+    name: 'verdant_run_ratchet_cycle',
+    description:
+      'Execute an M16/M17 Verdant Observer Ratchet Cycle: synthesizes the refinement agenda, executes uniform resolution + diversity + cohesion refinement across the Model-of-Models, advances monotonic parametric watermarks and the sealed Prism kappa digest, and registers hydration in verdant-uorc.wasm.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        targetTier: {
+          type: 'integer',
+          enum: [1, 2, 3, 4],
+          description: 'Target uniform resolution tier (1..4, defaults to escalating up to Tier 4 Sovereign Ultra-Def).',
+        },
+        partSlot: {
+          type: 'string',
+          enum: [...VERDANT_PART_SLOTS],
+          description: 'Optional single Cognitive Part slot to focus the ratchet cycle on.',
+        },
+        reason: {
+          type: 'string',
+          description: 'Optional audit reason for the ratchet cycle.',
+        },
+      },
+    },
+  },
+  {
+    name: 'verdant_refine_model_api',
+    description:
+      'Uniformly refine Frontiers and Foundations via the Extended Verdant Observer/Manager API: escalates resolution & definition across all 8 Cognitive Parts (or a targeted partSlot/modelId), auto-diversifies any colliding sibling clones, syncs part hydration into verdant-uorc.wasm, and seals the new root Prism kappa().',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        targetTier: {
+          type: 'integer',
+          enum: [1, 2, 3, 4],
+          description: 'Target uniform resolution tier (1..4, defaults to escalating +1 up to Tier 4 Sovereign Ultra-Def).',
+        },
+        partSlot: {
+          type: 'string',
+          enum: [...VERDANT_PART_SLOTS],
+          description: 'Optional single Cognitive Part slot to refine.',
+        },
+        modelId: {
+          type: 'string',
+          description: 'Optional single sub-model URN to refine.',
+        },
+        enforceDiversity: {
+          type: 'boolean',
+          description: 'Auto-diversify any colliding sibling models (default true).',
+        },
+        reason: {
+          type: 'string',
+          description: 'Optional refinement audit reason.',
+        },
+      },
+    },
+  },
 ];
 
 export class VerdantMcpHost {
@@ -424,6 +608,7 @@ export class VerdantMcpHost {
   private wasm: WasmExports | null = null;
   private initPromise: Promise<void> | null = null;
   private realms = new Map<string, FrontiersRealmSpec>();
+  private modelObserver = new FrontiersVerdantObserver();
   private polyHavenCache = new Map<string, Record<string, { name?: string; tags?: string[]; categories?: string[] }>>();
   private enc = new TextEncoder();
   private dec = new TextDecoder();
@@ -527,6 +712,31 @@ export class VerdantMcpHost {
         this.registerRealmInWasm(spec);
       }
     }
+
+    // Hydrate the unified Model-of-Models & attach Verdant Engine's 13 native VSM Managers
+    this.modelObserver.syncWorldState({
+      realms: Array.from(this.realms.values()),
+    });
+    if (typeof this.wasm.verdant_wasm_operator_status_aux === 'function') {
+      this.wasm.verdant_wasm_operator_status_aux();
+      const opJson = this.readAuxJson<{
+        managers?: Array<{
+          managerId?: string;
+          name?: string;
+          basisPrime?: number;
+          kappaHex?: string;
+          spec?: { concerns?: string[]; differentiationRequirements?: string[] };
+        }>;
+      }>();
+      if (opJson && Array.isArray(opJson.managers)) {
+        this.modelObserver.attachWasmManagers(opJson.managers);
+      }
+    }
+  }
+
+  public async getModelObserver(): Promise<FrontiersVerdantObserver> {
+    await this.ensureReady();
+    return this.modelObserver;
   }
 
   private registerRealmInWasm(spec: FrontiersRealmSpec): void {
@@ -1119,52 +1329,27 @@ Pick a mode from: dorian, lydian, phrygian-dominant, mixolydian, aeolian, harmon
     count?: number;
     brief?: string;
   }): Promise<{
-    relics: Array<{
-      id: string;
-      name: string;
-      origin: string;
-      description: string;
-      bonusKind: 'maxHp' | 'damagePct' | 'speedPct' | 'staminaRegenPct' | 'healPower';
-      bonusValue: number;
-      resonanceHz: number;
-    }>;
+    relics: SynthesizedVerdantRelic[];
     noveltyAudit: ReturnType<typeof auditAntiTropeNovelty>;
   }> {
     await this.ensureReady();
     const slug = params.realmSlug || 'vaelmor';
+    const hostRealm = this.realms.get(slug) ?? CANONICAL_REALM_SPECS[0];
     const count = Math.max(1, Math.min(3, params.count ?? 2));
-    const templates = [
-      {
-        name: 'Calibrated Meridian Tuning Fork',
-        origin: 'Vaelmor Acoustic Foundry',
-        description: 'A twin-tine phosphor-bronze surveyor fork that amplifies Bell-Hammer shockwaves along basalt seams.',
-        bonusKind: 'damagePct' as const,
-        bonusValue: 18,
-        resonanceHz: 174,
-      },
-      {
-        name: 'Frostglass Barometric Astrolabe',
-        origin: 'Borealis Spire Watch',
-        description: 'Faceted glacial crystal compass that steadies stamina pacing across high-altitude passes and dungeon vaults.',
-        bonusKind: 'staminaRegenPct' as const,
-        bonusValue: 20,
-        resonanceHz: 220,
-      },
-      {
-        name: 'Kar-Veth Aeolian Wind-Chime Seal',
-        origin: 'Kar-Veth Caravan Compact',
-        description: 'Hollow sandstone-and-brass resonator that mends minor concussions with warm harmonic overtones.',
-        bonusKind: 'healPower' as const,
-        bonusValue: 16,
-        resonanceHz: 165,
-      },
-    ];
-
-    const relics = templates.slice(0, count).map((t, i) => ({
-      id: `relic-mcp-${slug}-${Date.now()}-${i}`,
-      ...t,
-      description: params.brief ? `${t.description} Tuned for: ${params.brief}.` : t.description,
-    }));
+    const existingNames: string[] = [];
+    const relics: SynthesizedVerdantRelic[] = [];
+    for (let i = 0; i < count; i++) {
+      const relic = synthesizeBiomeRelic({
+        theme: hostRealm.theme,
+        realmName: hostRealm.name,
+        existingNames,
+        source: 'mcp',
+        brief: params.brief,
+        seed: (Date.now() + i * 7919) >>> 0,
+      });
+      existingNames.push(relic.name);
+      relics.push(relic);
+    }
 
     for (const r of relics) {
       if (this.wasm) {
@@ -1179,9 +1364,9 @@ Pick a mode from: dorian, lydian, phrygian-dominant, mixolydian, aeolian, harmon
               sourceStream: 'frontiers-forge',
               sourceUri: `urn:frontiers:relic:${r.id}`,
               licenseSpdx: 'CC0-1.0',
-              tags: ['relic', r.bonusKind, `${r.resonanceHz}hz`, slug],
-              propertiesJson: JSON.stringify(r),
-              commitNote: `Verdant MCP forged relic ${r.name}`,
+              tags: ['relic', r.bonusKind, r.perkId, r.rarity, `${r.resonanceHz}hz`, slug],
+              propertiesJson: JSON.stringify({ ...r, sigilSvg: '[svg-data-uri]' }),
+              commitNote: `Verdant MCP forged ${r.rarity} relic ${r.name} (${r.perkLabel})`,
             }),
           ),
         );
@@ -1953,6 +2138,373 @@ Pick a mode from: dorian, lydian, phrygian-dominant, mixolydian, aeolian, harmon
             catalogExtensionIds: dgPlan.catalogExtensionIds,
           },
           dungeonKappa,
+          projectModel,
+        };
+      }
+
+      case 'verdant_synthesize_relic': {
+        const realmSlug = typeof args.realmSlug === 'string' ? args.realmSlug : 'vaelmor';
+        const hostRealm = this.realms.get(realmSlug) ?? CANONICAL_REALM_SPECS[0];
+        const theme = (typeof args.theme === 'string' ? args.theme : hostRealm.theme) as RealmThemeId;
+        const rarity = typeof args.rarity === 'string' ? (args.rarity as RelicRarity) : undefined;
+        const seed = typeof args.seed === 'number' ? args.seed : undefined;
+        const brief = typeof args.brief === 'string' ? args.brief : undefined;
+        const relic = synthesizeBiomeRelic({
+          theme,
+          realmName: hostRealm.name,
+          rarity,
+          seed,
+          brief,
+          source: 'mcp',
+        });
+        this.stageIo(
+          this.enc.encode(
+            JSON.stringify({
+              modelId: `frontiers:relic:${relic.id}`,
+              title: relic.name,
+              schemaType: 'CreativeWork',
+              mediaType: 'application/json',
+              targetSlot: 'hero-props',
+              sourceStream: 'verdant-relic-synthesizer',
+              sourceUri: `urn:frontiers:relic:${relic.id}`,
+              licenseSpdx: 'CC0-1.0',
+              tags: ['relic-artifact', relic.theme, relic.rarity, relic.perkId, `${relic.resonanceHz}hz`],
+              propertiesJson: JSON.stringify({
+                id: relic.id,
+                name: relic.name,
+                theme: relic.theme,
+                rarity: relic.rarity,
+                perkId: relic.perkId,
+                perkLabel: relic.perkLabel,
+                bonusKind: relic.bonusKind,
+                bonusValue: relic.bonusValue,
+                resonanceHz: relic.resonanceHz,
+                catalogId: relic.catalogId,
+              }),
+              commitNote: `Synthesized ${relic.rarity} biome relic "${relic.name}" (${relic.perkLabel})`,
+            }),
+          ),
+        );
+        this.wasm.verdant_wasm_import_project_model_io();
+        const projectModel = this.readAuxJson();
+        const relicKappa = await kappa({
+          id: relic.id,
+          name: relic.name,
+          theme: relic.theme,
+          rarity: relic.rarity,
+          perkId: relic.perkId,
+          bonusKind: relic.bonusKind,
+          bonusValue: relic.bonusValue,
+          resonanceHz: relic.resonanceHz,
+        });
+        return {
+          engine: 'verdant-uorc.wasm',
+          relic,
+          relicKappa,
+          projectModel,
+        };
+      }
+
+      case 'verdant_inspect_model_of_models': {
+        this.modelObserver.syncWorldState({
+          realms: Array.from(this.realms.values()),
+        });
+        const modelId = typeof args.modelId === 'string' && args.modelId.trim() ? args.modelId.trim() : undefined;
+        const partSlot =
+          typeof args.partSlot === 'string' &&
+          (VERDANT_PART_SLOTS as readonly string[]).includes(args.partSlot)
+            ? (args.partSlot as VerdantPartSlot)
+            : undefined;
+        const includeTree = Boolean(args.includeTree);
+        const includeGraph = Boolean(args.includeGraph);
+        const graph = this.modelObserver.getModelGraph();
+        return {
+          engine: 'verdant-uorc.wasm',
+          summary: this.modelObserver.getSummary(),
+          renderProfile: this.modelObserver.getRenderResolutionProfile(),
+          graphStats: {
+            edgeCount: graph.edges.length,
+            crossPartEdges: graph.crossPartEdges,
+            danglingEdges: graph.danglingEdges.length,
+            integrityRatio: graph.integrityRatio,
+          },
+          auditLedger: this.modelObserver.getAuditLedger(),
+          ...(includeGraph ? { graph } : {}),
+          ...(modelId
+            ? {
+                model: this.modelObserver.getModel(modelId),
+                lineage: this.modelObserver.getModelLineage(modelId),
+              }
+            : {}),
+          ...(partSlot ? { partModels: this.modelObserver.listModels({ partSlot }) } : {}),
+          ...(includeTree ? { rootModel: this.modelObserver.getRootModel() } : {}),
+        };
+      }
+
+      case 'verdant_observer_diversity_kpis': {
+        this.modelObserver.syncWorldState({
+          realms: Array.from(this.realms.values()),
+        });
+        const includeManagers = args.includeManagers !== false;
+        const kpis = this.modelObserver.observeKpis();
+        const managers = this.modelObserver.listManagers();
+        return {
+          engine: 'verdant-uorc.wasm',
+          kpis,
+          managersCount: managers.length,
+          wasmManagersCount: managers.filter((m) => m.origin === 'verdant-wasm').length,
+          frontiersManagersCount: managers.filter((m) => m.origin === 'frontiers-extension').length,
+          ...(includeManagers ? { managers } : {}),
+        };
+      }
+
+      case 'verdant_refine_model_api': {
+        this.modelObserver.syncWorldState({
+          realms: Array.from(this.realms.values()),
+        });
+        const rawTier = Number(args.targetTier);
+        const targetTier: VerdantResolutionTier | undefined =
+          rawTier === 1 || rawTier === 2 || rawTier === 3 || rawTier === 4
+            ? (rawTier as VerdantResolutionTier)
+            : undefined;
+        const partSlot =
+          typeof args.partSlot === 'string' &&
+          (VERDANT_PART_SLOTS as readonly string[]).includes(args.partSlot)
+            ? (args.partSlot as VerdantPartSlot)
+            : undefined;
+        const modelId =
+          typeof args.modelId === 'string' && args.modelId.trim() ? args.modelId.trim() : undefined;
+        const refineOpts: UniformRefinementOptions = {
+          ...(targetTier ? { targetTier } : {}),
+          ...(partSlot ? { partSlot } : {}),
+          ...(modelId ? { modelId } : {}),
+          enforceDiversity: args.enforceDiversity !== false,
+          ...(typeof args.reason === 'string' && args.reason.trim() ? { reason: args.reason.trim() } : {}),
+        };
+
+        const report = await this.modelObserver.refine(refineOpts);
+
+        // Register the sealed Model-of-Models refinement snapshot natively in verdant-uorc.wasm
+        this.stageIo(
+          this.enc.encode(
+            JSON.stringify({
+              modelId: report.kpis.rootModelId,
+              title: 'Frontiers and Foundations — Unified Model of Models',
+              schemaType: 'VideoGameModelOfModels',
+              mediaType: 'application/vnd.verdant.model-of-models+json',
+              targetSlot: partSlot ?? 'stage-environment',
+              sourceStream: 'verdant-ecosystem-catalog',
+              sourceUri: `urn:frontiers:model-of-models:v${this.modelObserver.getRootModel().version}`,
+              licenseSpdx: 'CC0-1.0',
+              tags: [
+                'model-of-models',
+                `tier-${report.after.resolutionTier}`,
+                `diversity-${report.after.diversityIndex}`,
+              ],
+              propertiesJson: JSON.stringify({
+                scope: report.scope,
+                modelsRefined: report.modelsRefined,
+                clonesDiversified: report.clonesDiversified,
+                diversityIndex: report.after.diversityIndex,
+                resolutionIndex: report.after.resolutionIndex,
+                rootKappaDigest: report.after.rootKappaDigest,
+              }),
+              commitNote: report.reason,
+            }),
+          ),
+        );
+        this.wasm.verdant_wasm_import_project_model_io();
+        const projectModel = this.readAuxJson();
+
+        if (typeof this.wasm.verdant_wasm_record_part_hydration_io === 'function') {
+          this.stageIo(
+            this.enc.encode(
+              `${partSlot ?? 'stage-environment'}|frontiers-observer-manager|Tier ${report.after.resolutionTier} · Diversity ${report.after.diversityIndex}/100`,
+            ),
+          );
+          this.wasm.verdant_wasm_record_part_hydration_io(report.after.resolutionTier);
+        }
+
+        return {
+          engine: 'verdant-uorc.wasm',
+          report,
+          projectModel,
+        };
+      }
+
+      case 'verdant_observer_refinement_agenda': {
+        this.modelObserver.syncWorldState({
+          realms: Array.from(this.realms.values()),
+        });
+        const includeManagers = args.includeManagers !== false;
+        const agenda = this.modelObserver.synthesizeRefinementAgenda();
+        const managers = this.modelObserver.listManagers();
+        return {
+          engine: 'verdant-uorc.wasm',
+          agenda,
+          managersCount: managers.length,
+          wasmManagersCount: managers.filter((m) => m.origin === 'verdant-wasm').length,
+          frontiersManagersCount: managers.filter((m) => m.origin === 'frontiers-extension').length,
+          ...(includeManagers ? { managers } : {}),
+        };
+      }
+
+      case 'verdant_run_ratchet_cycle': {
+        this.modelObserver.syncWorldState({
+          realms: Array.from(this.realms.values()),
+        });
+        const rawTier = Number(args.targetTier);
+        const targetTier: VerdantResolutionTier | undefined =
+          rawTier === 1 || rawTier === 2 || rawTier === 3 || rawTier === 4
+            ? (rawTier as VerdantResolutionTier)
+            : undefined;
+        const partSlot =
+          typeof args.partSlot === 'string' &&
+          (VERDANT_PART_SLOTS as readonly string[]).includes(args.partSlot)
+            ? (args.partSlot as VerdantPartSlot)
+            : undefined;
+        const cycleOpts: UniformRefinementOptions = {
+          ...(targetTier ? { targetTier } : {}),
+          ...(partSlot ? { partSlot } : {}),
+          enforceDiversity: true,
+          ...(typeof args.reason === 'string' && args.reason.trim() ? { reason: args.reason.trim() } : {}),
+        };
+
+        const report = await this.modelObserver.runRatchetCycle(cycleOpts);
+        const refine = report.refinementReport;
+
+        this.stageIo(
+          this.enc.encode(
+            JSON.stringify({
+              modelId: refine.kpis.rootModelId,
+              title: 'Frontiers and Foundations — Observer Ratchet Snapshot',
+              schemaType: 'VideoGameModelOfModels',
+              mediaType: 'application/vnd.verdant.model-of-models+json',
+              targetSlot: partSlot ?? 'stage-environment',
+              sourceStream: 'verdant-ecosystem-catalog',
+              sourceUri: `urn:frontiers:model-of-models:ratchet-${report.cycleNumber}`,
+              licenseSpdx: 'CC0-1.0',
+              tags: [
+                'observer-ratchet',
+                `cycle-${report.cycleNumber}`,
+                `tier-${refine.after.resolutionTier}`,
+                `cohesion-${report.agendaAfter.cohesionIndex}`,
+                `diversity-${refine.after.diversityIndex}`,
+              ],
+              propertiesJson: JSON.stringify({
+                cycleNumber: report.cycleNumber,
+                watermarkAdvanced: report.watermarkAdvanced,
+                proposalsExecuted: report.executedProposals.length,
+                cohesionIndex: report.agendaAfter.cohesionIndex,
+                diversityIndex: refine.after.diversityIndex,
+                rootKappaDigest: refine.after.rootKappaDigest,
+              }),
+              commitNote: refine.reason,
+            }),
+          ),
+        );
+        this.wasm.verdant_wasm_import_project_model_io();
+        const projectModel = this.readAuxJson();
+
+        if (typeof this.wasm.verdant_wasm_record_part_hydration_io === 'function') {
+          this.stageIo(
+            this.enc.encode(
+              `${partSlot ?? 'stage-environment'}|frontiers-observer-ratchet|Cycle #${report.cycleNumber} · Cohesion ${report.agendaAfter.cohesionIndex}/100 · Diversity ${refine.after.diversityIndex}/100`,
+            ),
+          );
+          this.wasm.verdant_wasm_record_part_hydration_io(refine.after.resolutionTier);
+        }
+
+        return {
+          engine: 'verdant-uorc.wasm',
+          report,
+          projectModel,
+        };
+      }
+
+      case 'verdant_lifecycle_gate': {
+        this.modelObserver.syncWorldState({
+          realms: Array.from(this.realms.values()),
+        });
+        const report = this.modelObserver.executeLifecycleGate();
+        return {
+          engine: 'verdant-uorc.wasm',
+          report,
+          watermarks: this.modelObserver.getMonotonicWatermarks(),
+        };
+      }
+
+      case 'verdant_automate': {
+        this.modelObserver.syncWorldState({
+          realms: Array.from(this.realms.values()),
+        });
+        const rawTier = Number(args.targetTier);
+        const targetTier: VerdantResolutionTier | undefined =
+          rawTier === 1 || rawTier === 2 || rawTier === 3 || rawTier === 4
+            ? (rawTier as VerdantResolutionTier)
+            : undefined;
+        const partSlot =
+          typeof args.partSlot === 'string' &&
+          (VERDANT_PART_SLOTS as readonly string[]).includes(args.partSlot)
+            ? (args.partSlot as VerdantPartSlot)
+            : undefined;
+        const autoOpts: UniformRefinementOptions = {
+          ...(targetTier ? { targetTier } : {}),
+          ...(partSlot ? { partSlot } : {}),
+          enforceDiversity: true,
+          ...(typeof args.reason === 'string' && args.reason.trim() ? { reason: args.reason.trim() } : {}),
+        };
+
+        const report = await this.modelObserver.executeAutomatePipeline(autoOpts);
+        const refine = report.ratchetCycle.refinementReport;
+
+        this.stageIo(
+          this.enc.encode(
+            JSON.stringify({
+              modelId: refine.kpis.rootModelId,
+              title: 'Frontiers and Foundations — M17 Automate Snapshot',
+              schemaType: 'VideoGameModelOfModels',
+              mediaType: 'application/vnd.verdant.automate-report+json',
+              targetSlot: partSlot ?? 'stage-environment',
+              sourceStream: 'verdant-ecosystem-catalog',
+              sourceUri: `urn:frontiers:model-of-models:automate-${report.ratchetCycle.cycleNumber}`,
+              licenseSpdx: 'CC0-1.0',
+              tags: [
+                'verdant-automate',
+                `cycle-${report.ratchetCycle.cycleNumber}`,
+                `gates-${report.lifecycleGate.passedChecks}-of-${report.lifecycleGate.totalChecks}`,
+                `tier-${refine.after.resolutionTier}`,
+                `diversity-${refine.after.diversityIndex}`,
+              ],
+              propertiesJson: JSON.stringify({
+                cycleNumber: report.ratchetCycle.cycleNumber,
+                allPassed: report.allPassed,
+                passedStages: report.passedStages,
+                totalStages: report.totalStages,
+                lifecycleGatePassed: report.lifecycleGate.allPassed,
+                automateKappaHex: report.automateKappaHex,
+                overallRefinementScorePermille: report.ratchetCycle.agendaAfter.overallRefinementScorePermille,
+                watermarks: report.watermarks,
+              }),
+              commitNote: refine.reason,
+            }),
+          ),
+        );
+        this.wasm.verdant_wasm_import_project_model_io();
+        const projectModel = this.readAuxJson();
+
+        if (typeof this.wasm.verdant_wasm_record_part_hydration_io === 'function') {
+          this.stageIo(
+            this.enc.encode(
+              `${partSlot ?? 'stage-environment'}|frontiers-observer-automate|Cycle #${report.ratchetCycle.cycleNumber} · ${report.passedStages}/${report.totalStages} stages · Gates ${report.lifecycleGate.passedChecks}/${report.lifecycleGate.totalChecks}`,
+            ),
+          );
+          this.wasm.verdant_wasm_record_part_hydration_io(refine.after.resolutionTier);
+        }
+
+        return {
+          engine: 'verdant-uorc.wasm',
+          report,
           projectModel,
         };
       }

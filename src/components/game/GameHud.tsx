@@ -1,8 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { GEAR_LOADOUT, type GameQuest, type GearSlotId } from '../../game/worldData';
 import type { HudSnapshot } from '../../game/vaelmorRenderer';
-import type { GearUpgradeTiers, WorldChatMessage } from '../../game/multiplayerTypes';
+import type {
+  GearUpgradeTiers,
+  PartySummon,
+  RemotePlayerState,
+  WorldChatMessage,
+  WorldPing,
+  WorldPingKind,
+} from '../../game/multiplayerTypes';
 import type { FrontiersRealmSpec } from '../../verdant/realmModelSchema';
+import type { JourneyProgressSummary } from '../../verdant/verdantJourneyModel';
 
 export interface CombatCallout {
   id: number;
@@ -17,7 +25,11 @@ interface GameHudProps {
   trackedQuest: GameQuest | null;
   gearTiers: GearUpgradeTiers;
   onlineCount: number;
+  roomCode: string;
   realmConnected: boolean;
+  remotePlayers: RemotePlayerState[];
+  worldPings: WorldPing[];
+  activeSummon: PartySummon | null;
   chatMessages: WorldChatMessage[];
   chatOpen: boolean;
   callouts: CombatCallout[];
@@ -29,6 +41,10 @@ interface GameHudProps {
     subtitle: string;
     cell: [number, number, number];
   } | null;
+  journeySummary?: JourneyProgressSummary | null;
+  guideDismissed?: boolean;
+  onDismissGuide?: () => void;
+  onReplayPrologue?: () => void;
   onActivateGear: (gear: GearSlotId) => void;
   onTriggerAction: () => void;
   onTriggerDodge: () => void;
@@ -37,6 +53,11 @@ interface GameHudProps {
   onOpenMap: () => void;
   onOpenDungeons?: () => void;
   onOpenForge: () => void;
+  onOpenParty: () => void;
+  onDropPing: (kind?: WorldPingKind, label?: string) => void;
+  onWarpToAlly: (ally: RemotePlayerState) => void;
+  onAcceptSummon: (summon: PartySummon) => void;
+  onDismissSummon: () => void;
   onToggleChat: () => void;
   onSendChat: (text: string) => void;
   onToggleMute: () => void;
@@ -113,7 +134,11 @@ export const GameHud: React.FC<GameHudProps> = ({
   trackedQuest,
   gearTiers,
   onlineCount,
+  roomCode,
   realmConnected,
+  remotePlayers,
+  worldPings,
+  activeSummon,
   chatMessages,
   chatOpen,
   callouts,
@@ -121,6 +146,10 @@ export const GameHud: React.FC<GameHudProps> = ({
   activeTrackTitle,
   toastMessage,
   frontierBanner,
+  journeySummary,
+  guideDismissed = false,
+  onDismissGuide,
+  onReplayPrologue,
   onActivateGear,
   onTriggerAction,
   onTriggerDodge,
@@ -129,6 +158,11 @@ export const GameHud: React.FC<GameHudProps> = ({
   onOpenMap,
   onOpenDungeons,
   onOpenForge,
+  onOpenParty,
+  onDropPing,
+  onWarpToAlly,
+  onAcceptSummon,
+  onDismissSummon,
   onToggleChat,
   onSendChat,
   onToggleMute,
@@ -188,9 +222,43 @@ export const GameHud: React.FC<GameHudProps> = ({
   const activeGearDef = GEAR_LOADOUT.find((g) => g.id === hud.activeGear) ?? GEAR_LOADOUT[0];
   const activeTier = gearTiers[activeGearDef.id] ?? 1;
   const primaryEnemy = hud.nearbyEnemies[0] ?? null;
+  const activeSlug = activeRealm?.slug ?? 'vaelmor';
+  const sameRealmAllies = remotePlayers.filter((rp) => (rp.realmSlug || 'vaelmor') === activeSlug);
+  const sameRealmPings = worldPings.filter((p) => p.realmSlug === activeSlug && p.expiresAt > Date.now());
+  const visibleProjectedAllies = (hud.projectedAllies ?? []).filter((a) => a.visible);
 
   return (
     <div className="pointer-events-none fixed inset-0 z-20 select-none">
+      {/* 3D World-Projected Floating Ally Nameplates & Mini Vitality Bars */}
+      {visibleProjectedAllies.map((ally) => {
+        const allyHpPct = Math.max(0, Math.min(100, Math.round((ally.hp / Math.max(1, ally.maxHp)) * 100)));
+        return (
+          <div
+            key={ally.id}
+            data-testid={`ally-nameplate-${ally.id}`}
+            className="fixed -translate-x-1/2 -translate-y-full pointer-events-none flex flex-col items-center gap-0.5"
+            style={{
+              left: `${Math.round(ally.screenX)}px`,
+              top: `${Math.round(ally.screenY)}px`,
+            }}
+          >
+            <div className="px-2 py-0.5 rounded-[2px] bg-[#0e141c]/88 border border-[#52d6f4]/45 shadow-[0_3px_10px_rgba(0,0,0,0.65)] flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#52d6f4]" />
+              <span className="font-display text-[10px] font-bold tracking-[0.06em] text-[#e8f8fd] whitespace-nowrap">
+                {ally.name}
+              </span>
+              <span className="font-mono text-[9px] tabular-nums text-[#8ec8dc]">{ally.distance}m</span>
+            </div>
+            <div className="w-16 h-1 bg-[#121922] rounded-[1px] overflow-hidden border border-white/15">
+              <div
+                className={`h-full ${allyHpPct <= 35 ? 'bg-[#e06658]' : 'bg-[#5ea38c]'}`}
+                style={{ width: `${allyHpPct}%` }}
+              />
+            </div>
+          </div>
+        );
+      })}
+
       {/* Subtle low-health peripheral warning vignette */}
       {hud.hp <= 30 && hud.hp > 0 && (
         <div
@@ -295,6 +363,87 @@ export const GameHud: React.FC<GameHudProps> = ({
             <p className="font-mono text-xs font-bold tabular-nums text-[#f2e8d2]">{renown}</p>
           </div>
         </div>
+
+        {/* Compact Co-op Party Frames (rendered only when fellow Waywrights are connected) */}
+        {remotePlayers.length > 0 && (
+          <div
+            data-testid="hud-party-frames"
+            className="pointer-events-auto bg-[#11151b]/88 border border-[#52d6f4]/28 rounded-sm px-2.5 py-2 space-y-1.5 shadow-[0_6px_18px_rgba(0,0,0,0.44)]"
+          >
+            <div className="flex items-center justify-between text-[9px] font-mono uppercase tracking-[0.14em] text-[#7ed9ee]">
+              <span>Fellowship ({remotePlayers.length})</span>
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={(e) => {
+                  e.currentTarget.blur();
+                  onOpenParty();
+                }}
+                className="text-[#d4a253] hover:text-[#f0c778] cursor-pointer"
+              >
+                Manage [U]
+              </button>
+            </div>
+            {remotePlayers.slice(0, 4).map((ally) => {
+              const inSameRealm = (ally.realmSlug || 'vaelmor') === activeSlug;
+              const dist = Math.round(Math.hypot(ally.x - hud.playerX, ally.z - hud.playerZ));
+              const allyHp = ally.hp ?? 100;
+              const allyMaxHp = Math.max(1, ally.maxHp ?? 100);
+              const allyPct = Math.max(0, Math.min(100, Math.round((allyHp / allyMaxHp) * 100)));
+              return (
+                <div
+                  key={ally.id}
+                  data-testid={`party-frame-${ally.id}`}
+                  className="bg-[#161c24] border border-white/8 rounded-[2px] px-2 py-1.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                          inSameRealm ? 'bg-[#52d6f4]' : 'bg-[#d4a253]'
+                        }`}
+                      />
+                      <span className="text-[11px] font-semibold text-[#edf2f7] truncate">
+                        {ally.name}
+                      </span>
+                    </div>
+                    {inSameRealm ? (
+                      <span className="font-mono text-[9px] tabular-nums text-[#8ec8dc] shrink-0">
+                        {dist}m
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        tabIndex={-1}
+                        onClick={(e) => {
+                          e.currentTarget.blur();
+                          onWarpToAlly(ally);
+                        }}
+                        title={`Warp to ${ally.name} in ${ally.realmName || ally.realmSlug}`}
+                        className="px-1.5 py-0.5 rounded-[2px] bg-[#d4a253]/20 hover:bg-[#d4a253]/35 border border-[#d4a253]/45 text-[9px] font-mono font-bold uppercase text-[#f0cd80] cursor-pointer shrink-0"
+                      >
+                        Warp
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <div className="h-1 flex-1 bg-[#222a35] rounded-[1px] overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-200 ${
+                          allyPct <= 35 ? 'bg-[#d9534f]' : 'bg-[#5ea38c]'
+                        }`}
+                        style={{ width: `${allyPct}%` }}
+                      />
+                    </div>
+                    <span className="font-mono text-[9px] tabular-nums text-[#9eb0c0] truncate max-w-[110px]">
+                      {inSameRealm ? `${allyHp}/${allyMaxHp}` : ally.realmName || ally.realmSlug}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* TOP-CENTER: Waywright Compass Ribbon & Engaged Enemy Vitality */}
@@ -328,29 +477,114 @@ export const GameHud: React.FC<GameHudProps> = ({
               </svg>
             </div>
           )}
+          {/* Same-Realm Ally Directional Pips on Compass */}
+          {sameRealmAllies.map((ally) => {
+            const angle = Math.atan2(ally.x - hud.playerX, ally.z - hud.playerZ);
+            const rel = wrapAngleDiff(angle, hud.playerYaw);
+            const pct = Math.max(4, Math.min(96, 50 - (rel / (Math.PI * 0.65)) * 50));
+            return (
+              <div
+                key={`cmp-${ally.id}`}
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+                style={{ left: `${pct}%` }}
+                title={`Ally: ${ally.name}`}
+              >
+                <span className="block w-2 h-2 rounded-full bg-[#52d6f4] border border-[#0d1116]" />
+              </div>
+            );
+          })}
+          {/* Active World Ping Pips on Compass */}
+          {sameRealmPings.map((ping) => {
+            const angle = Math.atan2(ping.x - hud.playerX, ping.z - hud.playerZ);
+            const rel = wrapAngleDiff(angle, hud.playerYaw);
+            const pct = Math.max(4, Math.min(96, 50 - (rel / (Math.PI * 0.65)) * 50));
+            const color =
+              ping.kind === 'danger' ? '#f2604b' : ping.kind === 'loot' ? '#f2c96b' : '#52d6f4';
+            return (
+              <div
+                key={`cmp-ping-${ping.id}`}
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+                style={{ left: `${pct}%` }}
+                title={`${ping.senderName}: ${ping.label}`}
+              >
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <polygon points="6,1 11,10 1,10" fill={color} stroke="#0d1116" strokeWidth="1" />
+                </svg>
+              </div>
+            );
+          })}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1.5px] h-1.5 bg-[#d4a253]" />
         </div>
 
-        {primaryEnemy && (
-          <div className="w-full bg-[#12161c]/92 border border-[#d98657]/45 rounded-sm px-3.5 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="font-display font-semibold tracking-[0.06em] text-[#f3e6d6]">
-                {primaryEnemy.name}
-              </span>
-              <span className="font-mono text-[11px] tabular-nums text-[#e6ad83]">
-                {primaryEnemy.hp} / {primaryEnemy.maxHp}
-              </span>
+        {primaryEnemy &&
+          (primaryEnemy.archetype === 'colossus' ? (
+            <div
+              data-testid="boss-vitality-bar"
+              className={`w-[360px] sm:w-[430px] bg-[#11141a]/94 rounded-sm px-4 py-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.62)] border ${
+                primaryEnemy.phase2 ? 'border-[#f07638]/75' : 'border-[#d4a253]/55'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-display text-xs font-bold tracking-[0.08em] uppercase text-[#f6efe2] truncate">
+                      {primaryEnemy.name}
+                    </span>
+                    {primaryEnemy.phase2 && (
+                      <span
+                        data-testid="boss-phase2-badge"
+                        className="px-1.5 py-0.5 rounded-[2px] bg-[#d95226]/30 border border-[#f28444]/60 text-[9px] font-mono font-bold uppercase tracking-[0.12em] text-[#ffbc8a]"
+                      >
+                        Phase II
+                      </span>
+                    )}
+                  </div>
+                  {(primaryEnemy.bossTitle || primaryEnemy.signatureMove) && (
+                    <p className="text-[10px] font-mono uppercase tracking-[0.1em] text-[#c7b391] truncate">
+                      {primaryEnemy.bossTitle}
+                      {primaryEnemy.signatureMove ? ` · ${primaryEnemy.signatureMove}` : ''}
+                    </p>
+                  )}
+                </div>
+                <span className="font-mono text-xs font-semibold tabular-nums text-[#f0cb8b] shrink-0">
+                  {primaryEnemy.hp} / {primaryEnemy.maxHp}
+                </span>
+              </div>
+              <div className="relative h-2.5 bg-[#221918] rounded-[2px] overflow-hidden border border-white/12">
+                <div
+                  className={`h-full transition-all duration-150 ${
+                    primaryEnemy.phase2
+                      ? 'bg-gradient-to-r from-[#d94826] via-[#f07638] to-[#f4ba54]'
+                      : 'bg-gradient-to-r from-[#b84e34] to-[#e0894c]'
+                  }`}
+                  style={{
+                    width: `${Math.max(0, Math.min(100, Math.round((primaryEnemy.hp / primaryEnemy.maxHp) * 100)))}%`,
+                  }}
+                />
+                {/* 50% Phase-II Awakening threshold notch */}
+                <div className="absolute inset-y-0 left-1/2 w-[1.5px] bg-[#f5e7c8]/65 pointer-events-none" />
+              </div>
             </div>
-            <div className="h-2 bg-[#231d1c] rounded-[2px] overflow-hidden border border-white/10">
-              <div
-                className="h-full bg-[#d96b43] transition-all duration-150"
-                style={{
-                  width: `${Math.max(0, Math.min(100, Math.round((primaryEnemy.hp / primaryEnemy.maxHp) * 100)))}%`,
-                }}
-              />
+          ) : (
+            <div className="w-full bg-[#12161c]/92 border border-[#d98657]/45 rounded-sm px-3.5 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="font-display font-semibold tracking-[0.06em] text-[#f3e6d6]">
+                  {primaryEnemy.name}
+                </span>
+                <span className="font-mono text-[11px] tabular-nums text-[#e6ad83]">
+                  {primaryEnemy.hp} / {primaryEnemy.maxHp}
+                </span>
+              </div>
+              <div className="h-2 bg-[#231d1c] rounded-[2px] overflow-hidden border border-white/10">
+                <div
+                  className="h-full bg-[#d96b43] transition-all duration-150"
+                  style={{
+                    width: `${Math.max(0, Math.min(100, Math.round((primaryEnemy.hp / primaryEnemy.maxHp) * 100)))}%`,
+                  }}
+                />
+              </div>
             </div>
-          </div>
-        )}
+          ))}
       </div>
 
       {/* TOP-RIGHT: Utility Actions & Active Charter Tracker */}
@@ -517,6 +751,60 @@ export const GameHud: React.FC<GameHudProps> = ({
             )}
           </div>
         )}
+
+        {/* Compact, Dismissible Waywright Field Guide (Directed Journey Milestone) */}
+        {journeySummary?.activeMilestone && !guideDismissed && (
+          <div
+            data-testid="hud-journey-guide"
+            className="pointer-events-auto w-full bg-[#10151d]/90 border border-[#5ea38c]/35 rounded-sm px-3.5 py-2.5 text-left shadow-[0_8px_22px_rgba(0,0,0,0.45)]"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#7fd1b6] font-semibold">
+                Field Guide · Step {journeySummary.activeMilestone.stepNumber}/{journeySummary.totalCount}
+              </span>
+              <div className="flex items-center gap-2">
+                {onReplayPrologue && (
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={(e) => {
+                      e.currentTarget.blur();
+                      onReplayPrologue();
+                    }}
+                    className="text-[10px] font-mono text-[#d4a253] hover:text-[#f0cd80] cursor-pointer"
+                    title="Replay 5-Act Narrated Prologue"
+                  >
+                    Prologue
+                  </button>
+                )}
+                {onDismissGuide && (
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    data-testid="dismiss-journey-guide-btn"
+                    onClick={(e) => {
+                      e.currentTarget.blur();
+                      onDismissGuide();
+                    }}
+                    className="text-[10px] font-mono text-[#8f9cab] hover:text-[#f3efe6] cursor-pointer"
+                    aria-label="Hide Field Guide"
+                  >
+                    Hide
+                  </button>
+                )}
+              </div>
+            </div>
+            <p className="font-display text-xs font-bold text-[#f2eee6] mt-1">
+              {journeySummary.activeMilestone.title}
+            </p>
+            <p className="text-[11px] text-[#b4c0ce] leading-snug mt-1">
+              {journeySummary.activeMilestone.storyContext}
+            </p>
+            <p className="mt-1.5 pt-1.5 border-t border-white/8 text-[10px] font-mono text-[#e8c378]">
+              {journeySummary.activeMilestone.controlHint}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Floating Combat Callouts (mid-upper-center, brief) */}
@@ -557,24 +845,94 @@ export const GameHud: React.FC<GameHudProps> = ({
         </div>
       )}
 
+      {/* Live Co-op Party Travel Summon Prompt */}
+      {activeSummon && (
+        <div
+          data-testid="party-summon-banner"
+          className="pointer-events-auto fixed top-24 left-1/2 -translate-x-1/2 w-[360px] sm:w-[420px] px-4 py-3 rounded-sm bg-[#111822]/96 border border-[#52d6f4]/65 shadow-[0_14px_38px_rgba(0,0,0,0.72)] flex items-center justify-between gap-3"
+        >
+          <div className="min-w-0">
+            <p className="text-[9px] font-mono uppercase tracking-[0.16em] text-[#52d6f4] font-semibold">
+              {activeSummon.isDungeon ? 'Dungeon Delve Summon' : 'Party Rendezvous Summon'}
+            </p>
+            <p className="text-xs font-semibold text-[#f3eee4] truncate mt-0.5">
+              {activeSummon.senderName} calls you to {activeSummon.realmName}
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              tabIndex={-1}
+              data-testid="accept-summon-btn"
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onAcceptSummon(activeSummon);
+              }}
+              className="px-3 py-1.5 rounded-[2px] bg-[#52d6f4] hover:bg-[#70e1fa] text-[#0c141c] font-display text-[10px] font-bold uppercase tracking-[0.08em] cursor-pointer"
+            >
+              Join
+            </button>
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onDismissSummon();
+              }}
+              className="px-2 py-1.5 rounded-[2px] bg-[#1c2430] hover:bg-[#273242] text-[#a7b4c4] text-[10px] font-mono uppercase cursor-pointer"
+            >
+              Later
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Fleeting Toast Notification */}
-      {toastMessage && !frontierBanner && (
+      {toastMessage && !frontierBanner && !activeSummon && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 max-w-md px-4 py-2 rounded-sm bg-[#141920]/94 border border-[#d4a253]/50 text-[#f3ebd8] text-xs font-medium tracking-wide shadow-[0_10px_28px_rgba(0,0,0,0.55)] text-center">
           {toastMessage}
         </div>
       )}
 
-      {/* BOTTOM-LEFT: Realm Presence & Collapsible Waystone Chat */}
-      <div className="fixed bottom-4 left-4 sm:bottom-5 sm:left-5 w-[270px] flex flex-col gap-1.5 pointer-events-auto">
+      {/* BOTTOM-LEFT: Realm Presence, Quick Ping/Party Controls & Collapsible Waystone Chat */}
+      <div className="fixed bottom-4 left-4 sm:bottom-5 sm:left-5 w-[290px] flex flex-col gap-1.5 pointer-events-auto">
         {chatOpen && (
-          <div className="bg-[#11151b]/92 border border-[#d4a253]/35 rounded-sm p-2.5 shadow-[0_10px_28px_rgba(0,0,0,0.55)]">
+          <div className="bg-[#11151b]/94 border border-[#d4a253]/35 rounded-sm p-2.5 shadow-[0_10px_28px_rgba(0,0,0,0.55)]">
+            <div className="flex items-center justify-between gap-2 pb-1.5 mb-1.5 border-b border-white/8">
+              <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-[#7ed9ee]">
+                Room · {roomCode}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => onDropPing('rally', 'Rally Here')}
+                  className="px-1.5 py-0.5 rounded-[2px] bg-[#182833] hover:bg-[#213847] border border-[#52d6f4]/35 text-[9px] font-mono text-[#7ed9ee] cursor-pointer"
+                >
+                  Rally
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDropPing('danger', 'Threat Here')}
+                  className="px-1.5 py-0.5 rounded-[2px] bg-[#2c1918] hover:bg-[#3d2220] border border-[#e06658]/35 text-[9px] font-mono text-[#f2a096] cursor-pointer"
+                >
+                  Danger
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onSendChat('Need Lantern Mend!')}
+                  className="px-1.5 py-0.5 rounded-[2px] bg-[#162722] hover:bg-[#1e372f] border border-[#5ea38c]/35 text-[9px] font-mono text-[#88dfc0] cursor-pointer"
+                >
+                  Mend
+                </button>
+              </div>
+            </div>
             <div className="max-h-32 overflow-y-auto space-y-1 mb-2 pr-1">
               {chatMessages.length === 0 ? (
                 <p className="text-[11px] text-[#8d99a7]">
-                  Waystone frequency quiet. Greet fellow Waywrights in Vaelmor.
+                  Waystone frequency quiet. Greet fellow Waywrights in {roomCode}.
                 </p>
               ) : (
-                chatMessages.slice(-8).map((m) => (
+                chatMessages.slice(-10).map((m) => (
                   <p
                     key={m.id}
                     className={`text-[11px] leading-snug ${
@@ -622,27 +980,59 @@ export const GameHud: React.FC<GameHudProps> = ({
           </div>
         )}
 
-        <button
-          type="button"
-          tabIndex={-1}
-          onClick={(e) => {
-            e.currentTarget.blur();
-            onToggleChat();
-          }}
-          className="self-start px-3 py-1.5 rounded-sm bg-[#11151b]/88 hover:bg-[#1a212b] border border-white/12 text-[11px] text-[#cfd7e2] inline-flex items-center gap-2 shadow-md cursor-pointer"
-        >
-          <span
-            className={`w-2 h-2 rounded-full ${realmConnected ? 'bg-[#5ea38c]' : 'bg-[#d4a253]'}`}
-          />
-          <span className="font-mono tabular-nums text-[#f0ebe2] font-semibold">
-            {onlineCount}
-          </span>
-          <span>{onlineCount === 1 ? 'Waywright' : 'Waywrights'}</span>
-          <span className="text-white/30">·</span>
-          <span className="text-[#d4a253] uppercase tracking-[0.08em] text-[10px] font-semibold">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            tabIndex={-1}
+            data-testid="hud-party-btn"
+            onClick={(e) => {
+              e.currentTarget.blur();
+              onOpenParty();
+            }}
+            title={`Expedition Party & Invite Link (${roomCode}) [U]`}
+            className="px-2.5 py-1.5 rounded-sm bg-[#11151b]/90 hover:bg-[#1a212b] border border-[#52d6f4]/30 text-[11px] text-[#cfd7e2] inline-flex items-center gap-1.5 shadow-md cursor-pointer"
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${realmConnected ? 'bg-[#5ea38c]' : 'bg-[#d4a253]'}`}
+            />
+            <span data-testid="hud-online-count" className="font-mono tabular-nums text-[#f0ebe2] font-semibold">
+              {onlineCount}
+            </span>
+            <span>{onlineCount === 1 ? 'Waywright' : 'Waywrights'}</span>
+            <span className="text-white/25">·</span>
+            <span className="text-[#7ed9ee] uppercase tracking-[0.08em] text-[10px] font-semibold">
+              Party [U]
+            </span>
+          </button>
+
+          <button
+            type="button"
+            tabIndex={-1}
+            data-testid="hud-ping-btn"
+            onClick={(e) => {
+              e.currentTarget.blur();
+              onDropPing('rally', 'Rally Here');
+            }}
+            title="Drop Tactical Rally Beacon [G]"
+            className="px-2 py-1.5 rounded-sm bg-[#11151b]/90 hover:bg-[#1a212b] border border-white/12 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#7ed9ee] shadow-md cursor-pointer"
+          >
+            Ping [G]
+          </button>
+
+          <button
+            type="button"
+            tabIndex={-1}
+            data-testid="hud-chat-btn"
+            onClick={(e) => {
+              e.currentTarget.blur();
+              onToggleChat();
+            }}
+            title="Toggle Waystone Chat [T]"
+            className="px-2 py-1.5 rounded-sm bg-[#11151b]/90 hover:bg-[#1a212b] border border-white/12 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#d4a253] shadow-md cursor-pointer"
+          >
             Chat [T]
-          </span>
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* BOTTOM-CENTER: Contextual Interact Prompt + 4-Slot Gear Hotbar */}

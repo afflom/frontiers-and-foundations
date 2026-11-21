@@ -8,6 +8,7 @@ import {
   type WorldRegion,
 } from '../game/worldData';
 import {
+  getBossSignatureProfile,
   resolvePlayerAttack,
   stepEnemies,
   type EnemyEntity,
@@ -17,7 +18,23 @@ import type {
   EngineCallbacks,
   ProximityPrompt,
 } from '../game/vaelmorRenderer';
-import type { ComputedCombatStats, RemotePlayerState } from '../game/multiplayerTypes';
+import type {
+  ComputedCombatStats,
+  ProjectedAllyScreenPos,
+  RemoteActionEvent,
+  RemotePlayerState,
+  SharedEnemyState,
+  WorldPing,
+} from '../game/multiplayerTypes';
+import {
+  computeCoopHealAmount,
+  filterSameRealmBanners,
+  filterSameRealmPlayers,
+  interpolateRemotePlayer,
+  projectWorldToScreen,
+  pruneExpiredPings,
+  type RemoteVisualPose,
+} from '../game/multiplayerState';
 import {
   VerdantDynamicBatcher,
   type DynamicParticle,
@@ -70,6 +87,27 @@ import {
   synthesizeDungeonEcosystem,
   type SynthesizedDungeonPlan,
 } from './verdantDungeonCatalog';
+import {
+  FrontiersVerdantObserver,
+  type AutomateReport,
+  type LifecycleGateReport,
+  type MonotonicWatermarkState,
+  type ObserverRefinementAgenda,
+  type ObserverSnapshot,
+  type RatchetCycleReport,
+  type RefinementAuditEntry,
+  type UniformRefinementOptions,
+  type UniformRefinementReport,
+  type VerdantVsmManagerSpec,
+} from './verdantObserverManager';
+import type {
+  ModelLineageReport,
+  ModelOfModelsBuildInput,
+  VerdantModelGraph,
+  VerdantModelNode,
+  VerdantPartSlot,
+  VerdantResolutionTier,
+} from './verdantModelOfModels';
 
 export interface VerdantWorldStatus {
   wasmActive: boolean;
@@ -142,6 +180,7 @@ export class VerdantFrontiersRuntime {
   private batcher = new VerdantDynamicBatcher();
   private callbacks: EngineCallbacks;
   private onVerdantReady?: (status: VerdantWorldStatus) => void;
+  private onModelObserverChange?: (snapshot: ObserverSnapshot) => void;
   private onSpatialAudio?: (metrics: { pan: number; gain: number; itdMicros: number }) => void;
   private onCombatIntensity?: (intensity: number) => void;
   private onFootstep?: (surface: 'stone' | 'earth' | 'water') => void;
@@ -151,11 +190,14 @@ export class VerdantFrontiersRuntime {
     entryPos: [number, number],
     entryYaw: number,
   ) => void;
+  private modelObserver: FrontiersVerdantObserver;
+  private modelResolutionTier: VerdantResolutionTier = 3;
   private crossingBorder = false;
   private footstepTimer = 0;
   private smoothedCombatIntensity = 0;
 
   private phase: GamePhase = 'title';
+  private introBackdropOpaque = false;
   private disposed = false;
   private frameId = 0;
   private lastNow = performance.now();
@@ -232,6 +274,16 @@ export class VerdantFrontiersRuntime {
   private maxStamina = 100;
   private staminaRegenBonusPct = 0;
   private damageBonusPct = 0;
+  private speedMultiplier = 1;
+  private bellRangeBonus = 0;
+  private reachBonus = 0;
+  private lanternHealAmount = 34;
+  private damageReductionPct = 0;
+  private killHealAmount = 0;
+  private dodgeStaminaDiscount = 0;
+  private emberBonusPct = 0;
+  private frostSlowActive = false;
+  private playerRelicAuraRgb: [number, number, number] | null = null;
   private activeGear: GearSlotId = 'hookblade';
   private cooldowns: Record<GearSlotId, number> = {
     hookblade: 0,
@@ -260,6 +312,8 @@ export class VerdantFrontiersRuntime {
   private targetCamDist = 8.4;
   private camEye = [0, 7.2, 29.8];
   private camTarget = [0, 2.0, 16.0];
+  private introCamEye: [number, number, number] = [-16, 13.5, 34];
+  private introCamTarget: [number, number, number] = [0, 4.2, -10];
   private dragging = false;
   private dragButton = -1;
   private lastPointerX = 0;
@@ -277,6 +331,9 @@ export class VerdantFrontiersRuntime {
   private interactables: WorldInteractable[];
   private banners: FoundationBanner[];
   private remotePlayers: RemotePlayerState[] = [];
+  private remoteVisuals = new Map<string, RemoteVisualPose>();
+  private worldPings: WorldPing[] = [];
+  private projectedAllies: ProjectedAllyScreenPos[] = [];
   private projectiles: ProjectileEntity[] = [];
   private collisionMap: WorldCollisionMap;
   private waterTiles: WaterQuadTile[] = [];
@@ -300,6 +357,7 @@ export class VerdantFrontiersRuntime {
     callbacks: EngineCallbacks,
     hooks?: {
       onVerdantReady?: (status: VerdantWorldStatus) => void;
+      onModelObserverChange?: (snapshot: ObserverSnapshot) => void;
       onSpatialAudio?: (metrics: { pan: number; gain: number; itdMicros: number }) => void;
       onCombatIntensity?: (intensity: number) => void;
       onFootstep?: (surface: 'stone' | 'earth' | 'water') => void;
@@ -318,10 +376,16 @@ export class VerdantFrontiersRuntime {
     this.banners = initialBanners;
     this.callbacks = callbacks;
     this.onVerdantReady = hooks?.onVerdantReady;
+    this.onModelObserverChange = hooks?.onModelObserverChange;
     this.onSpatialAudio = hooks?.onSpatialAudio;
     this.onCombatIntensity = hooks?.onCombatIntensity;
     this.onFootstep = hooks?.onFootstep;
     this.onCrossFrontierBorder = hooks?.onCrossFrontierBorder;
+    this.modelObserver = new FrontiersVerdantObserver({ npcs: initialNpcs });
+    this.modelObserver.subscribe((snap) => {
+      this.modelResolutionTier = snap.renderProfile.resolutionTier;
+      this.onModelObserverChange?.(snap);
+    });
 
     for (let i = 0; i < 64; i++) {
       this.particles.push({
@@ -692,7 +756,58 @@ export class VerdantFrontiersRuntime {
         soundtrackTitle: this.activeRealm.soundtrack.title,
       };
 
+      // Attach Verdant Engine's 13 native VSM Managers into the unified Frontiers Observer
+      this.modelObserver.setSoftwareGl(this.isSoftwareGl);
+      if (typeof ex.verdant_wasm_operator_status_aux === 'function') {
+        try {
+          ex.verdant_wasm_operator_status_aux();
+          const opBytes = this.readAux();
+          if (opBytes.byteLength > 0) {
+            const opJson = JSON.parse(new TextDecoder().decode(opBytes)) as {
+              managers?: Array<{
+                managerId?: string;
+                name?: string;
+                basisPrime?: number;
+                kappaHex?: string;
+                spec?: { concerns?: string[]; differentiationRequirements?: string[] };
+              }>;
+            };
+            if (Array.isArray(opJson.managers)) {
+              this.modelObserver.attachWasmManagers(opJson.managers);
+            }
+          }
+        } catch {
+          // keep Frontiers domain managers active even if WASM operator JSON fails
+        }
+      }
+
+      // Expose uniform Model-of-Models & Extended Observer/Manager API on window
+      (window as unknown as Record<string, unknown>).__VERDANT_MODEL_API__ = {
+        getRootModel: () => this.modelObserver.getRootModel(),
+        getModel: (modelId: string) => this.modelObserver.getModel(modelId),
+        getModelGraph: () => this.modelObserver.getModelGraph(),
+        getModelLineage: (modelId: string) => this.modelObserver.getModelLineage(modelId),
+        getAuditLedger: () => this.modelObserver.getAuditLedger(),
+        listModels: (filter?: { partSlot?: string; kind?: string }) =>
+          this.modelObserver.listModels(
+            filter as Parameters<FrontiersVerdantObserver['listModels']>[0],
+          ),
+        listManagers: () => this.modelObserver.listManagers(),
+        observeKpis: () => this.modelObserver.observeKpis(),
+        getSummary: () => this.modelObserver.getSummary(),
+        getSnapshot: () => this.modelObserver.getSnapshot(),
+        getObserverSnapshot: () => this.modelObserver.getSnapshot(),
+        getRefinementAgenda: () => this.modelObserver.synthesizeRefinementAgenda(),
+        getRenderResolutionProfile: () => this.modelObserver.getRenderResolutionProfile(),
+        executeLifecycleGate: () => this.modelObserver.executeLifecycleGate(),
+        getWatermarks: () => this.modelObserver.getMonotonicWatermarks(),
+        refine: (opts?: UniformRefinementOptions) => this.refineWorldModel(opts),
+        runRatchetCycle: (opts?: UniformRefinementOptions) => this.runRatchetCycle(opts),
+        automate: (opts?: UniformRefinementOptions) => this.runAutomatePipeline(opts),
+      };
+
       this.onVerdantReady?.({ ...this.status });
+      this.onModelObserverChange?.(this.modelObserver.getSnapshot());
       this.pushHudSnapshot();
       this.lastNow = performance.now();
       this.tick();
@@ -809,10 +924,182 @@ export class VerdantFrontiersRuntime {
   }
 
   // ---------------------------------------------------------------------------
-  // Live Verdant + Prism + Stitch Cognitive & Custody Integration Hooks
+  // Live Verdant + Prism + Stitch Cognitive, Model-of-Models & Custody Hooks
   // ---------------------------------------------------------------------------
   public getVerdantStatus(): VerdantWorldStatus {
     return { ...this.status };
+  }
+
+  public getModelObserverSnapshot(): ObserverSnapshot {
+    return this.modelObserver.getSnapshot();
+  }
+
+  public getRefinementAgenda(): ObserverRefinementAgenda {
+    return this.modelObserver.synthesizeRefinementAgenda();
+  }
+
+  public listManagers(): VerdantVsmManagerSpec[] {
+    return this.modelObserver.listManagers();
+  }
+
+  public getModelGraph(): VerdantModelGraph {
+    return this.modelObserver.getModelGraph();
+  }
+
+  public getModelLineage(modelId: string): ModelLineageReport | null {
+    return this.modelObserver.getModelLineage(modelId);
+  }
+
+  public listModelsByPart(partSlot: VerdantPartSlot): VerdantModelNode[] {
+    return this.modelObserver.listModels({ partSlot });
+  }
+
+  public getAuditLedger(): RefinementAuditEntry[] {
+    return this.modelObserver.getAuditLedger();
+  }
+
+  public syncWorldModelState(input: ModelOfModelsBuildInput): ObserverSnapshot {
+    return this.modelObserver.syncWorldState(input);
+  }
+
+  public async refineWorldModel(
+    options: UniformRefinementOptions = {},
+  ): Promise<UniformRefinementReport> {
+    const report = await this.modelObserver.refine(options);
+    const prof = report.renderProfile;
+    this.modelResolutionTier = prof.resolutionTier;
+
+    if (this.renderer) {
+      this.renderer.setRenderScale(prof.renderScalePermille, prof.casSharpnessPermille);
+    }
+
+    if (this.wasm) {
+      const enc = new TextEncoder();
+      if (typeof this.wasm.verdant_wasm_record_part_hydration_io === 'function') {
+        const slot = options.partSlot ?? 'stage-environment';
+        this.stageIo(
+          enc.encode(
+            `${slot}|frontiers-observer-manager|Tier ${prof.resolutionTier} (${prof.resolutionLabel}) · Diversity ${report.after.diversityIndex}/100 · ${report.modelsRefined} models`,
+          ),
+        );
+        this.wasm.verdant_wasm_record_part_hydration_io(prof.resolutionTier);
+      }
+      if (typeof this.wasm.verdant_wasm_step_observer === 'function') {
+        try {
+          this.wasm.verdant_wasm_step_observer();
+        } catch {
+          // some builds require tick args; ignore gracefully
+        }
+      }
+      if (typeof this.wasm.verdant_wasm_set_lod_rank === 'function') {
+        try {
+          this.wasm.verdant_wasm_set_lod_rank(prof.lodRank);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if (this.phase === 'playing') {
+      this.spawnParticles(this.playerX, this.playerY + 1.6, this.playerZ, 20, 0xe8c468, 5.2);
+    }
+    return report;
+  }
+
+  public async runRatchetCycle(
+    options: UniformRefinementOptions = {},
+  ): Promise<RatchetCycleReport> {
+    const cycle = await this.modelObserver.runRatchetCycle(options);
+    const prof = cycle.refinementReport.renderProfile;
+    this.modelResolutionTier = prof.resolutionTier;
+
+    if (this.renderer) {
+      this.renderer.setRenderScale(prof.renderScalePermille, prof.casSharpnessPermille);
+    }
+
+    if (this.wasm) {
+      const enc = new TextEncoder();
+      if (typeof this.wasm.verdant_wasm_record_part_hydration_io === 'function') {
+        const slot = options.partSlot ?? 'stage-environment';
+        this.stageIo(
+          enc.encode(
+            `${slot}|frontiers-observer-ratchet|Cycle #${cycle.cycleNumber} · Tier ${prof.resolutionTier} · Cohesion ${cycle.agendaAfter.cohesionIndex}/100 · Diversity ${cycle.agendaAfter.diversityIndex}/100`,
+          ),
+        );
+        this.wasm.verdant_wasm_record_part_hydration_io(prof.resolutionTier);
+      }
+      if (typeof this.wasm.verdant_wasm_step_observer === 'function') {
+        try {
+          this.wasm.verdant_wasm_step_observer();
+        } catch {
+          // ignore
+        }
+      }
+      if (typeof this.wasm.verdant_wasm_set_lod_rank === 'function') {
+        try {
+          this.wasm.verdant_wasm_set_lod_rank(prof.lodRank);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if (this.phase === 'playing') {
+      this.spawnParticles(this.playerX, this.playerY + 1.6, this.playerZ, 24, 0x66dc9d, 5.6);
+    }
+    return cycle;
+  }
+
+  public executeLifecycleGate(): LifecycleGateReport {
+    return this.modelObserver.executeLifecycleGate();
+  }
+
+  public getMonotonicWatermarks(): MonotonicWatermarkState {
+    return this.modelObserver.getMonotonicWatermarks();
+  }
+
+  public async runAutomatePipeline(
+    options: UniformRefinementOptions = {},
+  ): Promise<AutomateReport> {
+    const report = await this.modelObserver.executeAutomatePipeline(options);
+    const prof = report.ratchetCycle.refinementReport.renderProfile;
+    this.modelResolutionTier = prof.resolutionTier;
+
+    if (this.renderer) {
+      this.renderer.setRenderScale(prof.renderScalePermille, prof.casSharpnessPermille);
+    }
+
+    if (this.wasm) {
+      const enc = new TextEncoder();
+      if (typeof this.wasm.verdant_wasm_record_part_hydration_io === 'function') {
+        const slot = options.partSlot ?? 'stage-environment';
+        this.stageIo(
+          enc.encode(
+            `${slot}|frontiers-observer-automate|Cycle #${report.ratchetCycle.cycleNumber} · ${report.passedStages}/${report.totalStages} stages · Gates ${report.lifecycleGate.passedChecks}/${report.lifecycleGate.totalChecks} · Tier ${prof.resolutionTier}`,
+          ),
+        );
+        this.wasm.verdant_wasm_record_part_hydration_io(prof.resolutionTier);
+      }
+      if (typeof this.wasm.verdant_wasm_step_observer === 'function') {
+        try {
+          this.wasm.verdant_wasm_step_observer();
+        } catch {
+          // ignore
+        }
+      }
+      if (typeof this.wasm.verdant_wasm_set_lod_rank === 'function') {
+        try {
+          this.wasm.verdant_wasm_set_lod_rank(prof.lodRank);
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    if (this.phase === 'playing') {
+      this.spawnParticles(this.playerX, this.playerY + 1.6, this.playerZ, 28, 0x7ad4f7, 6.0);
+    }
+    return report;
   }
 
   private ingestKnowledgePassage(
@@ -956,11 +1243,29 @@ export class VerdantFrontiersRuntime {
 
   public setPhase(phase: GamePhase): void {
     this.phase = phase;
+    if (phase !== 'intro') {
+      this.introBackdropOpaque = false;
+    }
     if (phase !== 'playing') {
       this.keys.clear();
       this.dragging = false;
     }
     this.pushHudSnapshot();
+  }
+
+  public setIntroCameraTarget(
+    eye: [number, number, number],
+    target: [number, number, number],
+    live3DVisible = true,
+  ): void {
+    this.introCamEye = [eye[0], eye[1], eye[2]];
+    this.introCamTarget = [target[0], target[1], target[2]];
+    this.introBackdropOpaque = !live3DVisible;
+    if (live3DVisible) {
+      // Snap near target shot so Scene V reveals Vaelmor immediately on frame 1
+      this.camEye = [eye[0], eye[1], eye[2]];
+      this.camTarget = [target[0], target[1], target[2]];
+    }
   }
 
   public setCompletedQuestsCount(count: number): void {
@@ -972,6 +1277,16 @@ export class VerdantFrontiersRuntime {
     this.maxHp = stats.maxHp;
     this.staminaRegenBonusPct = Math.round((stats.staminaRegenMultiplier - 1) * 100);
     this.damageBonusPct = Math.round((stats.damageMultiplier - 1) * 100);
+    this.speedMultiplier = stats.speedMultiplier;
+    this.bellRangeBonus = stats.bellRangeBonus;
+    this.reachBonus = stats.reachBonus ?? 0;
+    this.lanternHealAmount = stats.lanternHealAmount;
+    this.damageReductionPct = stats.damageReductionPct ?? 0;
+    this.killHealAmount = stats.killHealAmount ?? 0;
+    this.dodgeStaminaDiscount = stats.dodgeStaminaDiscount ?? 0;
+    this.emberBonusPct = stats.emberBonusPct ?? 0;
+    this.frostSlowActive = Boolean(stats.frostSlowActive);
+    this.playerRelicAuraRgb = stats.relicAuraRgb ?? null;
     if (stats.maxHp > prevMax) {
       this.hp = Math.min(this.maxHp, this.hp + (stats.maxHp - prevMax));
     }
@@ -984,6 +1299,156 @@ export class VerdantFrontiersRuntime {
 
   public syncRemotePlayers(players: RemotePlayerState[]): void {
     this.remotePlayers = players;
+    const activeIds = new Set(players.map((p) => p.id));
+    for (const id of Array.from(this.remoteVisuals.keys())) {
+      if (!activeIds.has(id)) {
+        this.remoteVisuals.delete(id);
+      }
+    }
+  }
+
+  public syncWorldPings(pings: WorldPing[]): void {
+    this.worldPings = pruneExpiredPings(pings, Date.now());
+  }
+
+  public replaceBanners(nextBanners: FoundationBanner[]): void {
+    this.banners = nextBanners.slice();
+  }
+
+  public spawnRemoteActionVfx(ev: RemoteActionEvent): void {
+    if (ev.realmSlug !== this.activeRealm.slug) return;
+    const pose = this.remoteVisuals.get(ev.playerId);
+    const rx = pose ? pose.x : ev.x;
+    const rz = pose ? pose.z : ev.z;
+    const ry = this.groundAt(rx, rz);
+    const isRadial = ev.activeGear === 'bellhammer' || ev.activeGear === 'lantern';
+    if (ev.activeGear === 'lantern') {
+      this.slashes.push({
+        active: true,
+        x: rx,
+        y: ry,
+        z: rz,
+        yaw: ev.yaw,
+        age: 0,
+        duration: 0.48,
+        isRadial: true,
+        r: 0.34,
+        g: 0.92,
+        b: 0.74,
+      });
+      this.spawnParticles(rx, ry + 1.2, rz, 14, 0x5ea38c, 4.0);
+    } else if (ev.activeGear === 'bellhammer') {
+      this.slashes.push({
+        active: true,
+        x: rx,
+        y: ry,
+        z: rz,
+        yaw: ev.yaw,
+        age: 0,
+        duration: 0.44,
+        isRadial: true,
+        r: 0.96,
+        g: 0.70,
+        b: 0.30,
+      });
+      this.spawnParticles(rx, ry + 0.7, rz, 14, 0xe09f5a, 5.2);
+    } else if (ev.activeGear === 'hookblade') {
+      this.slashes.push({
+        active: true,
+        x: rx,
+        y: ry,
+        z: rz,
+        yaw: ev.yaw,
+        age: 0,
+        duration: 0.28,
+        isRadial: false,
+        r: 0.48,
+        g: 0.90,
+        b: 0.98,
+      });
+      this.spawnParticles(rx + Math.sin(ev.yaw) * 1.3, ry + 1.1, rz + Math.cos(ev.yaw) * 1.3, 8, 0x78d5f5, 3.8);
+    } else if (isRadial) {
+      this.spawnParticles(rx, ry + 1.0, rz, 10, 0xd4a253, 3.6);
+    }
+  }
+
+  public applyRemoteEnemySync(
+    shared: SharedEnemyState,
+    attackerName?: string,
+  ): { killedLocally: boolean; enemy?: EnemyEntity } {
+    const enemy = this.enemies.find((e) => e.id === shared.id);
+    if (!enemy) return { killedLocally: false };
+    const wasAlive = enemy.state !== 'ko' && enemy.hp > 0;
+    const nextHp = shared.defeated ? 0 : Math.min(enemy.hp, shared.hp);
+    const dmgDelta = Math.max(0, enemy.hp - nextHp);
+    enemy.hp = nextHp;
+    if (dmgDelta > 0) {
+      enemy.hitFlashTimer = 0.22;
+      if (enemy.archetype === 'colossus' && !enemy.phase2 && enemy.hp > 0 && enemy.hp <= enemy.maxHp * 0.5) {
+        enemy.phase2 = true;
+      }
+      this.spawnParticles(
+        enemy.x,
+        this.groundAt(enemy.x, enemy.z) + 1.0,
+        enemy.z,
+        shared.defeated ? 20 : 10,
+        0x78d5f5,
+        4.8,
+      );
+      if (attackerName && Math.hypot(enemy.x - this.playerX, enemy.z - this.playerZ) < 28) {
+        this.callbacks.onCombatCallout?.(`-${Math.round(dmgDelta)} (${attackerName})`, 'damage');
+      }
+    }
+    let killedLocally = false;
+    if (wasAlive && (shared.defeated || enemy.hp <= 0)) {
+      enemy.hp = 0;
+      enemy.state = 'ko';
+      enemy.koTimer = 0.01;
+      this.defeatedCount += 1;
+      killedLocally = true;
+    }
+    this.pushHudSnapshot();
+    return { killedLocally, enemy };
+  }
+
+  public applyRemoteInteractableActivated(interactableId: string): WorldInteractable | null {
+    const item = this.interactables.find((i) => i.id === interactableId);
+    if (!item || item.activated) return null;
+    if (item.kind === 'dungeon-portal' || item.kind === 'dungeon-exit') return null;
+    item.activated = true;
+    this.spawnParticles(
+      item.position[0],
+      this.groundAt(item.position[0], item.position[1]) + 1.2,
+      item.position[1],
+      18,
+      0x78d5f5,
+      5.0,
+    );
+    this.pushHudSnapshot();
+    return item;
+  }
+
+  public applyCoopHeal(amount: number, healerName: string): void {
+    if (this.phase !== 'playing' || this.hp <= 0) return;
+    const applied = Math.max(1, Math.round(amount));
+    this.hp = Math.min(this.maxHp, this.hp + applied);
+    this.spawnParticles(this.playerX, this.playerY + 1.2, this.playerZ, 18, 0x5ea38c, 4.4);
+    this.slashes.push({
+      active: true,
+      x: this.playerX,
+      y: this.playerY,
+      z: this.playerZ,
+      yaw: this.playerYaw,
+      age: 0,
+      duration: 0.45,
+      isRadial: true,
+      r: 0.38,
+      g: 0.94,
+      b: 0.78,
+    });
+    this.callbacks.onAudioEvent({ kind: 'heal' });
+    this.callbacks.onCombatCallout?.(`+${applied} Vitality (${healerName})`, 'heal');
+    this.pushHudSnapshot();
   }
 
   public selectGear(gear: GearSlotId): void {
@@ -1003,11 +1468,12 @@ export class VerdantFrontiersRuntime {
       this.bufferedActionTimer = 0.18;
       return;
     }
-    if (this.stamina < 16) {
+    const dodgeCost = Math.round(16 * (1 - this.dodgeStaminaDiscount));
+    if (this.stamina < dodgeCost) {
       this.callbacks.onGearFeedback('Low Stamina — recover breath before dodging.');
       return;
     }
-    this.stamina -= 16;
+    this.stamina -= dodgeCost;
     this.dodgeTimer = 0.28;
 
     // Directional dodge: roll cleanly toward held WASD direction (or facing direction if stationary)
@@ -1038,7 +1504,9 @@ export class VerdantFrontiersRuntime {
     const isSwim = this.waterPosture === 'swimming';
     const isWade = this.waterPosture === 'wading';
     const phen = this.activePhenomenon;
-    const surgeSpeed = (isSwim ? 9.6 * phen.swimSpeedMult : isWade ? 10.2 : 12.5) * phen.dodgeDistMult;
+    const tidalBoost = this.dodgeStaminaDiscount > 0 ? 1.18 : 1.0;
+    const surgeSpeed =
+      (isSwim ? 9.6 * phen.swimSpeedMult : isWade ? 10.2 : 12.5) * phen.dodgeDistMult * tidalBoost;
     this.playerVx = dx * surgeSpeed;
     this.playerVz = dz * surgeSpeed;
     this.actionCount += 1;
@@ -1138,11 +1606,16 @@ export class VerdantFrontiersRuntime {
       npcs: this.npcs.map((n) => ({ id: n.id, x: n.position[0], z: n.position[1] })),
       enemies: this.enemies.map((e) => ({
         id: e.id,
+        name: e.name,
         archetype: e.archetype,
         x: Number(e.x.toFixed(2)),
         z: Number(e.z.toFixed(2)),
         hp: Math.round(e.hp),
+        maxHp: e.maxHp,
+        phase2: Boolean(e.phase2),
       })),
+      playerRelicAuraRgb: this.playerRelicAuraRgb,
+      modelOfModels: this.modelObserver.getSnapshot(),
     };
   }
 
@@ -1174,7 +1647,7 @@ export class VerdantFrontiersRuntime {
     this.cooldowns[gear.id] = gear.cooldownSec * this.activePhenomenon.cooldownMult;
     this.actionCount += 1;
     this.lastActionGear = gear.id;
-    this.callbacks.onPlayerAction?.(gear.id);
+    this.callbacks.onPlayerAction?.(gear.id, this.playerX, this.playerZ, this.playerYaw);
 
     // Soft melee aim-assist: smoothly turn toward nearest living threat inside strike arc
     if (gear.id === 'hookblade' || gear.id === 'bellhammer') {
@@ -1191,7 +1664,7 @@ export class VerdantFrontiersRuntime {
     }
 
     if (gear.id === 'lantern') {
-      const heal = 34;
+      const heal = this.lanternHealAmount;
       this.hp = Math.min(this.maxHp, this.hp + heal);
       this.spawnParticles(this.playerX, this.playerY + 1.2, this.playerZ, 18, 0x5ea38c, 4.2);
       this.slashes.push({
@@ -1209,7 +1682,8 @@ export class VerdantFrontiersRuntime {
       });
       this.callbacks.onAudioEvent({ kind: 'heal' });
       this.callbacks.onCombatCallout?.(`+${heal} Vitality`, 'heal');
-      this.callbacks.onGearFeedback('Mortar Lantern mends your vitality.');
+      this.callbacks.onCoopLanternCast?.(computeCoopHealAmount(heal), this.playerX, this.playerZ);
+      this.callbacks.onGearFeedback('Mortar Lantern mends you and nearby allies.');
       this.pushHudSnapshot();
       return;
     }
@@ -1312,6 +1786,7 @@ export class VerdantFrontiersRuntime {
 
     const effectiveGear = {
       ...gear,
+      range: gear.range + (isRadial ? this.bellRangeBonus : this.reachBonus),
       damage: Math.round(
         gear.damage * (1 + this.damageBonusPct / 100) * this.activePhenomenon.strikeDamageMult,
       ),
@@ -1328,21 +1803,41 @@ export class VerdantFrontiersRuntime {
       this.hitstopTimer = res.hitstopSec;
       this.cameraTrauma = Math.min(1, this.cameraTrauma + res.cameraTrauma);
       this.callbacks.onAudioEvent({ kind: 'hit', heavy: isRadial || res.killedEnemyIds.length > 0 });
+      const emberTag = this.emberBonusPct > 0 ? ' · EMBER' : '';
+      const frostTag = isRadial && this.frostSlowActive ? ' · CHILLED' : '';
       this.callbacks.onCombatCallout?.(
         res.killedEnemyIds.length > 0
-          ? `Felled! -${effectiveGear.damage}`
-          : `-${effectiveGear.damage}`,
+          ? `Felled! -${effectiveGear.damage}${emberTag}`
+          : `-${effectiveGear.damage}${emberTag}${frostTag}`,
         isRadial ? 'heavy' : 'damage',
       );
       for (const id of res.hitEnemyIds) {
         const enemy = this.enemies.find((e) => e.id === id);
         if (enemy) {
+          const killed = res.killedEnemyIds.includes(id);
+          this.callbacks.onEnemyDamaged?.({
+            enemyId: enemy.id,
+            enemyName: enemy.name,
+            archetype: enemy.archetype,
+            damage: effectiveGear.damage,
+            maxHp: enemy.maxHp,
+            killed,
+          });
+          if (isRadial && this.frostSlowActive && enemy.hp > 0) {
+            enemy.slowTimer = 3.5;
+          }
+          const hitColor =
+            isRadial && this.frostSlowActive
+              ? 0x74e5ff
+              : this.emberBonusPct > 0
+                ? 0xff6b2b
+                : 0xe09f5a;
           this.spawnParticles(
             enemy.x,
             this.groundAt(enemy.x, enemy.z) + 1.0,
             enemy.z,
-            res.killedEnemyIds.includes(id) ? 20 : 10,
-            0xe09f5a,
+            killed ? 20 : 12,
+            hitColor,
             5.4,
           );
         }
@@ -1351,6 +1846,11 @@ export class VerdantFrontiersRuntime {
         const enemy = this.enemies.find((e) => e.id === id);
         if (enemy) {
           this.defeatedCount += 1;
+          if (this.killHealAmount > 0 && this.hp > 0 && this.hp < this.maxHp) {
+            this.hp = Math.min(this.maxHp, this.hp + this.killHealAmount);
+            this.spawnParticles(this.playerX, this.playerY + 1.2, this.playerZ, 12, 0x4ee896, 3.8);
+            this.callbacks.onCombatCallout?.(`+${this.killHealAmount} Spore Siphon`, 'heal');
+          }
           this.callbacks.onEnemyDefeated(enemy.archetype, enemy.name);
         }
       }
@@ -1636,10 +2136,25 @@ export class VerdantFrontiersRuntime {
       this.lastRegionMood = region.ambientMood;
       this.callbacks.onAudioEvent({ kind: 'region', mood: region.ambientMood });
     }
+    const bossProf = getBossSignatureProfile(this.activeFaunaKit);
     const nearbyEnemies = this.enemies
-      .filter((e) => e.state !== 'ko' && e.hp > 0 && Math.hypot(e.x - this.playerX, e.z - this.playerZ) < 18)
+      .filter((e) => e.state !== 'ko' && e.hp > 0 && Math.hypot(e.x - this.playerX, e.z - this.playerZ) < 22)
+      .sort((a, b) => {
+        if (a.archetype === 'colossus' && b.archetype !== 'colossus') return -1;
+        if (b.archetype === 'colossus' && a.archetype !== 'colossus') return 1;
+        return Math.hypot(a.x - this.playerX, a.z - this.playerZ) - Math.hypot(b.x - this.playerX, b.z - this.playerZ);
+      })
       .slice(0, 3)
-      .map((e) => ({ id: e.id, name: e.name, hp: Math.round(e.hp), maxHp: e.maxHp, archetype: e.archetype }));
+      .map((e) => ({
+        id: e.id,
+        name: e.name,
+        hp: Math.round(e.hp),
+        maxHp: e.maxHp,
+        archetype: e.archetype,
+        phase2: Boolean(e.phase2),
+        bossTitle: e.archetype === 'colossus' ? (e.phase2 ? bossProf.phase2Title : bossProf.archetypeTitle) : undefined,
+        signatureMove: e.archetype === 'colossus' && e.phase2 ? bossProf.signatureMoveName : undefined,
+      }));
 
     this.callbacks.onHudUpdate({
       hp: Math.round(this.hp),
@@ -1656,6 +2171,7 @@ export class VerdantFrontiersRuntime {
       nearbyEnemies,
       defeatedCount: this.defeatedCount,
       waterPosture: this.waterPosture,
+      projectedAllies: this.projectedAllies,
       ecosystemBadge: {
         title: this.activePhenomenon.title,
         summary: this.activePhenomenon.effectSummary,
@@ -1728,12 +2244,39 @@ export class VerdantFrontiersRuntime {
       }
     }
 
+    // Smoothly interpolate same-realm remote Waywright poses & prune expired world pings
+    const sameRealmPeers = filterSameRealmPlayers(this.remotePlayers, this.activeRealm.slug);
+    for (const rp of sameRealmPeers) {
+      const nextPose = interpolateRemotePlayer(
+        this.remoteVisuals.get(rp.id),
+        { x: rp.x, z: rp.z, yaw: rp.yaw || 0 },
+        dt,
+      );
+      this.remoteVisuals.set(rp.id, nextPose);
+    }
+    if (this.worldPings.length > 0) {
+      this.worldPings = pruneExpiredPings(this.worldPings, Date.now());
+    }
+
     if (this.phase === 'title') {
       // Sweeping golden-hour aerial camera showcasing the Parabolic Bridge, Basalt Citadel,
       // Ironwood canopy, and Southern Causeway!
       const orbit = Math.sin(this.simTime * 0.16) * 0.34;
       this.camEye = [Math.sin(orbit) * 18.5, 9.8 + Math.sin(this.simTime * 0.25) * 0.7, 30.5];
       this.camTarget = [0, 3.6, -4.0];
+      return;
+    }
+
+    if (this.phase === 'intro') {
+      const alpha = Math.min(1, dt * 1.45);
+      const swayX = Math.sin(this.simTime * 0.24) * 0.72;
+      const swayY = Math.cos(this.simTime * 0.19) * 0.22;
+      this.camEye[0] += (this.introCamEye[0] + swayX - this.camEye[0]) * alpha;
+      this.camEye[1] += (this.introCamEye[1] + swayY - this.camEye[1]) * alpha;
+      this.camEye[2] += (this.introCamEye[2] - this.camEye[2]) * alpha;
+      this.camTarget[0] += (this.introCamTarget[0] - this.camTarget[0]) * alpha;
+      this.camTarget[1] += (this.introCamTarget[1] - this.camTarget[1]) * alpha;
+      this.camTarget[2] += (this.introCamTarget[2] - this.camTarget[2]) * alpha;
       return;
     }
 
@@ -1802,7 +2345,7 @@ export class VerdantFrontiersRuntime {
         vx: this.playerVx,
         vz: this.playerVz,
         playerYaw: this.playerYaw,
-        maxSpeed: 8.6 * waterState.speedMultiplier * ecoSpeedMult,
+        maxSpeed: 8.6 * waterState.speedMultiplier * ecoSpeedMult * this.speedMultiplier,
         accelRate: 16.5 * waterState.turnResponsiveness,
         decelRate: waterState.posture === 'swimming' ? 6.5 : 14.5,
         turnRate: 14.0 * waterState.turnResponsiveness,
@@ -2000,6 +2543,33 @@ export class VerdantFrontiersRuntime {
         b: 0.14,
       });
     }
+    if (ev.bossPhase2TriggeredIds.length > 0) {
+      const bossProf = getBossSignatureProfile(this.activeFaunaKit);
+      this.cameraTrauma = Math.min(1, this.cameraTrauma + 0.55);
+      this.callbacks.onAudioEvent({ kind: 'bell', hz: 138 });
+      this.callbacks.onCombatCallout?.(`PHASE II · ${bossProf.phase2Title.toUpperCase()}`, 'heavy');
+      this.pushHudSnapshot();
+    }
+    for (const cast of ev.bossSignatureCasts) {
+      this.slashes.push({
+        active: true,
+        x: cast.x,
+        y: this.groundAt(cast.x, cast.z) + 0.12,
+        z: cast.z,
+        yaw: 0,
+        age: 0,
+        duration: 0.62,
+        isRadial: true,
+        r: cast.rgb[0],
+        g: cast.rgb[1],
+        b: cast.rgb[2],
+      });
+      const hexCol =
+        (Math.round(cast.rgb[0] * 255) << 16) |
+        (Math.round(cast.rgb[1] * 255) << 8) |
+        Math.round(cast.rgb[2] * 255);
+      this.spawnParticles(cast.x, this.groundAt(cast.x, cast.z) + 1.6, cast.z, 22, hexCol, 6.8);
+    }
     if (ev.spawnedProjectiles.length > 0) {
       this.projectiles.push(...ev.spawnedProjectiles);
     }
@@ -2007,12 +2577,13 @@ export class VerdantFrontiersRuntime {
       this.applyPlayerHit(ev.playerDamaged);
     }
 
-    // Solid Dynamic Body Separation (Player <-> NPCs <-> Enemies <-> Enemies <-> Allies)
+    // Solid Dynamic Body Separation (Player <-> NPCs <-> Enemies <-> Enemies <-> Same-Realm Allies)
+    const sameRealmAllies = filterSameRealmPlayers(this.remotePlayers, this.activeRealm.slug);
     const sep = resolveDynamicBodySeparation(
       { x: this.playerX, z: this.playerZ, radius: PLAYER_COLLISION_RADIUS },
       this.enemies,
       this.npcs,
-      this.remotePlayers,
+      sameRealmAllies,
     );
     // Final static containment pass so dynamic separation can never push player or enemies into walls
     const finalPlayer = resolveCircleVsWorld(
@@ -2159,11 +2730,25 @@ export class VerdantFrontiersRuntime {
   }
 
   private applyPlayerHit(dmg: number): void {
-    this.hp = Math.max(0, this.hp - dmg);
+    const mitigated =
+      this.damageReductionPct > 0
+        ? Math.max(1, Math.round(dmg * (1 - this.damageReductionPct / 100)))
+        : dmg;
+    this.hp = Math.max(0, this.hp - mitigated);
     this.cameraTrauma = Math.min(1, this.cameraTrauma + 0.46);
-    this.spawnParticles(this.playerX, this.playerY + 1.1, this.playerZ, 12, 0xe05858, 4.8);
+    this.spawnParticles(
+      this.playerX,
+      this.playerY + 1.1,
+      this.playerZ,
+      12,
+      this.damageReductionPct > 0 ? 0xe5be6a : 0xe05858,
+      4.8,
+    );
     this.callbacks.onAudioEvent({ kind: 'hit', heavy: true });
-    this.callbacks.onCombatCallout?.(`-${Math.round(dmg)}`, 'damage');
+    this.callbacks.onCombatCallout?.(
+      this.damageReductionPct > 0 ? `-${Math.round(mitigated)} (Warded)` : `-${Math.round(mitigated)}`,
+      'damage',
+    );
     const defeated = this.hp <= 0;
     if (defeated) {
       this.callbacks.onAudioEvent({ kind: 'defeat' });
@@ -2177,6 +2762,10 @@ export class VerdantFrontiersRuntime {
     const w = this.canvas.width;
     const h = this.canvas.height;
     if (w <= 0 || h <= 0) return;
+
+    const sameRealmPlayers = filterSameRealmPlayers(this.remotePlayers, this.activeRealm.slug);
+    const sameRealmBanners = filterSameRealmBanners(this.banners, this.activeRealm.slug);
+    const sameRealmPings = this.worldPings.filter((p) => p.realmSlug === this.activeRealm.slug);
 
     const prox = this.findNearestPrompt();
     const dynViews = this.batcher.build({
@@ -2192,8 +2781,10 @@ export class VerdantFrontiersRuntime {
       npcs: this.npcs,
       enemies: this.enemies,
       interactables: this.interactables,
-      banners: this.banners,
-      remotePlayers: this.remotePlayers,
+      banners: sameRealmBanners,
+      remotePlayers: sameRealmPlayers,
+      remoteVisualPoses: this.remoteVisuals,
+      worldPings: sameRealmPings,
       projectiles: this.projectiles,
       particles: this.particles,
       slashes: this.slashes,
@@ -2217,6 +2808,8 @@ export class VerdantFrontiersRuntime {
       thermalVents: this.activeThermalVents,
       ambientParticleKind: this.activePhenomenon.ambientParticleKind,
       ambientRgb: this.activePhenomenon.ambientRgb,
+      playerRelicAuraRgb: this.playerRelicAuraRgb,
+      modelResolutionTier: this.modelResolutionTier,
     });
 
     this.renderer.uploadSplitBuffers(
@@ -2232,8 +2825,47 @@ export class VerdantFrontiersRuntime {
     const view = this.rendererMod.mat4LookAt(this.camEye, this.camTarget, [0, 1, 0]);
     const mvp = this.rendererMod.mat4Mul(proj, view);
 
+    // Project same-realm ally world positions into CSS viewport pixels for crisp 3D floating nameplates
+    const cssW = this.canvas.clientWidth || window.innerWidth;
+    const cssH = this.canvas.clientHeight || window.innerHeight;
+    if (sameRealmPlayers.length > 0) {
+      const nextProjected: ProjectedAllyScreenPos[] = [];
+      for (const rp of sameRealmPlayers) {
+        const pose = this.remoteVisuals.get(rp.id);
+        const rx = pose ? pose.x : rp.x;
+        const rz = pose ? pose.z : rp.z;
+        const groundY = this.groundAt(rx, rz);
+        const realmWaterLevel = this.activeRealm.terrainProfile.waterLevel;
+        const isSwim =
+          !this.activeRealm.isDungeon &&
+          rp.waterPosture === 'swimming' &&
+          typeof realmWaterLevel === 'number';
+        const ry = isSwim ? (realmWaterLevel as number) - 0.92 : groundY;
+        const dist = Math.hypot(rx - this.playerX, rz - this.playerZ);
+        const labelOffset = dist <= 2.6 ? 2.08 : 2.38;
+        const projected = projectWorldToScreen([rx, ry + labelOffset, rz], mvp, cssW, cssH);
+        nextProjected.push({
+          id: rp.id,
+          name: rp.name,
+          guildId: rp.guildId,
+          hp: rp.hp ?? 100,
+          maxHp: rp.maxHp ?? 100,
+          screenX: projected.screenX,
+          screenY: projected.screenY,
+          distance: Math.round(dist),
+          visible: projected.visible && dist < 85,
+          activeGear: rp.activeGear,
+          actionPulseAt: rp.actionPulseAt,
+        });
+      }
+      this.projectedAllies = nextProjected;
+    } else if (this.projectedAllies.length > 0) {
+      this.projectedAllies = [];
+    }
+
+    const renderProf = this.modelObserver.getRenderResolutionProfile();
     const lodSpec = {
-      rank: this.isSoftwareGl ? 1 : 3,
+      rank: renderProf.lodRank,
       sky: this.activeRealm.skyFallbackRgb,
       fog: this.activeRealm.fogRgb,
     };
@@ -2254,6 +2886,12 @@ export class VerdantFrontiersRuntime {
     const now = performance.now();
     const dt = Math.min(0.05, Math.max(0.004, (now - this.lastNow) / 1000));
     this.lastNow = now;
+
+    // Skip expensive 3D WebGL2 rasterization while Scenes I-IV opaque paintings cover 100% of viewport
+    if (this.phase === 'intro' && this.introBackdropOpaque) {
+      this.frameId = window.setTimeout(this.tick, 220);
+      return;
+    }
 
     this.stepSimulation(dt);
     this.renderFrame();
@@ -2287,5 +2925,6 @@ export class VerdantFrontiersRuntime {
     if (this.canvas.parentNode === this.container) {
       this.container.removeChild(this.canvas);
     }
+    delete (window as unknown as Record<string, unknown>).__VERDANT_MODEL_API__;
   }
 }

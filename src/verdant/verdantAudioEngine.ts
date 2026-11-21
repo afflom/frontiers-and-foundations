@@ -721,14 +721,24 @@ export class VerdantSpatialAudio {
       }
     }
 
-    // 8. Organic Environmental Foley Sparkle
+    // 8. Bespoke Generative Biome Soundscape Events (zero monotonous drone — organic acoustic accents)
     if (stepInBar === Math.min(stepsPerBar - 1, 5) && bar % 3 === 1) {
       if (score.foleyProfile === 'dungeon-cavern' || score.foleyProfile === 'aqueduct-water') {
         this.playWaterDrop(time, 680 + (bar % 5) * 140);
       } else if (score.foleyProfile === 'steppe-chimes' || score.foleyProfile === 'glacial-aurora') {
         const chimeHz = scaleDegreeToHz(score.rootMidi + 24, score.mode, (bar * 3) % 7);
-        this.playHammeredDulcimer(time, chimeHz, 1.5, 0.032, -0.45);
+        this.playHammeredDulcimer(time, chimeHz, 1.5, 0.034, -0.45);
+      } else if (score.foleyProfile === 'caldera-forge') {
+        this.playEmberCrackle(time, 0.042);
+      } else if (score.foleyProfile === 'ocean-surf') {
+        this.playSurfWaveSwell(time, 2.2, 0.046);
+      } else if (score.foleyProfile === 'highland-wind') {
+        const windHz = scaleDegreeToHz(score.rootMidi + 12, score.mode, 4);
+        this.playAeolianGust(time, windHz, 1.8, 0.026);
       }
+    }
+    if (score.foleyProfile === 'caldera-forge' && stepInBar === 2 && bar % 2 === 0) {
+      this.playEmberCrackle(time + eighthSec * 0.35, 0.028);
     }
   }
 
@@ -1138,6 +1148,67 @@ export class VerdantSpatialAudio {
     osc.stop(time + 0.13);
   }
 
+  private playEmberCrackle(time: number, gainPeak: number): void {
+    if (!this.ctx || !this.noiseBuffer || !this.musicBus) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(1900 + Math.random() * 1400, time);
+    bp.Q.value = 3.2;
+    const env = this.ctx.createGain();
+    env.gain.setValueAtTime(0.0001, time);
+    env.gain.linearRampToValueAtTime(gainPeak, time + 0.004);
+    env.gain.exponentialRampToValueAtTime(0.0001, time + 0.048);
+    const pan = this.ctx.createStereoPanner();
+    pan.pan.setValueAtTime((Math.random() - 0.5) * 1.1, time);
+    src.connect(bp);
+    bp.connect(env);
+    env.connect(pan);
+    pan.connect(this.musicBus);
+    src.start(time, Math.random() * 1.4, 0.06);
+  }
+
+  private playSurfWaveSwell(time: number, dur: number, gainPeak: number): void {
+    if (!this.ctx || !this.noiseBuffer || !this.musicBus) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const lp = this.ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(220, time);
+    lp.frequency.linearRampToValueAtTime(760, time + dur * 0.45);
+    lp.frequency.exponentialRampToValueAtTime(180, time + dur);
+    const env = this.ctx.createGain();
+    env.gain.setValueAtTime(0.0001, time);
+    env.gain.linearRampToValueAtTime(gainPeak, time + dur * 0.42);
+    env.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+    src.connect(lp);
+    lp.connect(env);
+    env.connect(this.musicBus);
+    src.start(time, Math.random() * 0.5, dur + 0.05);
+  }
+
+  private playAeolianGust(time: number, hz: number, dur: number, gainPeak: number): void {
+    if (!this.ctx || !this.musicBus) return;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(hz * 0.96, time);
+    osc.frequency.linearRampToValueAtTime(hz * 1.02, time + dur * 0.5);
+    osc.frequency.linearRampToValueAtTime(hz * 0.98, time + dur);
+    const env = this.ctx.createGain();
+    env.gain.setValueAtTime(0.0001, time);
+    env.gain.linearRampToValueAtTime(gainPeak, time + dur * 0.48);
+    env.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+    const pan = this.ctx.createStereoPanner();
+    pan.pan.setValueAtTime(-0.38, time);
+    pan.pan.linearRampToValueAtTime(0.38, time + dur);
+    osc.connect(env);
+    env.connect(pan);
+    pan.connect(this.musicBus);
+    osc.start(time);
+    osc.stop(time + dur + 0.04);
+  }
+
   // ---------------------------------------------------------------------------
   // High-Definition Interactive Gameplay, Combat, Footstep & Portal Foley
   // ---------------------------------------------------------------------------
@@ -1300,6 +1371,90 @@ export class VerdantSpatialAudio {
       this.playPluckedHarp(now + i * 0.11, hz * 2, 1.5, 0.11, -0.4 + i * 0.26);
       this.playFrenchHorn(now + i * 0.11, hz, 0.85, 0.09, 0.15);
     });
+  }
+
+  public playPrologueSceneCue(
+    preset: 'dusk-ferry' | 'pier-fracture' | 'vault-awakening' | 'workshop-oath' | 'causeway-dawn',
+  ): void {
+    void this.ensureStarted();
+    if (!this.ctx || !this.sfxBus || this.muted) return;
+    const now = this.ctx.currentTime;
+
+    if (preset === 'dusk-ferry') {
+      // Warm evening cello fifth + distant Meridian bronze bell + water swell
+      this.playBowedStringVoice(now, 146.83, 3.6, 0.08, -0.35);
+      this.playBowedStringVoice(now + 0.12, 220.0, 3.4, 0.062, 0.35);
+      this.playResonanceBell(174.61);
+      this.playSurfWaveSwell(now + 0.15, 2.8, 0.042);
+      return;
+    }
+
+    if (preset === 'pier-fracture') {
+      // Rain wind wash + tense minor-second strings + somber low bell
+      this.playBowedStringVoice(now, 130.81, 3.2, 0.075, -0.28);
+      this.playBowedStringVoice(now + 0.08, 155.56, 3.0, 0.06, 0.28);
+      this.playResonanceBell(130.81);
+      return;
+    }
+
+    if (preset === 'vault-awakening') {
+      // Deep subterranean horn fifth + cavernous rumble + modal vault ring
+      this.playFrenchHorn(now, 98.0, 2.8, 0.13, -0.2);
+      this.playFrenchHorn(now + 0.35, 146.83, 2.6, 0.11, 0.24);
+      this.playSfxTone(now, 68, 'sine', 2.2, 0.22, 34);
+      if (this.modalNode) {
+        this.modalNode.port.postMessage({ kind: 'strike', modeIndex: 0 });
+      }
+      return;
+    }
+
+    if (preset === 'workshop-oath') {
+      // Crisp anvil hammer ring + warm hearth crackle + rising Lydian harp motif
+      this.playSfxTone(now, 880, 'triangle', 0.45, 0.12, 860);
+      this.playSfxTone(now, 1760, 'sine', 0.38, 0.065, 1720);
+      this.playEmberCrackle(now + 0.18, 0.055);
+      const motif = [293.66, 369.99, 440.0, 554.37, 587.33];
+      motif.forEach((hz, i) => {
+        this.playPluckedHarp(now + 0.25 + i * 0.14, hz, 1.8, 0.095, -0.4 + i * 0.2);
+      });
+      return;
+    }
+
+    // causeway-dawn: Radiant sunrise swell resolving cleanly into live 3D Vaelmor
+    this.playBowedStringVoice(now, 146.83, 3.8, 0.085, -0.4);
+    this.playBowedStringVoice(now + 0.08, 220.0, 3.8, 0.075, 0.36);
+    this.playBowedStringVoice(now + 0.16, 293.66, 3.6, 0.062, 0.0);
+    const dawn = [293.66, 369.99, 440.0, 587.33, 739.99];
+    dawn.forEach((hz, i) => {
+      this.playHammeredDulcimer(now + 0.15 + i * 0.12, hz, 2.2, 0.072, -0.45 + i * 0.22);
+    });
+    this.playResonanceBell(293.66);
+  }
+
+  public playPrologueSeismicCrack(): void {
+    void this.ensureStarted();
+    if (!this.ctx || !this.sfxBus || this.muted) return;
+    const now = this.ctx.currentTime;
+    // Deep sub-bass pitch drop + filtered rock-fracture burst + detuned bell overtone
+    this.playSfxTone(now, 64, 'sine', 1.45, 0.34, 24);
+    this.playSfxTone(now + 0.04, 118, 'triangle', 0.65, 0.18, 36);
+    if (this.noiseBuffer) {
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.noiseBuffer;
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.setValueAtTime(1400, now);
+      lp.frequency.exponentialRampToValueAtTime(140, now + 1.15);
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.001, now);
+      g.gain.linearRampToValueAtTime(0.32, now + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 1.25);
+      src.connect(lp);
+      lp.connect(g);
+      g.connect(this.sfxBus);
+      src.start(now, Math.random() * 0.8, 1.3);
+    }
+    this.playResonanceBell(123.47);
   }
 
   private playSfxTone(

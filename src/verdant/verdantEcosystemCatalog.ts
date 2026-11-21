@@ -126,7 +126,7 @@ export interface SynthesizedEcosystemPlan {
 
 export interface VerdantCatalogExtensionEntry {
   id: string;
-  category: 'layout' | 'flora' | 'fauna' | 'phenomenon' | 'prop-kit';
+  category: 'layout' | 'flora' | 'fauna' | 'phenomenon' | 'prop-kit' | 'relic-archetype';
   title: string;
   description: string;
   themeAffinity: RealmThemeId[];

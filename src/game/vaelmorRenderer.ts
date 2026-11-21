@@ -17,7 +17,11 @@ import {
   type EnemyEntity,
   type ProjectileEntity,
 } from './rpgLogic';
-import type { ComputedCombatStats, RemotePlayerState } from './multiplayerTypes';
+import type {
+  ComputedCombatStats,
+  ProjectedAllyScreenPos,
+  RemotePlayerState,
+} from './multiplayerTypes';
 
 export interface ProximityPrompt {
   kind: 'npc' | 'interactable';
@@ -39,9 +43,19 @@ export interface HudSnapshot {
   activeGear: GearSlotId;
   cooldowns: Record<GearSlotId, number>;
   proximity: ProximityPrompt | null;
-  nearbyEnemies: Array<{ id: string; name: string; hp: number; maxHp: number; archetype: EnemyArchetype }>;
+  nearbyEnemies: Array<{
+    id: string;
+    name: string;
+    hp: number;
+    maxHp: number;
+    archetype: EnemyArchetype;
+    phase2?: boolean;
+    bossTitle?: string;
+    signatureMove?: string;
+  }>;
   defeatedCount: number;
   waterPosture?: 'dry' | 'wading' | 'swimming';
+  projectedAllies?: ProjectedAllyScreenPos[];
   ecosystemBadge?: {
     title: string;
     summary: string;
@@ -54,10 +68,19 @@ export interface EngineCallbacks {
   onInteractNpc: (npcId: string) => void;
   onActivateInteractable: (item: WorldInteractable) => void;
   onEnemyDefeated: (archetype: EnemyArchetype, name: string) => void;
+  onEnemyDamaged?: (payload: {
+    enemyId: string;
+    enemyName: string;
+    archetype: EnemyArchetype;
+    damage: number;
+    maxHp: number;
+    killed: boolean;
+  }) => void;
+  onCoopLanternCast?: (amount: number, x: number, z: number) => void;
   onPlayerDamaged: (newHp: number, defeated: boolean) => void;
   onBannerPlanted: (x: number, z: number) => void;
   onGearFeedback: (message: string) => void;
-  onPlayerAction?: (gear: GearSlotId) => void;
+  onPlayerAction?: (gear: GearSlotId, x?: number, z?: number, yaw?: number) => void;
   onCombatCallout?: (text: string, tone: 'damage' | 'heavy' | 'heal' | 'gold') => void;
   onAudioEvent: (
     event:
@@ -571,6 +594,14 @@ export class VaelmorGameEngine {
     staminaRegenMultiplier: 1,
     bellRangeBonus: 0,
     lanternHealAmount: 34,
+    activePerks: [],
+    relicAuraRgb: null,
+    damageReductionPct: 0,
+    killHealAmount: 0,
+    reachBonus: 0,
+    dodgeStaminaDiscount: 0,
+    emberBonusPct: 0,
+    frostSlowActive: false,
   };
 
   // Input state

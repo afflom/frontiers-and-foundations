@@ -14,6 +14,7 @@ import {
   type SynthesizedFloraInstance,
 } from './verdantEcosystemCatalog';
 import { synthesizeDungeonEcosystem } from './verdantDungeonCatalog';
+import { isOnDungeonWalkableFloor } from './verdantUnifiedCharter';
 
 export interface ParsedExternalMesh {
   assetId: string;
@@ -906,11 +907,8 @@ export async function compileRealmWithVerdant(
         const n11 = terrainNormalAt(spec, x1, z1);
         const n01 = terrainNormalAt(spec, x0, z1);
 
-        const inChasm = zm > 4.2 && zm < 17.8;
-        const onHallFloor =
-          !inChasm &&
-          ((Math.abs(xm) < 12.5 && zm > -37 && zm < 33) ||
-            (Math.abs(xm) < 21.0 && zm > -11.5 && zm < 3.5));
+        const dungeonStyle = spec.dungeonStyle ?? 'catacomb-vault';
+        const onHallFloor = isOnDungeonWalkableFloor(dungeonStyle, xm, zm);
 
         const target = onHallFloor ? cobbleBucket : terrainBucket;
         const i0 = pushVertex(target, x0, y00, z0, n00[0], n00[1], n00[2], 0.02, 0.02);
