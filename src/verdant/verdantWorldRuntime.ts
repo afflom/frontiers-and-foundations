@@ -40,6 +40,7 @@ import {
   type DynamicParticle,
   type SlashEffect,
 } from './verdantDynamicGeometry';
+import type { PlayerCharacterProfile } from './verdantCharacterTypes';
 import { resolvePublicUrl } from '../utils/publicUrl';
 import {
   CANONICAL_REALM_SPECS,
@@ -108,6 +109,10 @@ import type {
   VerdantPartSlot,
   VerdantResolutionTier,
 } from './verdantModelOfModels';
+import {
+  extrapolateUnifiedHdBlueprint,
+  type HdShaderUniformPayload,
+} from './verdantHdExtrapolator';
 
 export interface VerdantWorldStatus {
   wasmActive: boolean;
@@ -153,7 +158,7 @@ interface VerdantGlRenderer {
   render: (
     mvp: Float32Array,
     eye: number[],
-    lodSpec: { rank: number; sky: number[]; fog: number[] },
+    lodSpec: { rank: number; sky: number[]; fog: number[]; hd?: HdShaderUniformPayload },
     timeSec: number,
     lookTarget: number[],
     fovRad: number,
@@ -192,6 +197,8 @@ export class VerdantFrontiersRuntime {
   ) => void;
   private modelObserver: FrontiersVerdantObserver;
   private modelResolutionTier: VerdantResolutionTier = 3;
+  private playerProfile: PlayerCharacterProfile | null = null;
+  private playerEvolutionRank: 1 | 2 | 3 | 4 = 1;
   private crossingBorder = false;
   private footstepTimer = 0;
   private smoothedCombatIntensity = 0;
@@ -655,7 +662,7 @@ export class VerdantFrontiersRuntime {
 
       this.isSoftwareGl = Boolean(this.renderer.isSoftware);
       this.resizeCanvas();
-      this.renderer.setRenderScale(this.isSoftwareGl ? 850 : 1000, 320);
+      this.renderer.setRenderScale(this.isSoftwareGl ? 920 : 1000, 360);
       this.renderer.setCsmSplits([0.25, 48.0, 115.0, 220.0]);
 
       // 2. Parallel-fetch real verdant-uorc.wasm, Prism world manifest, and browser Prism identity
@@ -725,6 +732,41 @@ export class VerdantFrontiersRuntime {
         typeof prismIdentity?.prism === 'string'
           ? `prism:${prismIdentity.prism}`
           : `prism:${await kappa({ seed: 7777, role: 'waywright' })}`;
+
+      // 5b. Register Extrapolated HD Visual Blueprint Project Model in verdant-uorc.wasm
+      const initialHdBlueprint = extrapolateUnifiedHdBlueprint(this.activeRealm, {
+        resolutionTier: this.modelResolutionTier,
+        isSoftwareGl: this.isSoftwareGl,
+        timeSec: 0,
+        playerPos: [this.playerX, this.playerY, this.playerZ],
+        npcPositions: this.npcs,
+      });
+      this.stageIo(
+        new TextEncoder().encode(
+          JSON.stringify({
+            modelId: `frontiers:hd-extrapolation:${this.activeRealm.slug}`,
+            title: `${this.activeRealm.name} HD Extrapolated Render Blueprint`,
+            schemaType: 'RenderBlueprint',
+            mediaType: 'application/vnd.verdant.hd-blueprint+json',
+            targetSlot: 'visual-identity',
+            sourceStream: 'polyhaven-frontiers',
+            sourceUri: `verdant://extrapolate/hd/${this.activeRealm.slug}/${initialHdBlueprint.blueprintDigest}`,
+            licenseSpdx: 'CC0-1.0',
+            tags: ['hd-extrapolation', 'prologue-visual-grammar', this.activeRealm.theme],
+            propertiesJson: JSON.stringify({
+              anchorId: initialHdBlueprint.anchorId,
+              overallFidelityScore: initialHdBlueprint.overallFidelityScore,
+              pointLights: initialHdBlueprint.pointLights.length,
+              canopyClusterDepth: initialHdBlueprint.canopyClusterDepth,
+              blueprintDigest: initialHdBlueprint.blueprintDigest,
+            }),
+            commitNote: `Extrapolated HD visual blueprint for ${this.activeRealm.name}`,
+          }),
+        ),
+      );
+      if ((ex.verdant_wasm_import_project_model_io() >>> 0) > 0) {
+        this.status.projectModelsRegistered += 1;
+      }
 
       const uniqueCatalogAssets = Array.from(
         new Set(this.activeRealm.importedCatalogProps.map((p) => p.assetId)),
@@ -799,6 +841,15 @@ export class VerdantFrontiersRuntime {
         getObserverSnapshot: () => this.modelObserver.getSnapshot(),
         getRefinementAgenda: () => this.modelObserver.synthesizeRefinementAgenda(),
         getRenderResolutionProfile: () => this.modelObserver.getRenderResolutionProfile(),
+        extrapolateHdBlueprint: () =>
+          extrapolateUnifiedHdBlueprint(this.activeRealm, {
+            resolutionTier: this.modelResolutionTier,
+            isSoftwareGl: this.isSoftwareGl,
+            timeSec: this.simTime,
+            playerPos: [this.playerX, this.playerY, this.playerZ],
+            playerLanternActive: this.activeGear === 'lantern' || this.cooldowns.lantern > 0,
+            npcPositions: this.npcs,
+          }),
         executeLifecycleGate: () => this.modelObserver.executeLifecycleGate(),
         getWatermarks: () => this.modelObserver.getMonotonicWatermarks(),
         refine: (opts?: UniformRefinementOptions) => this.refineWorldModel(opts),
@@ -1291,6 +1342,14 @@ export class VerdantFrontiersRuntime {
       this.hp = Math.min(this.maxHp, this.hp + (stats.maxHp - prevMax));
     }
     this.pushHudSnapshot();
+  }
+
+  public setPlayerCharacterProfile(
+    profile: PlayerCharacterProfile | null,
+    evolutionRank: 1 | 2 | 3 | 4 = 1,
+  ): void {
+    this.playerProfile = profile;
+    this.playerEvolutionRank = evolutionRank;
   }
 
   public setTrackedObjectiveCoords(coords: [number, number] | null): void {
@@ -2767,6 +2826,15 @@ export class VerdantFrontiersRuntime {
     const sameRealmBanners = filterSameRealmBanners(this.banners, this.activeRealm.slug);
     const sameRealmPings = this.worldPings.filter((p) => p.realmSlug === this.activeRealm.slug);
 
+    const hdBlueprint = extrapolateUnifiedHdBlueprint(this.activeRealm, {
+      resolutionTier: this.modelResolutionTier,
+      isSoftwareGl: this.isSoftwareGl,
+      timeSec: this.simTime,
+      playerPos: [this.playerX, this.playerY, this.playerZ],
+      playerLanternActive: this.activeGear === 'lantern' || this.cooldowns.lantern > 0,
+      npcPositions: this.npcs,
+    });
+
     const prox = this.findNearestPrompt();
     const dynViews = this.batcher.build({
       timeSec: this.simTime,
@@ -2809,7 +2877,22 @@ export class VerdantFrontiersRuntime {
       ambientParticleKind: this.activePhenomenon.ambientParticleKind,
       ambientRgb: this.activePhenomenon.ambientRgb,
       playerRelicAuraRgb: this.playerRelicAuraRgb,
+      playerProfile: this.playerProfile,
+      playerEvolutionRank: this.playerEvolutionRank,
       modelResolutionTier: this.modelResolutionTier,
+      hasBridge: Boolean(this.activeRealm.terrainProfile.hasBridge),
+      bridgeDeckY: this.activeRealm.terrainProfile.bridgeDeckY,
+      isVaelmorCitadel: this.activeRealm.slug === 'vaelmor',
+      hdLanternRgb:
+        this.activeRealm.theme === 'sunken-aqueducts'
+          ? [0.42, 0.96, 0.68]
+          : this.activeRealm.theme === 'glacial-spire'
+            ? [0.58, 0.92, 1.0]
+            : this.activeRealm.theme === 'pelagic-spires'
+              ? [0.38, 0.92, 0.98]
+              : this.activeRealm.theme === 'obsidian-crucible'
+                ? [1.0, 0.48, 0.16]
+                : [1.0, 0.72, 0.30],
     });
 
     this.renderer.uploadSplitBuffers(
@@ -2868,6 +2951,7 @@ export class VerdantFrontiersRuntime {
       rank: renderProf.lodRank,
       sky: this.activeRealm.skyFallbackRgb,
       fog: this.activeRealm.fogRgb,
+      hd: hdBlueprint.shaderUniforms,
     };
 
     this.renderer.render(

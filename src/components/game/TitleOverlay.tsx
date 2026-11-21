@@ -15,6 +15,7 @@ interface TitleOverlayProps {
   defaultCallsign: string;
   invitedRoomCode?: string | null;
   onlineCount?: number;
+  onOpenCharacterCreator: (slotId: SaveSlotId) => void;
   onStartNewInSlot: (slotId: SaveSlotId, waywrightName: string, guildId: string) => void;
   onContinueSlot: (slotId: SaveSlotId) => void;
   onRenameSlot: (slotId: SaveSlotId, nextName: string) => void;
@@ -34,7 +35,8 @@ export const TitleOverlay: React.FC<TitleOverlayProps> = ({
   defaultCallsign,
   invitedRoomCode,
   onlineCount = 1,
-  onStartNewInSlot,
+  onOpenCharacterCreator,
+  onStartNewInSlot: _onStartNewInSlot,
   onContinueSlot,
   onRenameSlot,
   onDeleteSlot,
@@ -42,9 +44,6 @@ export const TitleOverlay: React.FC<TitleOverlayProps> = ({
   onOpenFieldManual,
 }) => {
   const mostRecent = useMemo(() => getMostRecentSaveSlot(saveStore), [saveStore]);
-  const [creatingSlotId, setCreatingSlotId] = useState<SaveSlotId | null>(null);
-  const [draftName, setDraftName] = useState<string>(defaultCallsign);
-  const [draftGuildId, setDraftGuildId] = useState<string>(INITIAL_GUILDS[0].id);
   const [renamingSlotId, setRenamingSlotId] = useState<SaveSlotId | null>(null);
   const [renameDraft, setRenameDraft] = useState<string>('');
   const [confirmDeleteSlotId, setConfirmDeleteSlotId] = useState<SaveSlotId | null>(null);
@@ -52,9 +51,7 @@ export const TitleOverlay: React.FC<TitleOverlayProps> = ({
   const openCreatorForSlot = (slotId: SaveSlotId) => {
     setRenamingSlotId(null);
     setConfirmDeleteSlotId(null);
-    setCreatingSlotId(slotId);
-    setDraftName(defaultCallsign);
-    setDraftGuildId(INITIAL_GUILDS[0].id);
+    onOpenCharacterCreator(slotId);
   };
 
   const handleHeroPrimary = () => {
@@ -62,7 +59,7 @@ export const TitleOverlay: React.FC<TitleOverlayProps> = ({
       onContinueSlot(mostRecent.slotId);
     } else {
       const targetSlot = getFirstEmptySaveSlotId(saveStore);
-      onStartNewInSlot(targetSlot, defaultCallsign, INITIAL_GUILDS[0].id);
+      onOpenCharacterCreator(targetSlot);
     }
   };
 
@@ -231,7 +228,6 @@ export const TitleOverlay: React.FC<TitleOverlayProps> = ({
           <div className="mt-3.5 space-y-2.5">
             {SAVE_SLOT_IDS.map((slotId) => {
               const slot = saveStore.slots[slotId];
-              const isCreating = creatingSlotId === slotId;
               const isRenaming = renamingSlotId === slotId;
               const isConfirmingDelete = confirmDeleteSlotId === slotId;
               const guild = slot
@@ -252,81 +248,18 @@ export const TitleOverlay: React.FC<TitleOverlayProps> = ({
                           Charter Slot {SLOT_ROMAN[slotId]} · Empty
                         </p>
                         <p className="text-xs text-[#c5ceda] mt-0.5">
-                          Opens with the animated 5-scene Vaelmor Prologue
+                          Create your Waywright character &amp; launch the 5-scene Prologue
                         </p>
                       </div>
-                      {!isCreating && (
-                        <button
-                          type="button"
-                          data-testid={`start-new-${slotId}`}
-                          onClick={() => openCreatorForSlot(slotId)}
-                          className="shrink-0 px-3.5 py-2 rounded-[2px] bg-[#1e2633] hover:bg-[#d4a253] text-[#ece8df] hover:text-[#14110b] border border-[#d4a253]/40 font-display text-[11px] font-bold uppercase tracking-[0.1em] transition-colors cursor-pointer"
-                        >
-                          New Journey
-                        </button>
-                      )}
-                    </div>
-
-                    {isCreating && (
-                      <form
-                        data-testid={`create-form-${slotId}`}
-                        className="mt-3 pt-3 border-t border-white/10 space-y-2.5"
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          onStartNewInSlot(slotId, draftName.trim() || defaultCallsign, draftGuildId);
-                          setCreatingSlotId(null);
-                        }}
+                      <button
+                        type="button"
+                        data-testid={`start-new-${slotId}`}
+                        onClick={() => openCreatorForSlot(slotId)}
+                        className="shrink-0 px-3.5 py-2 rounded-[2px] bg-[#1e2633] hover:bg-[#d4a253] text-[#ece8df] hover:text-[#14110b] border border-[#d4a253]/40 font-display text-[11px] font-bold uppercase tracking-[0.1em] transition-colors cursor-pointer"
                       >
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <label className="block">
-                            <span className="block text-[10px] font-mono uppercase tracking-[0.12em] text-[#9aa6b5] mb-1">
-                              Waywright Name
-                            </span>
-                            <input
-                              type="text"
-                              data-testid={`slot-name-input-${slotId}`}
-                              maxLength={24}
-                              value={draftName}
-                              onChange={(e) => setDraftName(e.target.value)}
-                              className="w-full px-2.5 py-1.5 rounded-[2px] bg-[#0b0f15] border border-white/18 focus:border-[#d4a253] text-xs text-[#f3efe6] outline-none"
-                              placeholder="Enter Waywright name"
-                            />
-                          </label>
-                          <label className="block">
-                            <span className="block text-[10px] font-mono uppercase tracking-[0.12em] text-[#9aa6b5] mb-1">
-                              Starting Guild
-                            </span>
-                            <select
-                              value={draftGuildId}
-                              onChange={(e) => setDraftGuildId(e.target.value)}
-                              className="w-full px-2.5 py-1.5 rounded-[2px] bg-[#0b0f15] border border-white/18 focus:border-[#d4a253] text-xs text-[#f3efe6] outline-none"
-                            >
-                              {INITIAL_GUILDS.map((g) => (
-                                <option key={g.id} value={g.id}>
-                                  {g.name}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        </div>
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setCreatingSlotId(null)}
-                            className="px-3 py-1.5 rounded-[2px] bg-[#1a222d] hover:bg-[#243040] text-[11px] text-[#aeb9c7] cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="submit"
-                            data-testid={`confirm-new-${slotId}`}
-                            className="px-4 py-1.5 rounded-[2px] bg-[#d4a253] hover:bg-[#e1b366] text-[#14110b] font-display text-[11px] font-bold uppercase tracking-[0.1em] cursor-pointer"
-                          >
-                            Launch Prologue &amp; Begin
-                          </button>
-                        </div>
-                      </form>
-                    )}
+                        New Journey
+                      </button>
+                    </div>
                   </div>
                 );
               }
@@ -399,6 +332,10 @@ export const TitleOverlay: React.FC<TitleOverlayProps> = ({
                         </h3>
                       )}
 
+                      <p className="text-[11px] text-[#d4a253] truncate mt-0.5 tabular-nums">
+                        Lv.{slot.characterLevel ?? 1} · {slot.speciesName ?? 'Meridian Human'} ·{' '}
+                        {slot.className ?? 'Meridian Surveyor'}
+                      </p>
                       <p className="text-[11px] text-[#bcc7d4] truncate mt-0.5">
                         {slot.regionName} · {guild?.name ?? 'Stonebinder Guild'}
                       </p>
@@ -429,7 +366,6 @@ export const TitleOverlay: React.FC<TitleOverlayProps> = ({
                         <button
                           type="button"
                           onClick={() => {
-                            setCreatingSlotId(null);
                             setConfirmDeleteSlotId(null);
                             setRenamingSlotId(slotId);
                             setRenameDraft(slot.waywrightName);
@@ -489,6 +425,7 @@ export const TitleOverlay: React.FC<TitleOverlayProps> = ({
           <span><strong className="text-[#f0cd80]">Space / Shift</strong> Jump · Dodge</span>
           <span><strong className="text-[#f0cd80]">1-4 · Click/F</strong> Gear &amp; Action</span>
           <span><strong className="text-[#f0cd80]">E</strong> Interact</span>
+          <span><strong className="text-[#f0cd80]">K</strong> Character Atelier</span>
           <span><strong className="text-[#f0cd80]">J / M / V / I / U</strong> Atlas · Party</span>
         </div>
         <span className="text-[#e7c06f] uppercase tracking-[0.18em] font-semibold">

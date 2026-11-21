@@ -55,6 +55,12 @@ import {
   DIRECTED_JOURNEY_MILESTONES,
   type JourneyProgressSummary,
 } from '../../verdant/verdantJourneyModel';
+import type { PlayerCharacterProfile } from '../../verdant/verdantCharacterTypes';
+import {
+  evaluateGearAffinity,
+  evaluateRelicAffinity,
+  type CharacterProgressionState,
+} from '../../verdant/verdantCharacterOntology';
 
 export type AtlasTab = 'chronicle' | 'map' | 'dungeons' | 'forge' | 'guilds' | 'codex';
 
@@ -66,6 +72,8 @@ interface JournalMapModalProps {
   guilds: GuildCharter[];
   pledgedGuildId: string;
   playerCallsign: string;
+  playerProfile?: PlayerCharacterProfile;
+  characterProgression?: CharacterProgressionState;
   roomCode: string;
   realmConnected: boolean;
   banners: FoundationBanner[];
@@ -261,6 +269,8 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
   onInspectPartModels,
   onInspectModelLineage,
   journeySummary,
+  playerProfile,
+  characterProgression,
   onReplayPrologue,
   onClose,
 }) => {
@@ -1252,10 +1262,18 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
                   const tier = gearTiers[gear.id] ?? 1;
                   const cost = getUpgradeCost(tier);
                   const affordable = canAffordMaterials(materials, cost);
+                  const affinity =
+                    playerProfile
+                      ? evaluateGearAffinity(playerProfile, gear.id)
+                      : null;
                   return (
                     <div
                       key={gear.id}
-                      className="p-4 rounded-sm bg-[#161c25] border border-white/10 flex flex-col justify-between gap-3"
+                      className={`p-4 rounded-sm border flex flex-col justify-between gap-3 ${
+                        affinity?.rating === 'resonant'
+                          ? 'bg-[#192029] border-[#d4a253]/45'
+                          : 'bg-[#161c25] border-white/10'
+                      }`}
                     >
                       <div>
                         <div className="flex items-center justify-between gap-2">
@@ -1267,6 +1285,15 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
                           </span>
                         </div>
                         <p className="text-[11px] text-[#d4a253] mt-0.5">{gear.roleClue}</p>
+                        {affinity && (
+                          <p
+                            className={`text-[11px] mt-1 font-medium tabular-nums ${
+                              affinity.rating === 'resonant' ? 'text-[#7fd1b6]' : 'text-[#9aa7b6]'
+                            }`}
+                          >
+                            {affinity.label} · {affinity.reason}
+                          </p>
+                        )}
                         <p className="text-xs text-[#b2bdc9] mt-2 leading-relaxed">
                           {gear.description}
                         </p>
@@ -1384,6 +1411,18 @@ export const JournalMapModal: React.FC<JournalMapModalProps> = ({
                             <p className="font-mono text-[11px] text-[#e8c374] mt-1.5">
                               {formatRelicBonus(r)}
                             </p>
+                            {playerProfile && (() => {
+                              const rAff = evaluateRelicAffinity(playerProfile, r);
+                              return (
+                                <p
+                                  className={`text-[10px] mt-1 ${
+                                    rAff.rating === 'resonant' ? 'text-[#7fd1b6] font-medium' : 'text-[#8ea0b2]'
+                                  }`}
+                                >
+                                  {rAff.label}
+                                </p>
+                              );
+                            })()}
                             {r.perkLabel && (
                               <div className="mt-1.5 pt-1.5 border-t border-white/8">
                                 <p className="text-[10px] font-mono uppercase tracking-[0.08em] text-[#7ad8eb] font-semibold">

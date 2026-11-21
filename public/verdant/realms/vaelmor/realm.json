@@ -736,12 +736,12 @@
   "interactables": [],
   "enemies": [],
   "prismCustody": {
-    "worldGlbKappa": "sha256:f80388eaba0bad95227299b2c116b345eda2f5e419052227e80dadf5e52ff3e7",
+    "worldGlbKappa": "sha256:8567ddba05bd61edb326475e8874e20caf3357ad80de339d3124b0c26f4f7947",
     "vdntKappa": "sha256:c47ece7b6f4e2d18103841e063d512a722537987ef31f8a13f8dd6f6fd594d2e",
     "skyKappa": "sha256:a5883ec7ae9ef22ee45d65969e7ec0711ec5e8b8ba94cc8b2fd52d82a37f61b9",
-    "triangles": 31775,
-    "vertices": 52788,
-    "glbBytes": 3007128,
+    "triangles": 70687,
+    "vertices": 85468,
+    "glbBytes": 4634216,
     "atlasTileCount": 4,
     "importedCatalogModelsCount": 18,
     "importedCatalogAssets": [

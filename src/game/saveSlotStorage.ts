@@ -11,6 +11,14 @@ import type {
   EquippedRelic,
   GearUpgradeTiers,
 } from './multiplayerTypes';
+import type { PlayerCharacterProfile } from '../verdant/verdantCharacterTypes';
+import {
+  computeCharacterProgression,
+  createDefaultPlayerProfile,
+  getClassSpec,
+  getSpeciesSpec,
+  normalizePlayerProfile,
+} from '../verdant/verdantCharacterOntology';
 
 export const SAVE_SLOTS_STORAGE_KEY = 'frontiers-foundations-slots-v4';
 export const LEGACY_SAVE_STORAGE_KEY = 'frontiers-foundations-save-v3';
@@ -33,11 +41,15 @@ export interface SavedJourneyPayload {
   regionName: string;
   defeatedCount: number;
   hasVisitedDungeon: boolean;
+  characterProfile?: PlayerCharacterProfile;
 }
 
 export interface SaveSlotRecord {
   slotId: SaveSlotId;
   waywrightName: string;
+  speciesName?: string;
+  className?: string;
+  characterLevel?: number;
   pledgedGuildId: string;
   realmSlug: string;
   realmName: string;
@@ -106,6 +118,7 @@ function createEmptyStore(): SaveSlotStoreState {
 
 export function createFreshJourneyPayload(
   pledgedGuildId: string = INITIAL_GUILDS[0].id,
+  characterProfile?: PlayerCharacterProfile,
 ): SavedJourneyPayload {
   return {
     quests: INITIAL_QUESTS.map((q) => ({
@@ -125,6 +138,9 @@ export function createFreshJourneyPayload(
     regionName: 'Southern Causeway',
     defeatedCount: 0,
     hasVisitedDungeon: false,
+    characterProfile: characterProfile
+      ? normalizePlayerProfile(characterProfile)
+      : createDefaultPlayerProfile('Waywright'),
   };
 }
 
@@ -137,12 +153,32 @@ function normalizeSlotRecord(slotId: SaveSlotId, raw: unknown): SaveSlotRecord |
   const completedQuests = r.journey.quests.filter((q) => q.status === 'completed').length;
   const totalQuests = r.journey.quests.length;
   const now = Date.now();
+  const cleanName =
+    typeof r.waywrightName === 'string' && r.waywrightName.trim().length > 0
+      ? r.waywrightName.trim().slice(0, 24)
+      : 'Waywright';
+  const normalizedProfile = normalizePlayerProfile(
+    r.journey.characterProfile ?? createDefaultPlayerProfile(cleanName),
+  );
+  const renownVal = typeof r.renown === 'number' ? r.renown : r.journey.renown ?? 0;
+  const defeatedVal =
+    typeof r.defeatedCount === 'number'
+      ? r.defeatedCount
+      : typeof r.journey.defeatedCount === 'number'
+        ? r.journey.defeatedCount
+        : 0;
+  const prog = computeCharacterProgression(
+    normalizedProfile,
+    renownVal,
+    completedQuests,
+    defeatedVal,
+  );
   return {
     slotId,
-    waywrightName:
-      typeof r.waywrightName === 'string' && r.waywrightName.trim().length > 0
-        ? r.waywrightName.trim().slice(0, 24)
-        : 'Waywright',
+    waywrightName: cleanName,
+    speciesName: getSpeciesSpec(normalizedProfile.speciesId).name,
+    className: getClassSpec(normalizedProfile.classId).name,
+    characterLevel: prog.level,
     pledgedGuildId:
       typeof r.pledgedGuildId === 'string' && r.pledgedGuildId
         ? r.pledgedGuildId
@@ -159,16 +195,11 @@ function normalizeSlotRecord(slotId: SaveSlotId, raw: unknown): SaveSlotRecord |
       typeof r.regionName === 'string' && r.regionName
         ? r.regionName
         : r.journey.regionName || 'Southern Causeway',
-    renown: typeof r.renown === 'number' ? r.renown : r.journey.renown ?? 0,
+    renown: renownVal,
     completedQuests,
     totalQuests,
     bannersCount: Array.isArray(r.journey.banners) ? r.journey.banners.length : 0,
-    defeatedCount:
-      typeof r.defeatedCount === 'number'
-        ? r.defeatedCount
-        : typeof r.journey.defeatedCount === 'number'
-          ? r.journey.defeatedCount
-          : 0,
+    defeatedCount: defeatedVal,
     playTimeSec: typeof r.playTimeSec === 'number' && r.playTimeSec >= 0 ? Math.floor(r.playTimeSec) : 0,
     prologueCompleted: Boolean(r.prologueCompleted),
     waywrightOath:
@@ -201,6 +232,7 @@ function normalizeSlotRecord(slotId: SaveSlotId, raw: unknown): SaveSlotRecord |
       regionName: r.journey.regionName || 'Southern Causeway',
       defeatedCount: typeof r.journey.defeatedCount === 'number' ? r.journey.defeatedCount : 0,
       hasVisitedDungeon: Boolean(r.journey.hasVisitedDungeon),
+      characterProfile: normalizedProfile,
     },
   };
 }
@@ -336,6 +368,7 @@ export function createNewSaveSlot(
     waywrightName: string;
     pledgedGuildId?: string;
     prologueCompleted?: boolean;
+    characterProfile?: PlayerCharacterProfile;
     now?: number;
   },
   storage: StorageLike | null = getDefaultStorage(),
@@ -343,10 +376,18 @@ export function createNewSaveSlot(
   const now = params.now ?? Date.now();
   const guildId = params.pledgedGuildId ?? INITIAL_GUILDS[0].id;
   const cleanName = params.waywrightName.trim().slice(0, 24) || 'Waywright';
-  const journey = createFreshJourneyPayload(guildId);
+  const profile = normalizePlayerProfile(
+    params.characterProfile
+      ? { ...params.characterProfile, name: cleanName }
+      : createDefaultPlayerProfile(cleanName),
+  );
+  const journey = createFreshJourneyPayload(guildId, profile);
   const record: SaveSlotRecord = {
     slotId: params.slotId,
     waywrightName: cleanName,
+    speciesName: getSpeciesSpec(profile.speciesId).name,
+    className: getClassSpec(profile.classId).name,
+    characterLevel: 1,
     pledgedGuildId: guildId,
     realmSlug: journey.activeRealmSlug,
     realmName: journey.activeRealmName,
@@ -393,9 +434,24 @@ export function updateSaveSlotProgress(
   const prev = store.slots[params.slotId];
   const completedQuests = params.journey.quests.filter((q) => q.status === 'completed').length;
   const totalQuests = params.journey.quests.length;
+  const cleanName = params.waywrightName.trim().slice(0, 24) || prev?.waywrightName || 'Waywright';
+  const normalizedProfile = normalizePlayerProfile(
+    params.journey.characterProfile ??
+      prev?.journey.characterProfile ??
+      createDefaultPlayerProfile(cleanName),
+  );
+  const prog = computeCharacterProgression(
+    normalizedProfile,
+    params.journey.renown,
+    completedQuests,
+    params.journey.defeatedCount,
+  );
   const nextRecord: SaveSlotRecord = {
     slotId: params.slotId,
-    waywrightName: params.waywrightName.trim().slice(0, 24) || prev?.waywrightName || 'Waywright',
+    waywrightName: cleanName,
+    speciesName: getSpeciesSpec(normalizedProfile.speciesId).name,
+    className: getClassSpec(normalizedProfile.classId).name,
+    characterLevel: prog.level,
     pledgedGuildId: params.journey.pledgedGuildId,
     realmSlug: params.journey.activeRealmSlug,
     realmName: params.journey.activeRealmName,
@@ -417,7 +473,10 @@ export function updateSaveSlotProgress(
       'Arrival: Briefing with Magistrate Orenna Vael',
     createdAt: prev?.createdAt ?? now,
     savedAt: now,
-    journey: params.journey,
+    journey: {
+      ...params.journey,
+      characterProfile: normalizedProfile,
+    },
   };
   const nextStore: SaveSlotStoreState = {
     version: 4,

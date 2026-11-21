@@ -80,11 +80,11 @@ describe('Single Model-of-Models & Extended Verdant Observer/Manager Pattern', (
     assert.ok(vaelmorLineage.crossPartDegree >= 4);
   });
 
-  it('registers 10 Frontiers Domain Managers with unique prime basis continuing Verdant WASM primes (113..167) and enforces differentiation rules', () => {
-    assert.equal(FRONTIERS_DOMAIN_MANAGERS.length, 10);
+  it('registers 12 Frontiers Domain Managers with unique prime basis continuing Verdant WASM primes (113..179) and enforces differentiation rules', () => {
+    assert.equal(FRONTIERS_DOMAIN_MANAGERS.length, 12);
     const primes = FRONTIERS_DOMAIN_MANAGERS.map((m) => m.basisPrime);
-    assert.deepEqual(primes, [113, 127, 131, 137, 139, 149, 151, 157, 163, 167]);
-    assert.equal(new Set(primes).size, 10);
+    assert.deepEqual(primes, [113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179]);
+    assert.equal(new Set(primes).size, 12);
     assert.ok(
       FRONTIERS_DOMAIN_MANAGERS.some((m) => m.managerId === 'mgr-frontiers-multiplayer'),
       'Must include Multiplayer Co-op Federation Manager',
@@ -92,6 +92,14 @@ describe('Single Model-of-Models & Extended Verdant Observer/Manager Pattern', (
     assert.ok(
       FRONTIERS_DOMAIN_MANAGERS.some((m) => m.managerId === 'mgr-frontiers-journey'),
       'Must include Gamer Journey & Narrative Onboarding Manager',
+    );
+    assert.ok(
+      FRONTIERS_DOMAIN_MANAGERS.some((m) => m.managerId === 'mgr-frontiers-hd-extrapolation'),
+      'Must include HD Visual Extrapolation & Painterly Shader Director',
+    );
+    assert.ok(
+      FRONTIERS_DOMAIN_MANAGERS.some((m) => m.managerId === 'mgr-frontiers-character-ontology'),
+      'Must include Character Ontology, Species, Class & Progression Manager',
     );
 
     const coveredSlots = new Set(FRONTIERS_DOMAIN_MANAGERS.flatMap((m) => m.ownedSlots));
@@ -106,7 +114,7 @@ describe('Single Model-of-Models & Extended Verdant Observer/Manager Pattern', (
     }
   });
 
-  it('measures Diversity, Graph Integrity & 8D vTensor Spread accurately and passes all 13 baseline KPIs', () => {
+  it('measures Diversity, Graph Integrity & 8D vTensor Spread accurately and passes all 15 baseline KPIs', () => {
     assert.equal(computeNormalizedShannonEntropy(['a', 'b', 'c', 'd']), 1);
     assert.equal(computeNormalizedShannonEntropy(['a', 'a', 'a', 'a']), 0);
     assert.equal(computeJaccardDistance(['a', 'b'], ['c', 'd']), 1);
@@ -119,14 +127,14 @@ describe('Single Model-of-Models & Extended Verdant Observer/Manager Pattern', (
     const observer = new FrontiersVerdantObserver();
     const kpis = observer.observeKpis();
     assert.equal(kpis.spec, 'frontiers/verdant-observer-kpi-report/2');
-    assert.equal(kpis.kpis.length, 13);
+    assert.equal(kpis.kpis.length, 15);
     assert.equal(kpis.clonePairsTotal, 0, 'Canonical world must have 0 clone pairs');
     assert.ok(kpis.diversityIndex >= 80, `Expected high diversityIndex >=80, got ${kpis.diversityIndex}`);
     assert.ok(kpis.cohesionIndex >= 90, `Expected high cohesionIndex >=90, got ${kpis.cohesionIndex}`);
     assert.equal(
       kpis.allPassed,
       true,
-      `Expected all 13 baseline Observer KPIs to pass: ${JSON.stringify(kpis.kpis.filter((k) => !k.passed))}`,
+      `Expected all 15 baseline Observer KPIs to pass: ${JSON.stringify(kpis.kpis.filter((k) => !k.passed))}`,
     );
   });
 
@@ -182,10 +190,10 @@ describe('Single Model-of-Models & Extended Verdant Observer/Manager Pattern', (
     assert.ok(report.after.definitionScore > report.before.definitionScore);
     assert.ok(report.clonesDiversified >= 2, `Expected >=2 auto-diversified clones, got ${report.clonesDiversified}`);
     assert.equal(report.after.clonePairsTotal, 0, 'Zero clone pairs should remain after auto-diversification');
-    assert.equal(report.kpis.allPassed, true, 'All 13 Observer KPIs must pass after Uniform Refinement');
+    assert.equal(report.kpis.allPassed, true, 'All 15 Observer KPIs must pass after Uniform Refinement');
     assert.match(report.after.rootKappaDigest, /^sha256:[0-9a-f]{64}$/);
     assert.notEqual(report.after.rootKappaDigest, report.before.rootKappaDigest);
-    assert.equal(report.managersInvoked.length, 10);
+    assert.equal(report.managersInvoked.length, 12);
 
     const diversifiedRealm = observer.getModel('frontiers:realm:vaelmor-duplicate-test');
     const diversifiedMonster = observer.getModel('frontiers:monster:citadel-highlands:stalker-clone-test');
@@ -267,7 +275,7 @@ describe('Single Model-of-Models & Extended Verdant Observer/Manager Pattern', (
 
     // 1. Agenda includes constructive per-manager health, pinpoint diagnoses, and sealed agendaKappaHex
     const agendaBefore = observer.synthesizeRefinementAgenda();
-    assert.equal(agendaBefore.managerHealth.length, 10);
+    assert.equal(agendaBefore.managerHealth.length, 12);
     for (const mh of agendaBefore.managerHealth) {
       assert.ok(mh.healthScorePermille >= 0 && mh.healthScorePermille <= 1000);
     }

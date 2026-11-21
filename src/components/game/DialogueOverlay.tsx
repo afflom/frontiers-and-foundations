@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { BANNED_FANTASY_TROPES, type DialogueChoice, type GameNpc } from '../../game/worldData';
 import { isStaticPagesHost, resolvePublicUrl } from '../../utils/publicUrl';
+import type { PlayerCharacterProfile } from '../../verdant/verdantCharacterTypes';
+import {
+  buildBespokeNpcInteraction,
+  createDefaultPlayerProfile,
+  computeCharacterProgression,
+  type CharacterProgressionState,
+} from '../../verdant/verdantCharacterOntology';
 
 interface DialogueOverlayProps {
   npc: GameNpc;
   realmName?: string;
   usedMotifs: string[];
+  playerProfile?: PlayerCharacterProfile;
+  characterProgression?: CharacterProgressionState;
   onSelectChoice: (npc: GameNpc, choice: DialogueChoice) => void;
   onClose: () => void;
 }
@@ -20,9 +29,24 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
   npc,
   realmName,
   usedMotifs,
+  playerProfile,
+  characterProgression,
   onSelectChoice,
   onClose,
 }) => {
+  const effectiveProfile = useMemo(
+    () => playerProfile ?? createDefaultPlayerProfile('Waywright'),
+    [playerProfile],
+  );
+  const effectiveProgression = useMemo(
+    () => characterProgression ?? computeCharacterProgression(effectiveProfile, 0, 0, 0),
+    [characterProgression, effectiveProfile],
+  );
+  const bespoke = useMemo(
+    () => buildBespokeNpcInteraction(npc, effectiveProfile, effectiveProgression),
+    [npc, effectiveProfile, effectiveProgression],
+  );
+
   const [history, setHistory] = useState<SpokenTurn[]>([
     { speaker: 'npc', text: npc.greeting },
   ]);
@@ -72,10 +96,22 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
             name: npc.name,
             epithet: npc.title,
             faction: npc.guildName,
+            species: bespoke.npcSpecies.name,
+            ethnicity: bespoke.npcEthnicity.name,
+            characterClass: bespoke.npcClass.name,
+            directive: bespoke.npcDirective.name,
             cognitiveDrive: npc.cognitiveDrive,
             concealedSecret: npc.concealedSecret,
             speechCadence: npc.speechCadence,
             beliefGraph: npc.beliefs,
+            playerContext: {
+              name: effectiveProfile.name,
+              speciesId: effectiveProfile.speciesId,
+              ethnicityId: effectiveProfile.ethnicityId,
+              classId: effectiveProfile.classId,
+              directiveId: effectiveProfile.directiveId,
+              resonanceRelation: bespoke.resonanceRelation,
+            },
           },
         }),
       });
@@ -137,6 +173,17 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
                 </h2>
                 <p className="text-xs text-[#9ca7b5] mt-0.5">{npc.title}</p>
               </div>
+              <div
+                data-testid="npc-lineage-dossier"
+                className="pt-1.5 border-t border-white/10 space-y-0.5 text-[11px]"
+              >
+                <p className="text-[#e7cf98] font-medium">
+                  {bespoke.npcSpecies.name} · {bespoke.npcEthnicity.name}
+                </p>
+                <p className="text-[#9ec5b6]">
+                  {bespoke.npcClass.name} · {bespoke.npcDirective.name}
+                </p>
+              </div>
               {npc.appearance?.traitSummary && (
                 <p
                   data-testid="npc-trait-summary"
@@ -163,14 +210,22 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
           {/* Spoken Dialogue & Choices Column */}
           <div className="p-5 sm:p-6 flex flex-col justify-between gap-4">
             <div>
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <span className="text-[10px] uppercase tracking-[0.18em] text-[#9aa5b3] font-semibold">
-                  Conversation
-                </span>
+              <div className="flex items-start justify-between gap-4 mb-2.5">
+                <div className="min-w-0">
+                  <span className="text-[10px] uppercase tracking-[0.18em] text-[#9aa5b3] font-semibold">
+                    Conversation · {bespoke.resonanceLabel}
+                  </span>
+                  <p
+                    data-testid="dialogue-resonance-note"
+                    className="text-[11px] text-[#a7c6bb] mt-0.5 leading-snug"
+                  >
+                    {bespoke.bespokeOpeningNote}
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="text-xs text-[#b5bfcc] hover:text-[#f3efe6] uppercase tracking-[0.12em] font-semibold cursor-pointer"
+                  className="shrink-0 text-xs text-[#b5bfcc] hover:text-[#f3efe6] uppercase tracking-[0.12em] font-semibold cursor-pointer"
                 >
                   Farewell [Esc]
                 </button>
@@ -203,8 +258,37 @@ export const DialogueOverlay: React.FC<DialogueOverlayProps> = ({
               )}
             </div>
 
-            {/* Grounded Story Choices */}
-            <div className="space-y-2">
+            {/* Grounded Story & Bespoke Character-Reactive Choices */}
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              {bespoke.bespokeChoices.map((bChoice) => {
+                const used = selectedChoiceIds.includes(bChoice.id);
+                const sourceKind = bChoice.id.includes('lineage')
+                  ? 'species'
+                  : bChoice.id.includes('class')
+                    ? 'class'
+                    : 'directive';
+                return (
+                  <button
+                    key={bChoice.id}
+                    type="button"
+                    data-testid={`bespoke-choice-${sourceKind}`}
+                    onClick={() => handleChoice(bChoice)}
+                    className={`w-full text-left px-3.5 py-2 rounded-sm border text-xs sm:text-[13px] transition-colors cursor-pointer flex items-center justify-between gap-3 ${
+                      used
+                        ? 'bg-[#151c22] border-white/10 text-[#8f9ca9]'
+                        : 'bg-[#142322] hover:bg-[#1a302e] border-[#5ea38c]/55 text-[#e6f5ef]'
+                    }`}
+                  >
+                    <span>{bChoice.label}</span>
+                    {!used && bChoice.renownGain && (
+                      <span className="shrink-0 font-mono text-[10px] text-[#7fd1b6] tabular-nums">
+                        +{bChoice.renownGain}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+
               {npc.choices.map((choice) => {
                 const used = selectedChoiceIds.includes(choice.id);
                 return (

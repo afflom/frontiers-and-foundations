@@ -618,12 +618,12 @@
     }
   ],
   "prismCustody": {
-    "worldGlbKappa": "sha256:b11eff9f997db6030f539c95e66d3ec45fbc67865718469f4c4fbf97cea01117",
+    "worldGlbKappa": "sha256:5373cf234309afed965a16253d5379e72df53efec6b41161d7af3887fec26f77",
     "vdntKappa": "sha256:8ccae20d8f28406e35cc424e9c06680087c14c8ee3d9de169b263e8031f1deef",
     "skyKappa": "sha256:3701313b99b2534362abf1eafcf7632b70c6aee5f7a9595643b20cd61b2ff9b8",
     "triangles": 12434,
     "vertices": 19978,
-    "glbBytes": 1598800,
+    "glbBytes": 1598812,
     "atlasTileCount": 3,
     "importedCatalogModelsCount": 7,
     "importedCatalogAssets": [

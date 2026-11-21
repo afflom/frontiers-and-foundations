@@ -2,14 +2,26 @@ import type { DialogueChoice, GameNpc, RegionId } from '../game/worldData';
 import type { RealmThemeId } from './realmModelSchema';
 import type {
   CharacterBeardStyle,
+  CharacterClassId,
   CharacterClaspKind,
   CharacterGarmentStyle,
   CharacterHairStyle,
   CharacterPropKind,
   CharacterSatchelStyle,
+  CharacterSpeciesId,
+  GuidingDirectiveId,
   RgbTuple,
   VerdantCharacterAppearance,
 } from './verdantCharacterTypes';
+import {
+  CHARACTER_CLASSES,
+  WORLDVIEW_DIRECTIVES,
+  buildPresetToScale,
+  getClassSpec,
+  getSpeciesSpec,
+  hexToLinearRgb,
+  renderHdCharacterPortraitSvg,
+} from './verdantCharacterOntology';
 
 /**
  * Deterministic 32-bit PRNG (Mulberry32) seeded from Verdant cell + character index.
@@ -635,9 +647,63 @@ export function synthesizeVerdantCharacter(opts: SynthesizeCharacterOptions): {
   }
   const title = pick(rng, role.titlePrefixes);
 
-  const skinRgb = pick(rng, SKIN_PALETTES);
-  const hairRgb = pick(rng, HAIR_PALETTES);
-  const eyeRgb = pick(rng, EYE_PALETTES);
+  // Map RealmThemeId to its native Species (with 25% chance of cosmopolitan Waywright traveler)
+  const NATIVE_SPECIES_BY_THEME: Record<RealmThemeId, CharacterSpeciesId> = {
+    'citadel-highlands': 'meridian-human',
+    'amber-steppe': 'lithborn',
+    'sunken-aqueducts': 'sylvan-rootkin',
+    'pelagic-spires': 'pelagis',
+    'obsidian-crucible': 'cinderkin',
+    'glacial-spire': 'glacian',
+  };
+  const ALL_SPECIES_IDS: CharacterSpeciesId[] = [
+    'meridian-human',
+    'lithborn',
+    'sylvan-rootkin',
+    'pelagis',
+    'cinderkin',
+    'glacian',
+  ];
+  const speciesId: CharacterSpeciesId =
+    rng() < 0.75
+      ? NATIVE_SPECIES_BY_THEME[opts.theme] ?? 'meridian-human'
+      : pick(rng, ALL_SPECIES_IDS);
+  const speciesDef = getSpeciesSpec(speciesId);
+  const ethnicityDef = pick(rng, speciesDef.ethnicities);
+
+  const ROLE_CLASS_MAP: Record<string, CharacterClassId> = {
+    warden: 'crucible-vanguard',
+    artisan: 'foundry-bellwright',
+    scholar: 'frostglass-astromancer',
+    navigator: 'meridian-surveyor',
+    scout: 'rootward-alchemist',
+  };
+  const ALL_CLASS_IDS = CHARACTER_CLASSES.map((c) => c.id);
+  const classId: CharacterClassId =
+    (opts.roleHint && ROLE_CLASS_MAP[opts.roleHint]) ||
+    ALL_CLASS_IDS[Math.abs(resolvedRoleIdx) % ALL_CLASS_IDS.length];
+
+  const ALL_DIRECTIVE_IDS = WORLDVIEW_DIRECTIVES.map((d) => d.id);
+  const directiveId: GuidingDirectiveId = pick(rng, ALL_DIRECTIVE_IDS);
+
+  const skinRgb: RgbTuple =
+    ethnicityDef.skinSwatches.length > 0
+      ? hexToLinearRgb(pick(rng, ethnicityDef.skinSwatches))
+      : speciesDef.skinPalette.length > 0
+        ? hexToLinearRgb(pick(rng, speciesDef.skinPalette))
+        : pick(rng, SKIN_PALETTES);
+  const hairRgb: RgbTuple =
+    ethnicityDef.hairSwatches.length > 0
+      ? hexToLinearRgb(pick(rng, ethnicityDef.hairSwatches))
+      : speciesDef.hairPalette.length > 0
+        ? hexToLinearRgb(pick(rng, speciesDef.hairPalette))
+        : pick(rng, HAIR_PALETTES);
+  const eyeRgb: RgbTuple =
+    ethnicityDef.eyeSwatches.length > 0
+      ? hexToLinearRgb(pick(rng, ethnicityDef.eyeSwatches))
+      : speciesDef.eyePalette.length > 0
+        ? hexToLinearRgb(pick(rng, speciesDef.eyePalette))
+        : pick(rng, EYE_PALETTES);
   const garmentRgb = pick(rng, THEME_GARMENT_PALETTES[opts.theme] ?? THEME_GARMENT_PALETTES['citadel-highlands']);
   const underTunicRgb: RgbTuple = [
     Math.max(0.12, garmentRgb[0] * 0.7 + 0.10),
@@ -655,15 +721,19 @@ export function synthesizeVerdantCharacter(opts: SynthesizeCharacterOptions): {
 
   const garmentStyle = pick(rng, role.garmentStyles);
   const hairStyle = pick(rng, ALL_HAIR_STYLES);
-  const beardStyle = pick(rng, ALL_BEARD_STYLES);
+  const beardStyle =
+    speciesId === 'pelagis' || speciesId === 'glacian'
+      ? (rng() < 0.75 ? 'none' : pick(rng, ALL_BEARD_STYLES))
+      : pick(rng, ALL_BEARD_STYLES);
   const signatureProp = pick(rng, role.props);
   const bareForearms = garmentStyle === 'smith-apron' || rng() < role.bareForearmsChance;
   const hasHoodDown = garmentStyle === 'hooded-cloak' || rng() < 0.25;
   const hasPauldrons = role.hasPauldrons || garmentStyle === 'ranger-brigandine';
 
-  const wScale = garmentStyle === 'smith-apron' ? 1.12 + rng() * 0.08 : 0.94 + rng() * 0.14;
-  const hScale = 0.96 + rng() * 0.10;
-  const dScale = garmentStyle === 'smith-apron' ? 1.08 + rng() * 0.08 : 0.95 + rng() * 0.10;
+  const baseBuild = buildPresetToScale(speciesDef.defaultBuildPreset);
+  const wScale = (garmentStyle === 'smith-apron' ? 1.08 : 0.96 + rng() * 0.10) * baseBuild[0];
+  const hScale = (0.97 + rng() * 0.08) * baseBuild[1];
+  const dScale = (garmentStyle === 'smith-apron' ? 1.06 : 0.96 + rng() * 0.08) * baseBuild[2];
 
   const safeCellKey = (opts.cellKey ?? 'frontier').replace(/[^a-z0-9-]/gi, '');
   const id =
@@ -692,11 +762,21 @@ export function synthesizeVerdantCharacter(opts: SynthesizeCharacterOptions): {
     claspRgb,
     claspKind: role.claspKind,
     eyeRgb,
+    speciesId,
+    ethnicityId: ethnicityDef.id,
+    classId,
+    directiveId,
+    anatomicalTraits: { ...speciesDef.anatomicalDefaults, evolutionRank: 2 },
     genomeSeed: opts.seed >>> 0,
-    traitSummary: `${garmentStyle} · ${hairStyle}${beardStyle !== 'none' ? ` · ${beardStyle}` : ''} · ${signatureProp}`,
+    traitSummary: `${speciesDef.name} (${ethnicityDef.name}) · ${getClassSpec(classId).name} · ${garmentStyle} · ${signatureProp}`,
   };
 
-  const portraitUrl = synthesizeCharacterPortraitDataUri(baseAppearance, opts.biomeSkyRgb, name);
+  const portraitUrl = renderHdCharacterPortraitSvg(baseAppearance, {
+    name,
+    speciesId,
+    classId,
+    evolutionRank: 2,
+  });
   const appearance: VerdantCharacterAppearance = {
     ...baseAppearance,
     portraitUrl,

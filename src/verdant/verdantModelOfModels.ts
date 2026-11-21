@@ -45,6 +45,21 @@ import {
   WAYWRIGHT_OATH_CHOICES,
   verifyGamerJourneyGraph,
 } from './verdantJourneyModel';
+import {
+  PROLOGUE_HD_VISUAL_ANCHOR,
+  extrapolateAllPartBlueprints,
+} from './verdantHdExtrapolator';
+import {
+  CHARACTER_CLASSES,
+  CHARACTER_SPECIES,
+  CHARACTER_UNIVERSAL_INVARIANTS,
+  WORLDVIEW_DIRECTIVES,
+  createDefaultPlayerProfile,
+  getClassSpec,
+  getSpeciesSpec,
+  resolveNpcCharacterProfile,
+} from './verdantCharacterOntology';
+import type { PlayerCharacterProfile } from './verdantCharacterTypes';
 
 /**
  * Exact 8 Canonical Cognitive Part Slots exposed by `verdant-uorc.wasm`
@@ -119,6 +134,11 @@ export type VerdantModelKind =
   | 'field-manual'
   | 'differentiation-profile'
   | 'expedition-session'
+  | 'hd-extrapolation'
+  | 'species-taxonomy'
+  | 'character-class'
+  | 'worldview-directive'
+  | 'character-profile'
   | 'framework';
 
 export type VerdantEdgeRelation =
@@ -138,7 +158,12 @@ export type VerdantEdgeRelation =
   | 'introduces-realm'
   | 'introduces-npc'
   | 'guides-quest'
-  | 'directs-journey';
+  | 'directs-journey'
+  | 'belongs-to-species'
+  | 'practices-class'
+  | 'guided-by-directive'
+  | 'synergizes-gear'
+  | 'extrapolates-hd-render';
 
 export interface VerdantModelEdge {
   edgeId: string;
@@ -210,6 +235,7 @@ export interface ModelOfModelsBuildInput {
   quests?: GameQuest[];
   guilds?: GuildCharter[];
   relics?: EquippedRelic[];
+  playerProfile?: PlayerCharacterProfile;
   multiplayer?: MultiplayerSessionModelInput;
   baseResolutionTier?: VerdantResolutionTier;
 }
@@ -712,6 +738,7 @@ export function buildFrontiersModelOfModels(
   const charChildren: VerdantModelNode[] = [];
   for (const { npc, realmSlug } of npcMap.values()) {
     const app = compileNpcCharacterAppearance(npc);
+    const npcOnt = resolveNpcCharacterProfile(npc);
     charChildren.push(
       makeNode({
         modelId: `frontiers:character:${npc.id}`,
@@ -729,6 +756,10 @@ export function buildFrontiersModelOfModels(
         traits: {
           realmSlug,
           portraitArchetype: app.portraitArchetype,
+          speciesId: npcOnt.speciesId,
+          ethnicityId: npcOnt.ethnicityId,
+          classId: npcOnt.classId,
+          directiveId: npcOnt.directiveId,
           garmentStyle: app.garmentStyle,
           hairStyle: app.hairStyle,
           beardStyle: app.beardStyle,
@@ -739,6 +770,10 @@ export function buildFrontiersModelOfModels(
         },
         featureSignature: [
           `archetype:${app.portraitArchetype}`,
+          `species:${npcOnt.speciesId}`,
+          `ethnicity:${npcOnt.ethnicityId}`,
+          `class:${npcOnt.classId}`,
+          `directive:${npcOnt.directiveId}`,
           `garment:${app.garmentStyle}`,
           `hair:${app.hairStyle}`,
           `beard:${app.beardStyle}`,
@@ -746,10 +781,119 @@ export function buildFrontiersModelOfModels(
           `satchel:${app.satchelStyle}`,
           `realm:${realmSlug}`,
         ],
-        tags: ['character-rig', app.garmentStyle, app.signatureProp, realmSlug],
+        tags: ['character-rig', npcOnt.speciesId, npcOnt.classId, app.garmentStyle, realmSlug],
       }),
     );
   }
+
+  // Register the 6 World-Grounded Species & 12 Cultural Ethnicities
+  for (const sp of CHARACTER_SPECIES) {
+    charChildren.push(
+      makeNode({
+        modelId: `frontiers:species:${sp.id}`,
+        parentId: charPartId,
+        kind: 'species-taxonomy',
+        partSlot: 'character-rigs',
+        title: `${sp.name} (${sp.ancestralRegion})`,
+        schemaType: 'CharacterSpeciesTaxonomy',
+        resolutionTier: tier,
+        generator: 'verdantCharacterOntology.CHARACTER_SPECIES',
+        catalogRef: `verdant:species:${sp.id}`,
+        traits: {
+          speciesId: sp.id,
+          homeTheme: sp.realmTheme,
+          ethnicitiesCount: sp.ethnicities.length,
+          ethnicityIds: sp.ethnicities.map((e) => e.id).join(','),
+          earShape: sp.anatomicalDefaults.earShape,
+          browCrest: sp.anatomicalDefaults.browCrest,
+          shoulderCrest: sp.anatomicalDefaults.shoulderCrest,
+          innateTraitName: sp.innateTraitName,
+        },
+        featureSignature: [
+          `species-taxonomy:${sp.id}`,
+          `home-theme:${sp.realmTheme}`,
+          `ear:${sp.anatomicalDefaults.earShape}`,
+          `brow:${sp.anatomicalDefaults.browCrest}`,
+          `crest:${sp.anatomicalDefaults.shoulderCrest}`,
+          ...sp.ethnicities.map((e) => `ethnicity:${e.id}`),
+        ],
+        tags: ['species-taxonomy', sp.id, sp.realmTheme],
+      }),
+    );
+  }
+
+  // Register the 6 Playable Character Classes & Evolution Paths
+  for (const cls of CHARACTER_CLASSES) {
+    charChildren.push(
+      makeNode({
+        modelId: `frontiers:class:${cls.id}`,
+        parentId: charPartId,
+        kind: 'character-class',
+        partSlot: 'character-rigs',
+        title: `${cls.name} — ${cls.archetypeRole}`,
+        schemaType: 'CharacterClassCharter',
+        resolutionTier: tier,
+        generator: 'verdantCharacterOntology.CHARACTER_CLASSES',
+        catalogRef: `verdant:class:${cls.id}`,
+        traits: {
+          classId: cls.id,
+          primaryAttribute: cls.primaryAttribute,
+          secondaryAttribute: cls.secondaryAttribute,
+          preferredGear: cls.preferredGear.join(','),
+          preferredRelicBonus: cls.preferredRelicBonus.join(','),
+          evolutionTiers: cls.evolutionPath.length,
+          signatureItem: cls.signatureItemName,
+          startingGarment: cls.startingGarment,
+        },
+        featureSignature: [
+          `class-charter:${cls.id}`,
+          `primary-attr:${cls.primaryAttribute}`,
+          `secondary-attr:${cls.secondaryAttribute}`,
+          `garment:${cls.startingGarment}`,
+          ...cls.preferredGear.map((g) => `gear-synergy:${g}`),
+        ],
+        tags: ['character-class', cls.id, cls.primaryAttribute],
+      }),
+    );
+  }
+
+  // Register the Active Customizable Player Character Profile
+  const activePlayerProfile = input.playerProfile ?? createDefaultPlayerProfile('Waywright');
+  const activePlayerSpecies = getSpeciesSpec(activePlayerProfile.speciesId);
+  const activePlayerClass = getClassSpec(activePlayerProfile.classId);
+  charChildren.push(
+    makeNode({
+      modelId: 'frontiers:player:active-waywright',
+      parentId: charPartId,
+      kind: 'character-profile',
+      partSlot: 'character-rigs',
+      title: `${activePlayerProfile.name} — ${activePlayerSpecies.name} ${activePlayerClass.name}`,
+      schemaType: 'PlayerCharacterProfile',
+      resolutionTier: tier,
+      generator: 'verdantCharacterOntology.PlayerCharacterProfile',
+      catalogRef: `verdant:player:${activePlayerProfile.speciesId}:${activePlayerProfile.classId}`,
+      traits: {
+        name: activePlayerProfile.name,
+        speciesId: activePlayerProfile.speciesId,
+        ethnicityId: activePlayerProfile.ethnicityId,
+        classId: activePlayerProfile.classId,
+        directiveId: activePlayerProfile.directiveId,
+        garmentStyle: activePlayerProfile.garmentStyle,
+        hairStyle: activePlayerProfile.hairStyle,
+        buildPreset: activePlayerProfile.buildPreset,
+        universalInvariantsCount: CHARACTER_UNIVERSAL_INVARIANTS.length,
+      },
+      featureSignature: [
+        `player-species:${activePlayerProfile.speciesId}`,
+        `player-ethnicity:${activePlayerProfile.ethnicityId}`,
+        `player-class:${activePlayerProfile.classId}`,
+        `player-directive:${activePlayerProfile.directiveId}`,
+        `player-garment:${activePlayerProfile.garmentStyle}`,
+        `player-build:${activePlayerProfile.buildPreset}`,
+      ],
+      tags: ['player-character', activePlayerProfile.speciesId, activePlayerProfile.classId, activePlayerProfile.directiveId],
+    }),
+  );
 
   for (const faunaKit of ALL_FAUNA_KITS) {
     const bossProfile = getBossSignatureProfile(faunaKit);
@@ -1176,6 +1320,34 @@ export function buildFrontiersModelOfModels(
         tags: ['guild-charter', g.homeRegion],
       }),
     ),
+    ...WORLDVIEW_DIRECTIVES.map((dir) =>
+      makeNode({
+        modelId: `frontiers:directive:${dir.id}`,
+        parentId: langPartId,
+        kind: 'worldview-directive',
+        partSlot: 'cognitive-language',
+        title: `${dir.name} — ${dir.worldviewAxis}`,
+        schemaType: 'WorldviewDirective',
+        resolutionTier: tier,
+        generator: 'verdantCharacterOntology.WORLDVIEW_DIRECTIVES',
+        catalogRef: `verdant:directive:${dir.id}`,
+        traits: {
+          directiveId: dir.id,
+          name: dir.name,
+          passiveLabel: dir.passiveLabel,
+          alliedDirectives: dir.alliedDirectives.join(','),
+          contrastingDirectives: dir.contrastingDirectives.join(','),
+          universalInvariantsBound: CHARACTER_UNIVERSAL_INVARIANTS.length,
+        },
+        featureSignature: [
+          `directive-id:${dir.id}`,
+          `passive:${dir.passiveLabel}`,
+          ...dir.alliedDirectives.map((a) => `allied:${a}`),
+          ...dir.contrastingDirectives.map((c) => `contrast:${c}`),
+        ],
+        tags: ['worldview-directive', dir.id],
+      }),
+    ),
     ...getAllStoryAutomata().map((auto) => {
       const report = verifyStoryAutomaton(auto);
       return makeNode({
@@ -1483,6 +1655,9 @@ export function buildFrontiersModelOfModels(
     ),
   ];
 
+  // Extrapolate concrete HD Visual Rendering Blueprints across all 8 canonical Verdant Cognitive Parts
+  const hdPartBlueprints = extrapolateAllPartBlueprints(tier, 'citadel-highlands');
+
   // Assemble the 8 Canonical Part Container Nodes
   const partMap: Record<VerdantPartSlot, VerdantModelNode[]> = {
     'stage-environment': stageChildren,
@@ -1496,8 +1671,36 @@ export function buildFrontiersModelOfModels(
   };
 
   const partNodes: VerdantModelNode[] = VERDANT_PART_SLOTS.map((slot) => {
-    const children = partMap[slot];
     const partId = `frontiers:part:${slot}`;
+    const hdBp = hdPartBlueprints[slot];
+    const hdNode = makeNode({
+      modelId: hdBp.modelId,
+      parentId: partId,
+      kind: 'hd-extrapolation',
+      partSlot: slot,
+      title: hdBp.title,
+      schemaType: 'HdVisualExtrapolationBlueprint',
+      resolutionTier: tier,
+      generator: 'verdantHdExtrapolator.extrapolateAllPartBlueprints',
+      catalogRef: PROLOGUE_HD_VISUAL_ANCHOR.id,
+      traits: {
+        partSlot: slot,
+        anchorId: PROLOGUE_HD_VISUAL_ANCHOR.id,
+        extrapolatedFidelityScore: hdBp.extrapolatedFidelityScore,
+        prologueParityRatio: hdBp.prologueParityRatio,
+        shaderDirectivesCount: hdBp.shaderDirectives.length,
+        geometryDirectivesCount: hdBp.geometryDirectives.length,
+        ...hdBp.activeTraits,
+      },
+      featureSignature: [
+        `hd-part:${slot}`,
+        `hd-anchor:${PROLOGUE_HD_VISUAL_ANCHOR.id}`,
+        ...hdBp.shaderDirectives.slice(0, 2).map((d) => `shader:${d}`),
+        ...hdBp.geometryDirectives.slice(0, 2).map((d) => `geo:${d}`),
+      ],
+      tags: ['hd-extrapolation', 'prologue-parity', slot],
+    });
+    const children = [...partMap[slot], hdNode];
     const childSigTokens = Array.from(
       new Set(children.flatMap((c) => c.featureSignature).slice(0, 24)),
     );
@@ -1515,6 +1718,7 @@ export function buildFrontiersModelOfModels(
         partSlot: slot,
         childCount: children.length,
         uniformApi: true,
+        hdExtrapolated: true,
       },
       featureSignature: [`part:${slot}`, ...childSigTokens.slice(0, 8)],
       tags: ['verdant-part', slot],
@@ -1793,11 +1997,52 @@ export function buildModelRelationGraph(root: VerdantModelNode): VerdantModelGra
     } else if (n.kind === 'character') {
       const realmSlug = String(tr.realmSlug ?? '');
       const guildId = String(tr.guildId ?? '');
+      const speciesId = String(tr.speciesId ?? '');
+      const classId = String(tr.classId ?? '');
+      const directiveId = String(tr.directiveId ?? '');
       if (realmSlug && byId.has(`frontiers:realm:${realmSlug}`)) {
         link(byId.get(`frontiers:realm:${realmSlug}`)!, n.modelId, 'inhabited-by');
       }
       if (guildId && byId.has(`frontiers:guild:${guildId}`)) {
         link(n, `frontiers:guild:${guildId}`, 'chartered-by');
+      }
+      if (speciesId && byId.has(`frontiers:species:${speciesId}`)) {
+        link(n, `frontiers:species:${speciesId}`, 'belongs-to-species');
+      }
+      if (classId && byId.has(`frontiers:class:${classId}`)) {
+        link(n, `frontiers:class:${classId}`, 'practices-class');
+      }
+      if (directiveId && byId.has(`frontiers:directive:${directiveId}`)) {
+        link(n, `frontiers:directive:${directiveId}`, 'guided-by-directive');
+      }
+    } else if (n.kind === 'species-taxonomy') {
+      const homeTheme = String(tr.homeTheme ?? '');
+      const favoredDir = String(tr.favoredDirective ?? '');
+      if (homeTheme && byId.has(`frontiers:profile:${homeTheme}`)) {
+        link(n, `frontiers:profile:${homeTheme}`, 'governed-by');
+      }
+      if (favoredDir && byId.has(`frontiers:directive:${favoredDir}`)) {
+        link(n, `frontiers:directive:${favoredDir}`, 'guided-by-directive');
+      }
+    } else if (n.kind === 'character-class') {
+      const prefGear = String(tr.preferredGear ?? '').split(',').filter(Boolean);
+      for (const gearId of prefGear) {
+        if (byId.has(`frontiers:gear:${gearId}`)) {
+          link(n, `frontiers:gear:${gearId}`, 'synergizes-gear');
+        }
+      }
+    } else if (n.kind === 'character-profile') {
+      const speciesId = String(tr.speciesId ?? '');
+      const classId = String(tr.classId ?? '');
+      const directiveId = String(tr.directiveId ?? '');
+      if (speciesId && byId.has(`frontiers:species:${speciesId}`)) {
+        link(n, `frontiers:species:${speciesId}`, 'belongs-to-species');
+      }
+      if (classId && byId.has(`frontiers:class:${classId}`)) {
+        link(n, `frontiers:class:${classId}`, 'practices-class');
+      }
+      if (directiveId && byId.has(`frontiers:directive:${directiveId}`)) {
+        link(n, `frontiers:directive:${directiveId}`, 'guided-by-directive');
       }
     } else if (n.kind === 'monster-species') {
       const theme = String(tr.theme ?? '');
@@ -1854,6 +2099,13 @@ export function buildModelRelationGraph(root: VerdantModelNode): VerdantModelGra
       link(n, 'frontiers:expedition:active-session', 'hosts-expedition');
     } else if (n.kind === 'field-manual') {
       link(n, 'frontiers:journey:experience-flow', 'directs-journey');
+    } else if (n.kind === 'hd-extrapolation') {
+      if (byId.has('frontiers:hd-extrapolation:runtime-frameworks') && n.modelId !== 'frontiers:hd-extrapolation:runtime-frameworks') {
+        link(n, 'frontiers:hd-extrapolation:runtime-frameworks', 'extrapolates-hd-render');
+      }
+      if (byId.has('frontiers:hd-extrapolation:visual-identity') && n.modelId !== 'frontiers:hd-extrapolation:visual-identity') {
+        link(n, 'frontiers:hd-extrapolation:visual-identity', 'extrapolates-hd-render');
+      }
     }
   }
 

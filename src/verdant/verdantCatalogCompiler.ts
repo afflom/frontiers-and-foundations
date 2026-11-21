@@ -226,6 +226,92 @@ function addCone(
   }
 }
 
+/**
+ * Builds an organic, softly irregular multi-ring foliage bough lobe with vertical
+ * sunlit-crown to deep-shadowed-underside color stratification for painterly HD canopies.
+ */
+function addFoliageDome(
+  b: MeshBucket,
+  cx: number,
+  cy: number,
+  cz: number,
+  rx: number,
+  ry: number,
+  rz: number,
+  segs: number,
+  rings: number,
+  rBot: number,
+  gBot: number,
+  bBot: number,
+  rTop: number,
+  gTop: number,
+  bTop: number,
+  seed = 0,
+): void {
+  const baseIdx = b.pos.length / 3;
+  const stride = segs + 1;
+  for (let ri = 0; ri <= rings; ri++) {
+    const v = ri / rings;
+    const phi = v * Math.PI;
+    const sp = Math.sin(phi);
+    const cp = Math.cos(phi);
+    const tCol = Math.pow(1 - v, 0.85);
+    const cr = rBot + (rTop - rBot) * tCol;
+    const cg = gBot + (gTop - gBot) * tCol;
+    const cb = bBot + (bTop - bBot) * tCol;
+    for (let si = 0; si <= segs; si++) {
+      const u = si / segs;
+      const theta = u * Math.PI * 2;
+      const organic = 1 + 0.14 * Math.sin(theta * 3 + seed * 5.7) * sp + 0.08 * Math.cos(phi * 4 - seed * 3.1);
+      const nx = sp * Math.cos(theta);
+      const ny = cp;
+      const nz = sp * Math.sin(theta);
+      pushVertex(
+        b,
+        cx + nx * rx * organic,
+        cy + ny * ry * organic,
+        cz + nz * rz * organic,
+        nx,
+        ny,
+        nz,
+        u,
+        v,
+        Math.min(1, cr * (0.94 + 0.12 * organic)),
+        Math.min(1, cg * (0.94 + 0.12 * organic)),
+        Math.min(1, cb * (0.94 + 0.12 * organic)),
+      );
+    }
+  }
+  for (let ri = 0; ri < rings; ri++) {
+    for (let si = 0; si < segs; si++) {
+      const a = baseIdx + ri * stride + si;
+      const b0 = a + 1;
+      const c = a + stride;
+      const d = c + 1;
+      b.idx.push(a, b0, c, b0, d, c);
+    }
+  }
+}
+
+/**
+ * Builds a weathered multi-faceted rocky boulder outcrop with mossy crown tinting.
+ */
+function addRockOutcrop(
+  b: MeshBucket,
+  cx: number,
+  cy: number,
+  cz: number,
+  rx: number,
+  ry: number,
+  rz: number,
+  seed: number,
+  r = 0.24,
+  g = 0.26,
+  bl = 0.28,
+): void {
+  addFoliageDome(b, cx, cy + ry * 0.35, cz, rx, ry, rz, 7, 4, r * 0.72, g * 0.74, bl * 0.78, r * 1.15, g * 1.24, bl * 1.06, seed);
+}
+
 function terrainNormalAt(spec: FrontiersRealmSpec, x: number, z: number): [number, number, number] {
   const e = 0.5;
   const hL = realmTerrainHeightAt(spec, x - e, z);
@@ -701,7 +787,7 @@ function packGlbWorld(
         roughnessFactor: mat.roughnessFactor,
         metallicRoughnessTexture: { index: armTexIdx },
       },
-      normalTexture: { index: norTexIdx, scale: 1.0 },
+      normalTexture: { index: norTexIdx, scale: 1.45 },
     });
   }
 
@@ -1150,32 +1236,61 @@ export async function compileRealmWithVerdant(
         addCylinder(accentBucket, 1.9, baseH, pz, 0.95, 0.55, pierH, 6, 0.48, 0.74, 0.90);
       }
     } else {
-      // Vaelmor Citadel: Classic Parabolic Basalt Causeway Bridge
+      // Vaelmor Citadel: Sculpted Parabolic Basalt Causeway Bridge with Gothic Coping,
+      // Arch Voussoir Ribs, Wrought-Iron Hanging Lantern Gallows & Gorge Boulder Abutments
       for (let seg = 0; seg < 6; seg++) {
         const zs = -3.4 + seg * (16.8 / 6);
         const ze = zs + 16.8 / 6;
-        addTiledBox(cobbleBucket, 0, DECK_Y - 0.25, (zs + ze) * 0.5, 5.7, 0.5, ze - zs + 0.05, 2.6);
+        addTiledBox(cobbleBucket, 0, DECK_Y - 0.25, (zs + ze) * 0.5, 5.75, 0.5, ze - zs + 0.05, 2.4);
       }
       for (const side of [-1, 1]) {
-        const px = side * 2.65;
-        addTiledBox(stoneBucket, px, DECK_Y + 0.48, 5.0, 0.42, 0.95, 16.8, 2.4);
+        const px = side * 2.68;
+        // Parapet wall + coping cornice + crenellation merlons
+        addTiledBox(stoneBucket, px, DECK_Y + 0.48, 5.0, 0.44, 0.96, 16.8, 2.2);
+        addTiledBox(cobbleBucket, px, DECK_Y + 1.02, 5.0, 0.54, 0.16, 17.0, 2.0);
         for (let z = -3.0; z <= 13.0; z += 4.0) {
-          addBox(stoneBucket, px, DECK_Y + 0.85, z, 0.72, 1.7, 0.72);
-          addBox(accentBucket, px, DECK_Y + 1.82, z, 0.36, 0.34, 0.36, 0, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
+          addTiledBox(stoneBucket, px, DECK_Y + 0.92, z, 0.78, 1.85, 0.78, 1.8);
+          addTiledBox(cobbleBucket, px, DECK_Y + 1.9, z, 0.90, 0.18, 0.90, 1.6);
+          // Wrought-iron lantern gallows bracket curving inward over bridge pier
+          addCylinder(accentBucket, px, DECK_Y + 1.95, z, 0.06, 0.05, 1.25, 6, 0.14, 0.15, 0.17);
+          addBox(accentBucket, px - side * 0.34, DECK_Y + 3.12, z, 0.76, 0.09, 0.09, 0, 0.15, 0.16, 0.18);
+          addBox(accentBucket, px - side * 0.22, DECK_Y + 2.86, z, 0.46, 0.07, 0.07, 0, 0.18, 0.19, 0.21);
+          // Warm glowing pier finial cap
+          addBox(accentBucket, px, DECK_Y + 2.06, z, 0.32, 0.24, 0.32, 0, lanternRgb[0], lanternRgb[1], lanternRgb[2]);
         }
       }
       for (const pz of [-2.4, 5.2, 12.6]) {
         const baseH = realmTerrainHeightAt(spec, 0, pz) - 1.5;
         const pierH = DECK_Y - 0.35 - baseH;
-        addTiledBox(stoneBucket, 0, baseH + pierH * 0.5, pz, 5.9, pierH, 1.85, 2.4);
-        addTiledBox(stoneBucket, -3.2, baseH + pierH * 0.35, pz, 0.9, pierH * 0.7, 1.35, 2.2);
-        addTiledBox(stoneBucket, 3.2, baseH + pierH * 0.35, pz, 0.9, pierH * 0.7, 1.35, 2.2);
+        addTiledBox(stoneBucket, 0, baseH + pierH * 0.5, pz, 5.95, pierH, 1.9, 2.2);
+        // Sculpted stepped cutwater buttresses facing upstream & downstream
+        addTiledBox(stoneBucket, -3.25, baseH + pierH * 0.38, pz, 0.98, pierH * 0.76, 1.42, 2.0);
+        addTiledBox(stoneBucket, 3.25, baseH + pierH * 0.38, pz, 0.98, pierH * 0.76, 1.42, 2.0);
+        addCone(stoneBucket, -3.25, baseH + pierH * 0.76, pz, 0.68, 0.85, 6, 1, 1, 1);
+        addCone(stoneBucket, 3.25, baseH + pierH * 0.76, pz, 0.68, 0.85, 6, 1, 1, 1);
       }
       for (const archCenterZ of [1.4, 8.9]) {
-        for (let i = 0; i < 10; i++) {
-          const t = -1 + (2 * (i + 0.5)) / 10;
-          addTiledBox(stoneBucket, 0, DECK_Y - 0.6 - t * t * 2.25, archCenterZ + t * 3.4, 5.1, 0.65, 0.85, 2.4);
+        for (let i = 0; i < 12; i++) {
+          const t = -1 + (2 * (i + 0.5)) / 12;
+          const ay = DECK_Y - 0.55 - t * t * 2.35;
+          const az = archCenterZ + t * 3.45;
+          addTiledBox(stoneBucket, 0, ay, az, 5.15, 0.68, 0.78, 2.2);
+          // Projecting keystone & carved outer arch rib moulding
+          addTiledBox(cobbleBucket, -2.65, ay + 0.14, az, 0.32, 0.52, 0.66, 1.8);
+          addTiledBox(cobbleBucket, 2.65, ay + 0.14, az, 0.32, 0.52, 0.66, 1.8);
         }
+      }
+      // Weathered basalt gorge boulders anchoring the bridge banks into the ravine
+      for (const [bx, bz, brx, bry, brz] of [
+        [-6.2, 13.8, 2.2, 1.6, 1.9],
+        [6.4, 13.2, 2.4, 1.8, 2.0],
+        [-7.8, 8.2, 2.6, 2.1, 2.2],
+        [8.1, 7.6, 2.8, 2.2, 2.4],
+        [-6.4, -3.2, 2.1, 1.7, 1.8],
+        [6.8, -3.4, 2.5, 1.9, 2.1],
+      ]) {
+        const by = realmTerrainHeightAt(spec, bx, bz);
+        addRockOutcrop(accentBucket, bx, by - 0.25, bz, brx, bry, brz, bx * 0.7 + bz * 0.3, 0.22, 0.24, 0.27);
       }
     }
 
@@ -1325,18 +1440,122 @@ export async function compileRealmWithVerdant(
           break;
         }
         default: {
-          // Highland Amber Ironwood & Alpine Conifers
+          // HD Highland Amber Ironwood & Sculpted Layered Alpine Conifers (7-Cluster Organic Canopy + Buttress Roots + Mossy Base Rock)
           const isAmberGrove = f.x > 10 && f.z < 12;
-          const trunkH = (isAmberGrove ? 4.2 : 3.1) * s;
-          const trunkR = (isAmberGrove ? 0.48 : 0.36) * s;
-          addCylinder(accentBucket, f.x, ty - 0.5, f.z, trunkR * 1.5, trunkR * 0.62, trunkH, 7, 0.27, 0.19, 0.13);
-          const c1 = isAmberGrove ? [0.74 * shade, 0.42 * shade, 0.14] : [0.15 * shade, 0.32 * shade, 0.19 * shade];
-          const c2 = isAmberGrove ? [0.85 * shade, 0.55 * shade, 0.18] : [0.20 * shade, 0.40 * shade, 0.23 * shade];
-          const c3 = isAmberGrove ? [0.92 * shade, 0.67 * shade, 0.25] : [0.26 * shade, 0.48 * shade, 0.27 * shade];
-          const rBase = (isAmberGrove ? 3.1 : 2.45) * s;
-          addCone(accentBucket, f.x, ty + trunkH * 0.54, f.z, rBase, 2.7 * s, 8, c1[0], c1[1], c1[2]);
-          addCone(accentBucket, f.x + 0.22 * Math.cos(f.yaw), ty + trunkH * 0.82, f.z + 0.22 * Math.sin(f.yaw), rBase * 0.78, 2.5 * s, 8, c2[0], c2[1], c2[2]);
-          addCone(accentBucket, f.x - 0.15 * Math.sin(f.yaw), ty + trunkH * 1.1, f.z + 0.15 * Math.cos(f.yaw), rBase * 0.52, 2.1 * s, 8, c3[0], c3[1], c3[2]);
+          const trunkH = (isAmberGrove ? 4.4 : 3.5) * s;
+          const trunkR = (isAmberGrove ? 0.48 : 0.38) * s;
+          // Bark-crested trunk + 3 flared buttress root spurs
+          addCylinder(accentBucket, f.x, ty - 0.5, f.z, trunkR * 1.55, trunkR * 0.58, trunkH, 9, 0.25, 0.17, 0.12);
+          for (let r = 0; r < 3; r++) {
+            const ra = f.yaw + (r * Math.PI * 2) / 3;
+            addCylinder(
+              accentBucket,
+              f.x + Math.cos(ra) * trunkR * 1.05,
+              ty - 0.45,
+              f.z + Math.sin(ra) * trunkR * 1.05,
+              trunkR * 0.68,
+              trunkR * 0.18,
+              trunkH * 0.34,
+              6,
+              0.22,
+              0.15,
+              0.10,
+            );
+          }
+          // Stratified deep-shadow underside -> rich mid-canopy -> sunlit golden-hour crown tips
+          const deepCol: [number, number, number] = isAmberGrove
+            ? [0.46 * shade, 0.22 * shade, 0.08]
+            : [0.08 * shade, 0.21 * shade, 0.13 * shade];
+          const midCol: [number, number, number] = isAmberGrove
+            ? [0.78 * shade, 0.44 * shade, 0.13]
+            : [0.16 * shade, 0.36 * shade, 0.19 * shade];
+          const tipCol: [number, number, number] = isAmberGrove
+            ? [0.96 * shade, 0.68 * shade, 0.24]
+            : [0.30 * shade, 0.50 * shade, 0.23 * shade];
+
+          const rBase = (isAmberGrove ? 3.25 : 2.65) * s;
+          // 4 lower asymmetrical organic bough clusters ringing the trunk
+          for (let bi = 0; bi < 4; bi++) {
+            const ba = f.yaw + (bi * Math.PI) / 2 + (bi % 2) * 0.28;
+            const bDist = rBase * 0.46;
+            addFoliageDome(
+              accentBucket,
+              f.x + Math.cos(ba) * bDist,
+              ty + trunkH * (0.64 + (bi % 2) * 0.08),
+              f.z + Math.sin(ba) * bDist,
+              rBase * 0.64,
+              1.35 * s,
+              rBase * 0.60,
+              9,
+              4,
+              deepCol[0],
+              deepCol[1],
+              deepCol[2],
+              midCol[0],
+              midCol[1],
+              midCol[2],
+              f.yaw + bi,
+            );
+          }
+          // 2 mid-upper offset crown clusters
+          for (let ui = 0; ui < 2; ui++) {
+            const ua = f.yaw + 0.75 + ui * Math.PI;
+            addFoliageDome(
+              accentBucket,
+              f.x + Math.cos(ua) * rBase * 0.28,
+              ty + trunkH * 0.98 + ui * 0.35 * s,
+              f.z + Math.sin(ua) * rBase * 0.28,
+              rBase * 0.58,
+              1.48 * s,
+              rBase * 0.54,
+              9,
+              5,
+              midCol[0] * 0.85,
+              midCol[1] * 0.85,
+              midCol[2] * 0.85,
+              tipCol[0],
+              tipCol[1],
+              tipCol[2],
+              f.yaw + ui * 2.1,
+            );
+          }
+          // Sculpted sunlit spire apex crown
+          addFoliageDome(
+            accentBucket,
+            f.x + 0.12 * Math.cos(f.yaw),
+            ty + trunkH * 1.28,
+            f.z + 0.12 * Math.sin(f.yaw),
+            rBase * 0.44,
+            1.65 * s,
+            rBase * 0.42,
+            9,
+            5,
+            midCol[0],
+            midCol[1],
+            midCol[2],
+            tipCol[0] * 1.05,
+            tipCol[1] * 1.05,
+            tipCol[2] * 1.02,
+            f.yaw + 4.3,
+          );
+          // Occasional mossy ground boulder at tree base for rich forest-floor grounding
+          if (f.variant > 0.48) {
+            const rx = f.x + Math.cos(f.yaw + 1.2) * (trunkR * 2.8);
+            const rz = f.z + Math.sin(f.yaw + 1.2) * (trunkR * 2.8);
+            addRockOutcrop(
+              accentBucket,
+              rx,
+              realmTerrainHeightAt(spec, rx, rz) - 0.12,
+              rz,
+              0.78 * s,
+              0.52 * s,
+              0.68 * s,
+              f.yaw,
+              0.24,
+              0.28,
+              0.26,
+            );
+          }
           break;
         }
       }

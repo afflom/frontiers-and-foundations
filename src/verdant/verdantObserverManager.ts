@@ -22,6 +22,7 @@ import {
   type VerdantResolutionTier,
 } from './verdantModelOfModels';
 import { verifyGamerJourneyGraph } from './verdantJourneyModel';
+import { auditCharacterOntology } from './verdantCharacterOntology';
 
 export type VsmSystemLevel = 'VSM-S1' | 'VSM-S2' | 'VSM-S3' | 'VSM-S4' | 'VSM-S5';
 
@@ -60,7 +61,9 @@ export type ObserverKpiId =
   | 'KPI-STORY-CONSERVATION-CLOSURE'
   | 'KPI-RELATIONAL-GRAPH-INTEGRITY'
   | 'KPI-VTENSOR-SEMANTIC-SPREAD'
-  | 'KPI-JOURNEY-EXPERIENCE-CLOSURE';
+  | 'KPI-JOURNEY-EXPERIENCE-CLOSURE'
+  | 'KPI-HD-VISUAL-EXTRAPOLATION'
+  | 'KPI-CHARACTER-ONTOLOGY-COVERAGE';
 
 export interface ObserverKpiMetric {
   id: ObserverKpiId;
@@ -224,6 +227,9 @@ export interface RenderResolutionProfile {
   renderScalePermille: number;
   casSharpnessPermille: number;
   lodRank: number;
+  hdExtrapolationActive: boolean;
+  maxPointLights: number;
+  bloomEnabled: boolean;
 }
 
 export interface UniformRefinementOptions {
@@ -459,6 +465,43 @@ export const FRONTIERS_DOMAIN_MANAGERS: VerdantVsmManagerSpec[] = [
       'Complete menu-to-gameplay state reachability with zero dead-end player transitions',
       '5-Act animated narrated prologue with closed-caption timing and live 3D camera choreography',
       '3-Slot Expedition Save Ledger (create, continue, rename, delete, legacy migration) & 6 directed gameplay milestones',
+    ],
+    differentiationRequirements: [STANDARD_DIFFERENTIATION_RULE],
+  },
+  {
+    managerId: 'mgr-frontiers-hd-extrapolation',
+    name: 'Frontiers HD Visual Extrapolation & Painterly Shader Director',
+    origin: 'frontiers-extension',
+    vsmSystem: 'VSM-S4',
+    citedAuthority: 'ISO 42010 · Verdant Prologue-Parity HD Extrapolation & HDR Lighting Charter',
+    basisPrime: 173,
+    ownedSlots: [
+      'stage-environment',
+      'character-rigs',
+      'hero-props',
+      'surface-materials',
+      'visual-identity',
+      'runtime-frameworks',
+    ],
+    concerns: [
+      'Extrapolating high-definition shaders, dynamic 8-point lantern lighting, gorge mist, and HDR bloom across all 8 Cognitive Parts from Prologue visual grammar',
+      'Enforcing sculpted multi-cluster canopies, gothic citadel battlements, glowing lancet windows, and grounded contact shadows',
+      'Calibrating PBR micro-relief normal scale, reflective Fresnel water, and smooth character tessellation for both hardware and software WebGL2',
+    ],
+    differentiationRequirements: [STANDARD_DIFFERENTIATION_RULE],
+  },
+  {
+    managerId: 'mgr-frontiers-character-ontology',
+    name: 'Frontiers Character Ontology, Lineage & Progression Steward',
+    origin: 'frontiers-extension',
+    vsmSystem: 'VSM-S4',
+    citedAuthority: 'ISO 42010 · Verdant Species, Ethnicity, Class, Directive & HD Character Charter',
+    basisPrime: 179,
+    ownedSlots: ['character-rigs', 'cognitive-language', 'hero-props', 'visual-identity'],
+    concerns: [
+      'Governing 6 World-Grounded Species, 12 Cultural Ethnicities, 6 Character Classes, 6 Guiding Directives, and 7 Universal Character Invariants',
+      'Enforcing 1:1 visual parity between 3D species anatomy/attire rigs and HD painterly portraits for both NPCs and customizable Player Characters',
+      'Binding character progression, allocatable attributes, inventory class/lineage synergy, and bespoke lineage-reactive NPC interactions',
     ],
     differentiationRequirements: [STANDARD_DIFFERENTIATION_RULE],
   },
@@ -904,6 +947,54 @@ export function evaluateFrontiersKpis(root: VerdantModelNode): FrontiersObserver
         detail: `${journeyAudit.reachableStates}/${journeyAudit.totalStates} journey states reachable · ${prologueModels.length} captioned prologue acts · ${milestoneModels.length} milestones · 3 save slots.`,
       };
     })(),
+    (() => {
+      const hdNodes = listModelsByKind(root, 'hd-extrapolation');
+      const coveredSlots = new Set(hdNodes.map((n) => n.partSlot));
+      const meanFidelity =
+        hdNodes.length > 0
+          ? Math.round(
+              (hdNodes.reduce(
+                (acc, n) => acc + Number(n.generativeGenome.traits.extrapolatedFidelityScore ?? 0),
+                0,
+              ) /
+                hdNodes.length) *
+                10,
+            ) / 10
+          : 0;
+      const passed = coveredSlots.size === VERDANT_PART_SLOTS.length && meanFidelity >= 88;
+      return {
+        id: 'KPI-HD-VISUAL-EXTRAPOLATION' as const,
+        label: 'HD Visual Extrapolation & Prologue Parity',
+        value: meanFidelity,
+        target: 88,
+        unit: 'score',
+        passed,
+        detail: `${coveredSlots.size}/${VERDANT_PART_SLOTS.length} Verdant parts HD-extrapolated against Prologue visual anchor (mean fidelity ${meanFidelity}/100).`,
+      };
+    })(),
+    (() => {
+      const ontAudit = auditCharacterOntology();
+      const speciesNodes = listModelsByKind(root, 'species-taxonomy');
+      const classNodes = listModelsByKind(root, 'character-class');
+      const directiveNodes = listModelsByKind(root, 'worldview-directive');
+      const playerNode = getModelById(root, 'frontiers:player:active-waywright');
+      const passed =
+        ontAudit.allValid &&
+        speciesNodes.length >= 6 &&
+        classNodes.length >= 6 &&
+        directiveNodes.length >= 6 &&
+        Boolean(playerNode);
+      const coveragePct = passed ? 100 : Math.round(((speciesNodes.length + classNodes.length + directiveNodes.length) / 18) * 100);
+      return {
+        id: 'KPI-CHARACTER-ONTOLOGY-COVERAGE' as const,
+        label: 'Character Species, Class & Directive Ontology',
+        value: coveragePct,
+        target: 100,
+        unit: '%',
+        passed,
+        detail: `${ontAudit.speciesCount} species · ${ontAudit.ethnicityCount} ethnicities · ${ontAudit.classCount} classes · ${ontAudit.directiveCount} directives · ${ontAudit.invariantCount} invariants verified.`,
+      };
+    })(),
   ];
 
   const diversityIndex = Math.round(
@@ -1048,22 +1139,28 @@ export function deriveRenderResolutionProfile(
       cylinderSegments: 16,
       ambientParticleBoost: 1.5,
       landmarkFlourishLevel: 4,
-      renderScalePermille: isSoftwareGl ? 920 : 1000,
-      casSharpnessPermille: 420,
+      renderScalePermille: isSoftwareGl ? 960 : 1000,
+      casSharpnessPermille: 440,
       lodRank: isSoftwareGl ? 2 : 3,
+      hdExtrapolationActive: true,
+      maxPointLights: 8,
+      bloomEnabled: true,
     };
   }
   if (tier === 3) {
     return {
       resolutionTier: 3,
       resolutionLabel: RESOLUTION_TIER_LABELS[3],
-      sphereSegments: 12,
-      cylinderSegments: 12,
-      ambientParticleBoost: 1.0,
+      sphereSegments: 14,
+      cylinderSegments: 14,
+      ambientParticleBoost: 1.15,
       landmarkFlourishLevel: 3,
-      renderScalePermille: isSoftwareGl ? 850 : 1000,
-      casSharpnessPermille: 320,
-      lodRank: isSoftwareGl ? 1 : 3,
+      renderScalePermille: isSoftwareGl ? 920 : 1000,
+      casSharpnessPermille: 360,
+      lodRank: isSoftwareGl ? 2 : 3,
+      hdExtrapolationActive: true,
+      maxPointLights: 8,
+      bloomEnabled: true,
     };
   }
   if (tier === 2) {
@@ -1074,9 +1171,12 @@ export function deriveRenderResolutionProfile(
       cylinderSegments: 10,
       ambientParticleBoost: 0.75,
       landmarkFlourishLevel: 2,
-      renderScalePermille: 820,
-      casSharpnessPermille: 240,
+      renderScalePermille: 840,
+      casSharpnessPermille: 260,
       lodRank: 1,
+      hdExtrapolationActive: true,
+      maxPointLights: 6,
+      bloomEnabled: true,
     };
   }
   return {
@@ -1089,6 +1189,9 @@ export function deriveRenderResolutionProfile(
     renderScalePermille: 720,
     casSharpnessPermille: 160,
     lodRank: 0,
+    hdExtrapolationActive: true,
+    maxPointLights: 4,
+    bloomEnabled: false,
   };
 }
 

@@ -499,33 +499,84 @@ function buildCitadelCausewayStructures(
     { x: 54, z: 10, radius: 8.5 },
     { x: 0, z: -56, radius: 8.5 },
   ];
-  // Octagonal Basalt Citadel Keep (0, -20.5)
+  // Sculpted 12-Sided Basalt Citadel Keep (0, -20.5) with Cornice, Buttresses, Crenellations & Ribbed Slate Spire
   s.push(
-    { id: 'citadel-plinth', kind: 'box', material: 'stone', x: 0, yOffset: 0.5, z: -18.5, sx: 19.5, sy: 2.6, sz: 15.0, collider: 'none' },
-    { id: 'citadel-keep', kind: 'cylinder', material: 'stone', x: 0, yOffset: 1.5, z: -20.5, sx: 6.4, sy: 12.2, sz: 5.8, segs: 8, collider: 'circle', colliderRadius: 5.85 },
-    { id: 'citadel-crown', kind: 'cylinder', material: 'stone', x: 0, yOffset: 13.4, z: -20.5, sx: 6.2, sy: 1.5, sz: 6.2, segs: 8, collider: 'none' },
-    { id: 'citadel-roof', kind: 'cone', material: 'accent', x: 0, yOffset: 14.9, z: -20.5, sx: 6.0, sy: 6.8, sz: 0, segs: 8, rgb: cols.spire, collider: 'none' },
-    { id: 'citadel-finial', kind: 'cone', material: 'accent', x: 0, yOffset: 21.3, z: -20.5, sx: 0.55, sy: 2.4, sz: 0, segs: 6, rgb: cols.lantern, collider: 'none' },
-    // Gatehouse Piers (open portal at x=0, z=-14)
-    { id: 'citadel-gatehouse-w', kind: 'box', material: 'stone', x: -3.2, yOffset: 4.4, z: -14.0, sx: 2.3, sy: 6.6, sz: 2.4, collider: 'box' },
-    { id: 'citadel-gatehouse-e', kind: 'box', material: 'stone', x: 3.2, yOffset: 4.4, z: -14.0, sx: 2.3, sy: 6.6, sz: 2.4, collider: 'box' },
-    { id: 'citadel-gatehouse-lintel', kind: 'box', material: 'stone', x: 0, yOffset: 7.6, z: -14.0, sx: 9.2, sy: 2.0, sz: 2.6, collider: 'none' },
+    { id: 'citadel-plinth', kind: 'box', material: 'stone', x: 0, yOffset: 0.5, z: -18.5, sx: 20.5, sy: 2.6, sz: 15.8, collider: 'none' },
+    { id: 'citadel-plinth-step', kind: 'box', material: 'cobble', x: 0, yOffset: 0.15, z: -11.4, sx: 11.2, sy: 0.9, sz: 2.8, collider: 'none' },
+    { id: 'citadel-keep-base', kind: 'cylinder', material: 'stone', x: 0, yOffset: 1.4, z: -20.5, sx: 6.9, sy: 2.4, sz: 6.5, segs: 12, collider: 'none' },
+    { id: 'citadel-keep', kind: 'cylinder', material: 'stone', x: 0, yOffset: 1.5, z: -20.5, sx: 6.4, sy: 12.6, sz: 5.85, segs: 12, collider: 'circle', colliderRadius: 5.85 },
+    { id: 'citadel-keep-belt', kind: 'cylinder', material: 'cobble', x: 0, yOffset: 8.2, z: -20.5, sx: 6.45, sy: 0.55, sz: 6.45, segs: 12, collider: 'none' },
+    { id: 'citadel-crown', kind: 'cylinder', material: 'stone', x: 0, yOffset: 13.7, z: -20.5, sx: 6.55, sy: 1.65, sz: 6.65, segs: 12, collider: 'none' },
+    { id: 'citadel-roof-eave', kind: 'cylinder', material: 'accent', x: 0, yOffset: 15.2, z: -20.5, sx: 6.8, sy: 0.45, sz: 6.2, segs: 12, rgb: cols.spire, collider: 'none' },
+    { id: 'citadel-roof', kind: 'cone', material: 'accent', x: 0, yOffset: 15.5, z: -20.5, sx: 6.3, sy: 7.4, sz: 0, segs: 12, rgb: cols.spire, collider: 'none' },
+    { id: 'citadel-lantern-cage', kind: 'cylinder', material: 'accent', x: 0, yOffset: 22.3, z: -20.5, sx: 0.65, sy: 1.1, sz: 0.52, segs: 8, rgb: [0.22, 0.20, 0.19], collider: 'none' },
+    { id: 'citadel-finial', kind: 'cone', material: 'accent', x: 0, yOffset: 23.3, z: -20.5, sx: 0.52, sy: 2.6, sz: 0, segs: 8, rgb: cols.lantern, collider: 'none' },
+    // Gatehouse Piers (open portal at x=0, z=-14) with buttresses & gothic crenellations
+    { id: 'citadel-gatehouse-w', kind: 'box', material: 'stone', x: -3.2, yOffset: 4.4, z: -14.0, sx: 2.3, sy: 6.8, sz: 2.4, collider: 'box' },
+    { id: 'citadel-gatehouse-e', kind: 'box', material: 'stone', x: 3.2, yOffset: 4.4, z: -14.0, sx: 2.3, sy: 6.8, sz: 2.4, collider: 'box' },
+    { id: 'citadel-gatehouse-lintel', kind: 'box', material: 'stone', x: 0, yOffset: 7.7, z: -14.0, sx: 9.4, sy: 2.1, sz: 2.7, collider: 'none' },
+    { id: 'citadel-gatehouse-cornice', kind: 'box', material: 'cobble', x: 0, yOffset: 8.9, z: -14.0, sx: 9.8, sy: 0.42, sz: 3.0, collider: 'none' },
+    { id: 'citadel-gatehouse-arch-w', kind: 'box', material: 'stone', x: -1.65, yOffset: 6.35, z: -14.0, sx: 1.15, sy: 0.95, sz: 2.55, yaw: 0, collider: 'none' },
+    { id: 'citadel-gatehouse-arch-e', kind: 'box', material: 'stone', x: 1.65, yOffset: 6.35, z: -14.0, sx: 1.15, sy: 0.95, sz: 2.55, yaw: 0, collider: 'none' },
+    { id: 'citadel-gatehouse-crest', kind: 'cone', material: 'accent', x: 0, yOffset: 9.2, z: -13.9, sx: 1.35, sy: 2.4, sz: 0, segs: 4, rgb: cols.spire, collider: 'none' },
   );
+  // Keep vertical buttresses & parapet merlons (crenellations)
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + Math.PI / 8;
+    const mx = Math.cos(a) * 6.2;
+    const mz = -20.5 + Math.sin(a) * 6.2;
+    s.push({ id: `citadel-keep-merlon-${i}`, kind: 'box', material: 'stone', x: mx, yOffset: 15.65, z: mz, sx: 1.15, sy: 0.95, sz: 0.72, yaw: -a + Math.PI / 2, collider: 'none' });
+    if (i % 2 === 0) {
+      const bx = Math.cos(a) * 6.15;
+      const bz = -20.5 + Math.sin(a) * 6.15;
+      s.push({ id: `citadel-keep-buttress-${i}`, kind: 'box', material: 'stone', x: bx, yOffset: 6.4, z: bz, sx: 1.05, sy: 10.6, sz: 1.35, yaw: -a + Math.PI / 2, collider: 'none' });
+    }
+  }
+  // Gatehouse crenellation merlons
+  for (const mx of [-4.0, -2.4, -0.8, 0.8, 2.4, 4.0]) {
+    s.push({ id: `citadel-gate-merlon-${mx}`, kind: 'box', material: 'stone', x: mx, yOffset: 9.45, z: -12.85, sx: 0.92, sy: 0.88, sz: 0.55, collider: 'none' });
+  }
   for (const side of [-1, 1]) {
     const tag = side < 0 ? 'w' : 'e';
     const tx = side * 9.8;
     s.push(
-      { id: `citadel-bastion-${tag}`, kind: 'cylinder', material: 'stone', x: tx, yOffset: -0.8, z: -17.0, sx: 3.2, sy: 11.2, sz: 2.9, segs: 8, collider: 'circle', colliderRadius: 3.2 },
-      { id: `citadel-bastion-cap-${tag}`, kind: 'cone', material: 'accent', x: tx, yOffset: 10.6, z: -17.0, sx: 3.4, sy: 4.4, sz: 0, segs: 8, rgb: cols.spire, collider: 'none' },
+      { id: `citadel-bastion-plinth-${tag}`, kind: 'cylinder', material: 'stone', x: tx, yOffset: -0.9, z: -17.0, sx: 3.65, sy: 2.2, sz: 3.3, segs: 12, collider: 'none' },
+      { id: `citadel-bastion-${tag}`, kind: 'cylinder', material: 'stone', x: tx, yOffset: -0.8, z: -17.0, sx: 3.25, sy: 11.8, sz: 2.95, segs: 12, collider: 'circle', colliderRadius: 3.2 },
+      { id: `citadel-bastion-crown-${tag}`, kind: 'cylinder', material: 'cobble', x: tx, yOffset: 10.6, z: -17.0, sx: 3.35, sy: 0.95, sz: 3.45, segs: 12, collider: 'none' },
+      { id: `citadel-bastion-cap-${tag}`, kind: 'cone', material: 'accent', x: tx, yOffset: 11.45, z: -17.0, sx: 3.65, sy: 5.1, sz: 0, segs: 12, rgb: cols.spire, collider: 'none' },
+      { id: `citadel-bastion-spire-${tag}`, kind: 'cone', material: 'accent', x: tx, yOffset: 16.4, z: -17.0, sx: 0.34, sy: 1.65, sz: 0, segs: 6, rgb: cols.lantern, collider: 'none' },
       { id: `citadel-curtain-${tag}`, kind: 'box', material: 'stone', x: side * 6.0, yOffset: 3.4, z: -17.8, sx: 5.2, sy: 6.8, sz: 2.0, collider: 'box' },
+      { id: `citadel-curtain-m1-${tag}`, kind: 'box', material: 'stone', x: side * 5.0, yOffset: 7.2, z: -16.95, sx: 1.1, sy: 0.95, sz: 0.55, collider: 'none' },
+      { id: `citadel-curtain-m2-${tag}`, kind: 'box', material: 'stone', x: side * 7.0, yOffset: 7.2, z: -16.95, sx: 1.1, sy: 0.95, sz: 0.55, collider: 'none' },
       { id: `citadel-banner-${tag}`, kind: 'box', material: 'accent', x: tx, yOffset: 6.4, z: -13.95, sx: 1.4, sy: 3.8, sz: 0.14, rgb: cols.banner, collider: 'none' },
+      // Secondary outer turret flanking each bastion (echoing Scene I's multi-spire silhouette)
+      { id: `citadel-turret-${tag}`, kind: 'cylinder', material: 'stone', x: side * 13.6, yOffset: -0.6, z: -20.2, sx: 2.1, sy: 13.4, sz: 1.85, segs: 10, collider: 'none' },
+      { id: `citadel-turret-roof-${tag}`, kind: 'cone', material: 'accent', x: side * 13.6, yOffset: 12.7, z: -20.2, sx: 2.35, sy: 4.6, sz: 0, segs: 10, rgb: cols.spire, collider: 'none' },
     );
+    // Flanking bastion parapet merlons
+    for (let m = 0; m < 6; m++) {
+      const a = (m / 6) * Math.PI * 2;
+      s.push({
+        id: `citadel-bastion-m-${tag}-${m}`,
+        kind: 'box',
+        material: 'stone',
+        x: tx + Math.cos(a) * 3.18,
+        yOffset: 11.75,
+        z: -17.0 + Math.sin(a) * 3.18,
+        sx: 0.82,
+        sy: 0.78,
+        sz: 0.48,
+        yaw: -a + Math.PI / 2,
+        collider: 'none',
+      });
+    }
   }
-  // Northern Watchtower (0, -56)
+  // Northern Watchtower (0, -56) with 12-sided shaft, crown cornice & bronze spire
   s.push(
-    { id: 'north-watchtower', kind: 'cylinder', material: 'stone', x: 0, yOffset: -0.6, z: -56, sx: 4.9, sy: 14.0, sz: 3.0, segs: 8, collider: 'circle', colliderRadius: 4.9 },
-    { id: 'north-watch-roof', kind: 'cone', material: 'accent', x: 0, yOffset: 13.4, z: -56, sx: 4.0, sy: 5.2, sz: 0, segs: 8, rgb: cols.spire, collider: 'none' },
-    { id: 'north-watch-lantern', kind: 'cone', material: 'accent', x: 0, yOffset: 18.4, z: -56, sx: 0.6, sy: 1.8, sz: 0, segs: 6, rgb: cols.lantern, collider: 'none' },
+    { id: 'north-watchtower', kind: 'cylinder', material: 'stone', x: 0, yOffset: -0.6, z: -56, sx: 4.9, sy: 14.2, sz: 3.15, segs: 12, collider: 'circle', colliderRadius: 4.9 },
+    { id: 'north-watch-crown', kind: 'cylinder', material: 'cobble', x: 0, yOffset: 13.3, z: -56, sx: 3.6, sy: 1.0, sz: 3.7, segs: 12, collider: 'none' },
+    { id: 'north-watch-roof', kind: 'cone', material: 'accent', x: 0, yOffset: 14.2, z: -56, sx: 4.2, sy: 5.6, sz: 0, segs: 12, rgb: cols.spire, collider: 'none' },
+    { id: 'north-watch-lantern', kind: 'cone', material: 'accent', x: 0, yOffset: 19.6, z: -56, sx: 0.6, sy: 1.9, sz: 0, segs: 8, rgb: cols.lantern, collider: 'none' },
   );
   // Western Monolith Stone Circle (-54, -22)
   s.push(

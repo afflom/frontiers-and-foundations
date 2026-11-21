@@ -275,11 +275,11 @@ describe('Unified Verdant Charter — Geomorphologies, Dungeon Topologies, 6 Mon
     assert.equal(Object.keys(WORLD_DIFFERENTIATION_PROFILES).length, 6);
   });
 
-  it('orchestrates 23 VSM managers (13 WASM + 10 Frontiers), 13 KPIs, Cohesion Index, M16 Refinement Agenda, and Ratchet Cycle', async () => {
+  it('orchestrates 25 VSM managers (13 WASM + 12 Frontiers), 15 KPIs, Cohesion Index, M16 Refinement Agenda, and Ratchet Cycle', async () => {
     const observer = new FrontiersVerdantObserver();
     const kpis = observer.observeKpis();
     assert.equal(kpis.spec, 'frontiers/verdant-observer-kpi-report/2');
-    assert.equal(kpis.kpis.length, 13);
+    assert.equal(kpis.kpis.length, 15);
     assert.ok(kpis.cohesionIndex >= 95, `Expected cohesionIndex >= 95, got ${kpis.cohesionIndex}`);
     assert.equal(kpis.allPassed, true, `Failing KPIs: ${JSON.stringify(kpis.kpis.filter((k) => !k.passed))}`);
 

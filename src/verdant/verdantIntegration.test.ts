@@ -129,8 +129,8 @@ describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 23 MCP Tool
     );
   });
 
-  it('exposes all 31 real verdant-uorc.wasm-backed MCP tools including unified Model-of-Models, 22-Manager Extended Observer Diversity & Cohesion KPIs, M16/M17 Lifecycle Gate, Refinement Agenda, Ratchet Cycle & Verdant Automate, Uniform Refinement API, extensible catalogs, procedural UniverseCell & character synthesis, HD rigs, score, questline, NPC cast, relic arsenal, and Stitch tools', async () => {
-    assert.equal(VERDANT_MCP_TOOLS.length, 31, 'Expected 31 Verdant MCP tools');
+  it('exposes all 33 real verdant-uorc.wasm-backed MCP tools including unified Model-of-Models, Character Ontology, HD Visual Extrapolation, 25-Manager Extended Observer Diversity & Cohesion KPIs, M16/M17 Lifecycle Gate, Refinement Agenda, Ratchet Cycle & Verdant Automate, Uniform Refinement API, extensible catalogs, procedural UniverseCell & character synthesis, HD rigs, score, questline, NPC cast, relic arsenal, and Stitch tools', async () => {
+    assert.equal(VERDANT_MCP_TOOLS.length, 33, 'Expected 33 Verdant MCP tools');
 
     const mcp = new VerdantMcpHost(process.cwd());
     await mcp.ensureReady();
@@ -250,6 +250,26 @@ describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 23 MCP Tool
     assert.ok(hdRefine.distinctArchetypes.length >= 4, 'All 4 canonical portrait archetypes plus synthesized outer-realm genomes must be compiled');
     assert.equal(hdRefine.operatorDecision?.admitted, true);
     assert.match(hdRefine.refinementKappa, /^sha256:[0-9a-f]{64}$/);
+
+    // Verify HD Visual Extrapolation MCP tool backed by verdant-uorc.wasm
+    const hdExtrap = (await mcp.handleToolCall(
+      'verdant_extrapolate_hd_profile',
+      { realmSlug: 'vaelmor', resolutionTier: 4 },
+      null,
+    )) as {
+      blueprint: {
+        spec: string;
+        overallFidelityScore: number;
+        pointLights: unknown[];
+        partExtrapolations: Record<string, unknown>;
+      };
+      projectModel: unknown;
+    };
+    assert.equal(hdExtrap.blueprint.spec, 'verdant/hd-visual-extrapolation-blueprint/1');
+    assert.equal(Object.keys(hdExtrap.blueprint.partExtrapolations).length, 8);
+    assert.ok(hdExtrap.blueprint.overallFidelityScore >= 92);
+    assert.ok(hdExtrap.blueprint.pointLights.length >= 5);
+    assert.ok(hdExtrap.projectModel, 'HD blueprint must be registered as a Project Model in verdant-uorc.wasm');
 
     // Verify boundless procedural UniverseCell synthesis via Verdant MCP + real WASM GLB import
     const synthCell = (await mcp.handleToolCall(
@@ -401,9 +421,9 @@ describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 23 MCP Tool
       kpis: { allPassed: boolean; diversityIndex: number; cohesionIndex: number; clonePairsTotal: number; kpis: unknown[] };
     };
     assert.equal(kpiRes.wasmManagersCount, 13, 'Must merge all 13 native verdant-uorc.wasm VSM Managers');
-    assert.equal(kpiRes.frontiersManagersCount, 10, 'Must register all 10 Frontiers Domain Managers');
-    assert.equal(kpiRes.managersCount, 23, 'Expected 23 total VSM Managers');
-    assert.equal(kpiRes.kpis.kpis.length, 13);
+    assert.equal(kpiRes.frontiersManagersCount, 12, 'Must register all 12 Frontiers Domain Managers');
+    assert.equal(kpiRes.managersCount, 25, 'Expected 25 total VSM Managers');
+    assert.equal(kpiRes.kpis.kpis.length, 15);
     assert.equal(kpiRes.kpis.allPassed, true);
     assert.equal(kpiRes.kpis.clonePairsTotal, 0);
     assert.ok(kpiRes.kpis.diversityIndex >= 80);
@@ -421,7 +441,7 @@ describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 23 MCP Tool
     assert.equal(agendaRes.agenda.spec, 'verdant/observer-refinement-agenda/1');
     assert.equal(agendaRes.agenda.partHealth.length, 8);
     assert.ok(agendaRes.agenda.proposals.length >= 1);
-    assert.equal(agendaRes.managersCount, 23);
+    assert.equal(agendaRes.managersCount, 25);
 
     // Verify M16 Observer Ratchet Cycle (MCP tool #28)
     const ratchetRes = (await mcp.handleToolCall(
@@ -497,6 +517,29 @@ describe('Verdant Engine (verdant-uorc.wasm) + 12-World Federation + 23 MCP Tool
     assert.equal(autoRes.report.lifecycleGate.allPassed, true);
     assert.match(autoRes.report.automateKappaHex, /^auto:[0-9a-f]{8}$/);
     assert.ok(autoRes.projectModel, 'M17 Automate snapshot must be registered in verdant-uorc.wasm');
+
+    // Verify Character Ontology MCP tool #33
+    const charOntology = (await mcp.handleToolCall(
+      'verdant_character_ontology',
+      { action: 'compile-player', speciesId: 'lithborn', classId: 'foundry-bellwright', directiveId: 'forge-of-merit', name: 'Bramwell' },
+      null,
+    )) as {
+      audit: { allValid: boolean; speciesCount: number; ethnicityCount: number; classCount: number; directiveCount: number };
+      profile: { speciesId: string; classId: string };
+      appearance: { portraitUrl: string };
+      characterKappa: string;
+      projectModel: unknown;
+    };
+    assert.equal(charOntology.audit.allValid, true);
+    assert.equal(charOntology.audit.speciesCount, 6);
+    assert.equal(charOntology.audit.ethnicityCount, 12);
+    assert.equal(charOntology.audit.classCount, 6);
+    assert.equal(charOntology.audit.directiveCount, 6);
+    assert.equal(charOntology.profile.speciesId, 'lithborn');
+    assert.equal(charOntology.profile.classId, 'foundry-bellwright');
+    assert.ok(charOntology.appearance.portraitUrl.startsWith('data:image/svg+xml'));
+    assert.match(charOntology.characterKappa, /^sha256:[0-9a-f]{64}$/);
+    assert.ok(charOntology.projectModel, 'Character Ontology model must be registered in verdant-uorc.wasm');
   });
 
   it('produces distinct orchestral soundtracks across themes and dungeons without monotonous drones', () => {

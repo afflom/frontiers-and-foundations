@@ -55,6 +55,19 @@ import {
   type VerdantPartSlot,
   type VerdantResolutionTier,
 } from './verdantModelOfModels';
+import { extrapolateUnifiedHdBlueprint } from './verdantHdExtrapolator';
+import {
+  CHARACTER_CLASSES,
+  CHARACTER_SPECIES,
+  CHARACTER_UNIVERSAL_INVARIANTS,
+  WORLDVIEW_DIRECTIVES,
+  auditCharacterOntology,
+  createDefaultPlayerProfile,
+  getClassSpec,
+  getSpeciesSpec,
+  normalizePlayerProfile,
+} from './verdantCharacterOntology';
+import { compilePlayerCharacterAppearance } from './verdantCharacterCompiler';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type WasmExports = Record<string, any> & { memory: WebAssembly.Memory };
@@ -597,6 +610,44 @@ export const VERDANT_MCP_TOOLS = [
         reason: {
           type: 'string',
           description: 'Optional refinement audit reason.',
+        },
+      },
+    },
+  },
+  {
+    name: 'verdant_extrapolate_hd_profile',
+    description:
+      'Extrapolate a full 8-part High-Definition Visual Render Blueprint (golden-hour chiaroscuro, 8 dynamic lantern point lights, gorge mist, HDR bloom, sculpted canopies, battlements, and PBR normal relief) from the Prologue visual anchor and register it inside verdant-uorc.wasm.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        realmSlug: {
+          type: 'string',
+          description: 'Target canonical realm or dungeon slug (default: vaelmor).',
+        },
+        resolutionTier: {
+          type: 'integer',
+          enum: [1, 2, 3, 4],
+          description: 'Target Verdant resolution tier (default: 4 Sovereign Ultra-Def).',
+        },
+      },
+    },
+  },
+  {
+    name: 'verdant_character_ontology',
+    description:
+      'Query or compile the Verdant Character Model Ontology (6 Species, 12 Cultural Ethnicities, 6 Character Classes, 6 Guiding Directives, 7 Universal Invariants, and customized HD Player Character rigs sealed with Prism kappa() and registered in verdant-uorc.wasm).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: {
+          type: 'string',
+          enum: ['summary', 'species', 'classes', 'invariants', 'compile-player'],
+          description: 'Ontology query or player compilation action (default: summary).',
+        },
+        profile: {
+          type: 'object',
+          description: 'Optional PlayerCharacterProfile fields when action is compile-player.',
         },
       },
     },
@@ -2506,6 +2557,178 @@ Pick a mode from: dorian, lydian, phrygian-dominant, mixolydian, aeolian, harmon
           engine: 'verdant-uorc.wasm',
           report,
           projectModel,
+        };
+      }
+
+      case 'verdant_extrapolate_hd_profile': {
+        const slug = typeof args.realmSlug === 'string' && args.realmSlug.trim() ? args.realmSlug.trim() : 'vaelmor';
+        const spec = this.realms.get(slug) ?? CANONICAL_REALM_SPECS[0];
+        const rawTier = Number(args.resolutionTier);
+        const tier: VerdantResolutionTier =
+          rawTier === 1 || rawTier === 2 || rawTier === 3 || rawTier === 4
+            ? (rawTier as VerdantResolutionTier)
+            : 4;
+        const blueprint = extrapolateUnifiedHdBlueprint(spec, { resolutionTier: tier });
+        const hdKappa = await kappa({
+          spec: blueprint.spec,
+          anchorId: blueprint.anchorId,
+          realmSlug: blueprint.realmSlug,
+          theme: blueprint.theme,
+          resolutionTier: blueprint.resolutionTier,
+          fidelityTenths: Math.round(blueprint.overallFidelityScore * 10),
+          pointLights: blueprint.pointLights.length,
+          canopyClusterDepth: blueprint.canopyClusterDepth,
+          blueprintDigest: blueprint.blueprintDigest,
+        });
+
+        this.stageIo(
+          this.enc.encode(
+            JSON.stringify({
+              modelId: `frontiers:hd-blueprint:${spec.slug}`,
+              title: `${spec.name} — Verdant HD Extrapolation Blueprint`,
+              schemaType: 'HdVisualExtrapolationBlueprint',
+              mediaType: 'application/vnd.verdant.hd-blueprint+json',
+              targetSlot: 'visual-identity',
+              sourceStream: 'verdant-ecosystem-catalog',
+              sourceUri: `urn:frontiers:hd-blueprint:${spec.slug}`,
+              licenseSpdx: 'CC0-1.0',
+              tags: ['hd-extrapolation', spec.theme, `tier-${tier}`, blueprint.blueprintDigest],
+              propertiesJson: JSON.stringify({
+                anchorId: blueprint.anchorId,
+                overallFidelityScore: blueprint.overallFidelityScore,
+                pointLights: blueprint.pointLights.length,
+                bloomStrength: blueprint.shaderUniforms.bloomStrength,
+                normalRelief: blueprint.shaderUniforms.normalRelief,
+                hdKappa,
+              }),
+              commitNote: `Extrapolated HD visual blueprint for ${spec.name} at Tier ${tier}`,
+            }),
+          ),
+        );
+        this.wasm.verdant_wasm_import_project_model_io();
+        const projectModel = this.readAuxJson();
+
+        if (typeof this.wasm.verdant_wasm_record_part_hydration_io === 'function') {
+          this.stageIo(
+            this.enc.encode(
+              `visual-identity|verdant-hd-extrapolator|Tier ${tier} · Fidelity ${blueprint.overallFidelityScore}/100 · ${blueprint.pointLights.length} point lights`,
+            ),
+          );
+          this.wasm.verdant_wasm_record_part_hydration_io(tier);
+        }
+
+        return {
+          engine: 'verdant-uorc.wasm',
+          hdKappa,
+          blueprint,
+          projectModel,
+        };
+      }
+
+      case 'verdant_character_ontology': {
+        const action = typeof args.action === 'string' ? args.action : 'summary';
+        const audit = auditCharacterOntology();
+        if (action === 'species') {
+          return {
+            engine: 'verdant-uorc.wasm',
+            audit,
+            species: Object.values(CHARACTER_SPECIES),
+          };
+        }
+        if (action === 'classes') {
+          return {
+            engine: 'verdant-uorc.wasm',
+            audit,
+            classes: Object.values(CHARACTER_CLASSES),
+            directives: Object.values(WORLDVIEW_DIRECTIVES),
+          };
+        }
+        if (action === 'invariants') {
+          return {
+            engine: 'verdant-uorc.wasm',
+            audit,
+            universalInvariants: CHARACTER_UNIVERSAL_INVARIANTS,
+            directives: Object.values(WORLDVIEW_DIRECTIVES),
+          };
+        }
+        if (action === 'compile-player') {
+          const rawProfile =
+            args.profile && typeof args.profile === 'object'
+              ? (args.profile as Record<string, unknown>)
+              : (args as Record<string, unknown>);
+          const profile = normalizePlayerProfile({
+            ...createDefaultPlayerProfile(
+              typeof rawProfile.name === 'string' ? rawProfile.name : 'Waywright',
+            ),
+            ...rawProfile,
+          });
+          const appearance = compilePlayerCharacterAppearance('hookblade', false, profile, 1);
+          const spSpec = getSpeciesSpec(profile.speciesId);
+          const clsSpec = getClassSpec(profile.classId);
+          const characterKappa = await kappa({
+            spec: 'frontiers/character-profile/1',
+            name: profile.name,
+            speciesId: profile.speciesId,
+            ethnicityId: profile.ethnicityId,
+            classId: profile.classId,
+            directiveId: profile.directiveId,
+            garmentStyle: profile.garmentStyle,
+            hairStyle: profile.hairStyle,
+            buildPreset: profile.buildPreset,
+            genomeSeed: appearance.genomeSeed ?? 1,
+          });
+          this.stageIo(
+            this.enc.encode(
+              JSON.stringify({
+                modelId: `frontiers:player:${profile.speciesId}:${profile.classId}`,
+                title: `${profile.name} — ${spSpec.name} ${clsSpec.name}`,
+                schemaType: 'PlayerCharacterRig',
+                mediaType: 'application/vnd.verdant.character+json',
+                targetSlot: 'character-rigs',
+                sourceStream: 'verdant-character-ontology',
+                sourceUri: `urn:frontiers:player:${profile.speciesId}:${profile.classId}`,
+                licenseSpdx: 'CC0-1.0',
+                tags: ['player-character', profile.speciesId, profile.ethnicityId, profile.classId, profile.directiveId],
+                propertiesJson: JSON.stringify({
+                  speciesId: profile.speciesId,
+                  ethnicityId: profile.ethnicityId,
+                  classId: profile.classId,
+                  directiveId: profile.directiveId,
+                  characterKappa,
+                }),
+                commitNote: `Compiled HD Player Character rig for ${profile.name}`,
+              }),
+            ),
+          );
+          this.wasm.verdant_wasm_import_project_model_io();
+          const projectModel = this.readAuxJson();
+          return {
+            engine: 'verdant-uorc.wasm',
+            audit,
+            characterKappa,
+            profile,
+            appearance,
+            projectModel,
+          };
+        }
+
+        const ontologyKappa = await kappa({
+          spec: 'frontiers/character-ontology/1',
+          speciesCount: audit.speciesCount,
+          ethnicityCount: audit.ethnicityCount,
+          classCount: audit.classCount,
+          directiveCount: audit.directiveCount,
+          invariantCount: audit.invariantCount,
+          canonicalNpcProfileCount: audit.canonicalNpcProfileCount,
+        });
+        return {
+          engine: 'verdant-uorc.wasm',
+          ontologyKappa,
+          audit,
+          speciesIds: CHARACTER_SPECIES.map((s) => s.id),
+          classIds: CHARACTER_CLASSES.map((c) => c.id),
+          directiveIds: WORLDVIEW_DIRECTIVES.map((d) => d.id),
+          invariants: CHARACTER_UNIVERSAL_INVARIANTS.map((i) => ({ id: i.id, label: i.label })),
         };
       }
 

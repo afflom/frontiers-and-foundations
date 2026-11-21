@@ -57,7 +57,6 @@ import {
 } from './verdant/verdantRelicCatalog';
 import {
   applyGearUpgrade,
-  computeCombatStats,
   mergeChatMessage,
   mergeRemoteBanner,
   removeRemotePlayer,
@@ -86,6 +85,7 @@ import { GameHud, type CombatCallout } from './components/game/GameHud';
 import { DialogueOverlay } from './components/game/DialogueOverlay';
 import { JournalMapModal, type AtlasTab } from './components/game/JournalMapModal';
 import { StatusModal } from './components/game/StatusModal';
+import { CharacterCreatorModal } from './components/game/CharacterCreatorModal';
 import {
   DEFAULT_SAVE_GEAR_TIERS,
   DEFAULT_SAVE_MATERIALS,
@@ -104,6 +104,15 @@ import {
   type PrologueCinematicAct,
   type WaywrightOathId,
 } from './verdant/verdantJourneyModel';
+import type { PlayerCharacterProfile } from './verdant/verdantCharacterTypes';
+import {
+  computeCharacterCombatStats,
+  computeCharacterProgression,
+  createDefaultPlayerProfile,
+  getClassSpec,
+  getSpeciesSpec,
+  normalizePlayerProfile,
+} from './verdant/verdantCharacterOntology';
 
 const DEFAULT_MATERIALS: CraftingMaterials = { ...DEFAULT_SAVE_MATERIALS };
 const DEFAULT_TIERS: GearUpgradeTiers = { ...DEFAULT_SAVE_GEAR_TIERS };
@@ -211,6 +220,16 @@ export default function App() {
   const [playerCallsign, setPlayerCallsign] = useState<string>(
     () => bootSlotRecord?.waywrightName ?? defaultBootCallsign,
   );
+  const [playerProfile, setPlayerProfile] = useState<PlayerCharacterProfile>(() =>
+    normalizePlayerProfile(
+      savedOnBoot?.characterProfile ??
+        createDefaultPlayerProfile(bootSlotRecord?.waywrightName ?? defaultBootCallsign),
+    ),
+  );
+  const [characterModal, setCharacterModal] = useState<{
+    mode: 'create' | 'customize';
+    slotId: SaveSlotId;
+  } | null>(null);
   const [roomCode, setRoomCode] = useState<string>(initialRoom.roomCode);
   const [worldPings, setWorldPings] = useState<WorldPing[]>([]);
   const [activeSummon, setActiveSummon] = useState<PartySummon | null>(null);
@@ -390,6 +409,7 @@ export default function App() {
           regionName: hud.region.name,
           defeatedCount: hud.defeatedCount,
           hasVisitedDungeon,
+          characterProfile: playerProfile,
         },
       }),
     );
@@ -397,6 +417,7 @@ export default function App() {
     hasActiveSession,
     activeSlotId,
     playerCallsign,
+    playerProfile,
     journeySummary.currentChapterTitle,
     quests,
     renown,
@@ -455,16 +476,56 @@ export default function App() {
     document.body.dataset.state = mapped;
   }, [phase]);
 
-  // Pause 3D engine simulation while Dialogue or Field Atlas is open
+  // Pause 3D engine simulation while Dialogue, Field Atlas, or Character Atelier is open
   const effectiveEnginePhase: GamePhase =
-    phase === 'playing' && (activeNpcId !== null || atlasTab !== null) ? 'paused' : phase;
+    phase === 'playing' &&
+    (activeNpcId !== null || atlasTab !== null || characterModal !== null)
+      ? 'paused'
+      : phase;
 
   useEffect(() => {
     engineRef.current?.setPhase(effectiveEnginePhase);
   }, [effectiveEnginePhase]);
 
-  // Sync computed combat stats (weapon tiers + equipped relics) into 3D engine
-  const combatStats = useMemo(() => computeCombatStats(gearTiers, relics), [gearTiers, relics]);
+  const completedQuestsCount = useMemo(
+    () => quests.filter((q) => q.status === 'completed').length,
+    [quests],
+  );
+  useEffect(() => {
+    engineRef.current?.setCompletedQuestsCount(completedQuestsCount);
+  }, [completedQuestsCount]);
+
+  // Live Character Progression (Level 1..20, 5 Core Attributes, 4-Tier Evolution)
+  const characterProgression = useMemo(
+    () =>
+      computeCharacterProgression(
+        playerProfile,
+        renown,
+        completedQuestsCount,
+        hud.defeatedCount,
+      ),
+    [playerProfile, renown, completedQuestsCount, hud.defeatedCount],
+  );
+
+  // Sync live customized 3D Player Character rig & Sovereign Evolution Rank into Verdant 3D engine
+  useEffect(() => {
+    engineRef.current?.setPlayerCharacterProfile(
+      playerProfile,
+      characterProgression.evolutionRank,
+    );
+  }, [playerProfile, characterProgression.evolutionRank]);
+
+  // Sync computed combat stats (Species + Class + Attributes + Gear Tiers + Relics Synergy) into 3D engine
+  const combatStats = useMemo(
+    () =>
+      computeCharacterCombatStats(
+        playerProfile,
+        gearTiers,
+        relics,
+        characterProgression,
+      ),
+    [playerProfile, gearTiers, relics, characterProgression],
+  );
   useEffect(() => {
     engineRef.current?.setPlayerCombatStats(combatStats);
   }, [combatStats]);
@@ -496,14 +557,6 @@ export default function App() {
     const obj = trackedQuest?.objectives.find((o) => o.currentCount < o.requiredCount);
     engineRef.current?.setTrackedObjectiveCoords(obj ? obj.targetCoords : null);
   }, [trackedQuest]);
-
-  const completedQuestsCount = useMemo(
-    () => quests.filter((q) => q.status === 'completed').length,
-    [quests],
-  );
-  useEffect(() => {
-    engineRef.current?.setCompletedQuestsCount(completedQuestsCount);
-  }, [completedQuestsCount]);
 
   // Quest progression reducer
   const applyQuestProgress = useCallback(
@@ -821,7 +874,10 @@ export default function App() {
       engine.getDebugSnapshot();
     (window as unknown as { __VERDANT_ENGINE__?: VerdantFrontiersRuntime }).__VERDANT_ENGINE__ =
       engine;
-    engine.setPlayerCombatStats(computeCombatStats(gearTiers, relics));
+    engine.setPlayerCombatStats(
+      computeCharacterCombatStats(playerProfile, gearTiers, relics, characterProgression),
+    );
+    engine.setPlayerCharacterProfile(playerProfile, characterProgression.evolutionRank);
     if (autostart) {
       engine.setPhase('playing');
     }
@@ -982,19 +1038,32 @@ export default function App() {
   }, []);
 
   const handleStartNewInSlot = useCallback(
-    (slotId: SaveSlotId, waywrightName: string, guildId: string = INITIAL_GUILDS[0].id) => {
+    (
+      slotId: SaveSlotId,
+      waywrightName: string,
+      guildId: string = INITIAL_GUILDS[0].id,
+      customProfile?: PlayerCharacterProfile,
+    ) => {
       void audioRef.current?.ensureStarted();
       const cleanName = normalizeCallsign(waywrightName, defaultBootCallsign);
+      const nextProfile = normalizePlayerProfile(
+        customProfile
+          ? { ...customProfile, name: cleanName }
+          : createDefaultPlayerProfile(cleanName),
+      );
       const { store: nextStore, record } = createNewSaveSlot(saveStore, {
         slotId,
         waywrightName: cleanName,
         pledgedGuildId: guildId,
         prologueCompleted: false,
+        characterProfile: nextProfile,
       });
       setSaveStore(nextStore);
       setActiveSlotId(slotId);
       setHasActiveSession(true);
       setPlayerCallsign(cleanName);
+      setPlayerProfile(nextProfile);
+      setCharacterModal(null);
       try {
         window.localStorage.setItem('frontiers-waywright-callsign', cleanName);
       } catch {
@@ -1019,6 +1088,7 @@ export default function App() {
       setActiveRealmSlug('vaelmor');
       setActiveNpcs(INITIAL_NPCS);
       realmRef.current?.updateProfile(cleanName, guildId);
+      engineRef.current?.setPlayerCharacterProfile(nextProfile, 1);
       if (activeRealmRef.current.slug !== 'vaelmor' && handleTravelToRealmRef.current) {
         void handleTravelToRealmRef.current(CANONICAL_REALM_SPECS[0]);
       } else {
@@ -1032,20 +1102,29 @@ export default function App() {
   );
 
   const handleRestartActiveSlot = useCallback(() => {
-    handleStartNewInSlot(activeSlotId, playerCallsignRef.current, pledgedGuildRef.current);
-  }, [activeSlotId, handleStartNewInSlot]);
+    handleStartNewInSlot(
+      activeSlotId,
+      playerCallsignRef.current,
+      pledgedGuildRef.current,
+      playerProfile,
+    );
+  }, [activeSlotId, handleStartNewInSlot, playerProfile]);
 
   const handleContinueSlot = useCallback(
     (slotId: SaveSlotId) => {
       const slot = saveStore.slots[slotId];
       if (!slot) {
-        handleStartNewInSlot(slotId, playerCallsignRef.current, pledgedGuildRef.current);
+        setCharacterModal({ mode: 'create', slotId });
         return;
       }
       void audioRef.current?.ensureStarted();
+      const restoredProfile = normalizePlayerProfile(
+        slot.journey.characterProfile ?? createDefaultPlayerProfile(slot.waywrightName),
+      );
       setActiveSlotId(slotId);
       setHasActiveSession(true);
       setPlayerCallsign(slot.waywrightName);
+      setPlayerProfile(restoredProfile);
       setPledgedGuildId(slot.pledgedGuildId);
       setQuests(slot.journey.quests);
       const firstActive = slot.journey.quests.find((q) => q.status === 'active') ?? slot.journey.quests[0];
@@ -1062,8 +1141,10 @@ export default function App() {
       setGuideDismissed(false);
       setActiveNpcId(null);
       setAtlasTab(null);
+      setCharacterModal(null);
       setChatOpen(false);
       realmRef.current?.updateProfile(slot.waywrightName, slot.pledgedGuildId);
+      engineRef.current?.setPlayerCharacterProfile(restoredProfile, 1);
 
       // Restore saved realm if player last saved outside Vaelmor
       const targetSlug = slot.journey.activeRealmSlug || 'vaelmor';
@@ -1076,7 +1157,7 @@ export default function App() {
       setPhase('playing');
       showToast(`Resumed ${SLOT_LABELS[slotId]} · Waywright ${slot.waywrightName}`);
     },
-    [handleStartNewInSlot, saveStore.slots, showToast],
+    [saveStore.slots, showToast],
   );
 
   const handleRenameSlot = useCallback(
@@ -1253,6 +1334,14 @@ export default function App() {
         return;
       }
 
+      if (characterModal !== null) {
+        if (e.code === 'Escape') {
+          e.preventDefault();
+          setCharacterModal(null);
+        }
+        return;
+      }
+
       if (phase === 'title') {
         if (e.code === 'Enter') {
           e.preventDefault();
@@ -1261,7 +1350,7 @@ export default function App() {
             handleContinueSlot(latest.slotId);
           } else {
             const target = getFirstEmptySaveSlotId(saveStore);
-            handleStartNewInSlot(target, playerCallsignRef.current, pledgedGuildRef.current);
+            setCharacterModal({ mode: 'create', slotId: target });
           }
         }
         return;
@@ -1289,7 +1378,11 @@ export default function App() {
       }
 
       if (phase === 'playing' && activeNpcId === null) {
-        if (e.code === 'KeyP') {
+        if (e.code === 'KeyK') {
+          e.preventDefault();
+          setAtlasTab(null);
+          setCharacterModal({ mode: 'customize', slotId: activeSlotId });
+        } else if (e.code === 'KeyP') {
           e.preventDefault();
           setAtlasTab(null);
           setPhase('paused');
@@ -1340,12 +1433,13 @@ export default function App() {
   }, [
     phase,
     fieldManualOpen,
+    characterModal,
+    activeSlotId,
     activeNpcId,
     atlasTab,
     chatOpen,
     saveStore,
     handleContinueSlot,
-    handleStartNewInSlot,
     handleToggleMute,
     showToast,
   ]);
@@ -2005,12 +2099,13 @@ export default function App() {
       <div ref={mountRef} className="fixed inset-0 w-full h-full" />
 
       {/* Title Screen & 3-Slot Expedition Ledger over Live 3D Vaelmor Flyover */}
-      {phase === 'title' && (
+      {phase === 'title' && characterModal === null && (
         <TitleOverlay
           saveStore={saveStore}
           defaultCallsign={playerCallsign}
           invitedRoomCode={initialRoom.invited ? roomCode : null}
           onlineCount={1 + remotePlayers.length}
+          onOpenCharacterCreator={(slotId) => setCharacterModal({ mode: 'create', slotId })}
           onStartNewInSlot={handleStartNewInSlot}
           onContinueSlot={handleContinueSlot}
           onRenameSlot={handleRenameSlot}
@@ -2037,7 +2132,7 @@ export default function App() {
       )}
 
       {/* Active Playing HUD */}
-      {phase === 'playing' && activeNpc === null && atlasTab === null && (
+      {phase === 'playing' && activeNpc === null && atlasTab === null && characterModal === null && (
         <GameHud
           hud={hud}
           activeRealm={activeRealm}
@@ -2058,9 +2153,21 @@ export default function App() {
           toastMessage={toastMessage}
           frontierBanner={frontierBanner}
           journeySummary={journeySummary}
+          playerCharacterSummary={{
+            name: playerProfile.name,
+            speciesName: getSpeciesSpec(playerProfile.speciesId).name,
+            className: getClassSpec(playerProfile.classId).name,
+            level: characterProgression.level,
+            evolutionTitle: characterProgression.evolutionTitle,
+            unspentPoints: characterProgression.unspentAttributePoints,
+          }}
           guideDismissed={guideDismissed}
           onDismissGuide={() => setGuideDismissed(true)}
           onReplayPrologue={() => handleWatchPrologue('playing')}
+          onOpenCharacter={() => {
+            setAtlasTab(null);
+            setCharacterModal({ mode: 'customize', slotId: activeSlotId });
+          }}
           onActivateGear={handleActivateGear}
           onTriggerAction={handleTriggerAction}
           onTriggerDodge={handleTriggerDodge}
@@ -2091,6 +2198,8 @@ export default function App() {
           npc={activeNpc}
           realmName={activeRealm.name}
           usedMotifs={quests.map((q) => q.motif)}
+          playerProfile={playerProfile}
+          characterProgression={characterProgression}
           onSelectChoice={handleSelectDialogueChoice}
           onClose={() => setActiveNpcId(null)}
         />
@@ -2106,6 +2215,8 @@ export default function App() {
           guilds={guilds}
           pledgedGuildId={pledgedGuildId}
           playerCallsign={playerCallsign}
+          playerProfile={playerProfile}
+          characterProgression={characterProgression}
           roomCode={roomCode}
           realmConnected={realmConnected}
           banners={banners}
@@ -2179,6 +2290,49 @@ export default function App() {
         />
       )}
 
+      {/* Waywright Character Creation & Live Ongoing Customization Atelier */}
+      {characterModal && (
+        <CharacterCreatorModal
+          mode={characterModal.mode}
+          initialProfile={
+            characterModal.mode === 'create'
+              ? createDefaultPlayerProfile(playerCallsign)
+              : playerProfile
+          }
+          slotLabel={SLOT_LABELS[characterModal.slotId]}
+          renown={characterModal.mode === 'create' ? 0 : renown}
+          completedQuestsCount={characterModal.mode === 'create' ? 0 : completedQuestsCount}
+          defeatedCount={characterModal.mode === 'create' ? 0 : hud.defeatedCount}
+          gearTiers={characterModal.mode === 'create' ? DEFAULT_TIERS : gearTiers}
+          relics={characterModal.mode === 'create' ? INITIAL_RELICS : relics}
+          onCancel={() => setCharacterModal(null)}
+          onConfirm={(confirmedProfile) => {
+            if (characterModal.mode === 'create') {
+              handleStartNewInSlot(
+                characterModal.slotId,
+                confirmedProfile.name,
+                pledgedGuildId,
+                confirmedProfile,
+              );
+            } else {
+              const cleanName = normalizeCallsign(confirmedProfile.name, playerCallsign);
+              const normalized = normalizePlayerProfile({
+                ...confirmedProfile,
+                name: cleanName,
+              });
+              setPlayerCallsign(cleanName);
+              setPlayerProfile(normalized);
+              setCharacterModal(null);
+              realmRef.current?.updateProfile(cleanName, pledgedGuildRef.current);
+              audioRef.current?.playResonanceBell(330);
+              showToast(
+                `Updated ${cleanName} (${getSpeciesSpec(normalized.speciesId).name} · ${getClassSpec(normalized.classId).name})`,
+              );
+            }
+          }}
+        />
+      )}
+
       {/* Paused / Victory / Game Over Modal */}
       {(phase === 'paused' || phase === 'victory' || phase === 'gameover') && !fieldManualOpen && (
         <StatusModal
@@ -2199,6 +2353,7 @@ export default function App() {
           onReturnToTitle={() => {
             setActiveNpcId(null);
             setAtlasTab(null);
+            setCharacterModal(null);
             setChatOpen(false);
             setPhase('title');
           }}

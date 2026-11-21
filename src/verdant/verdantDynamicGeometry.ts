@@ -7,6 +7,7 @@ import {
   compileNpcCharacterAppearance,
   compilePlayerCharacterAppearance,
   compileRemoteWaywrightAppearance,
+  type PlayerCharacterProfile,
   type VerdantCharacterAppearance,
 } from './verdantCharacterCompiler';
 import type { WaterPosture, WaterQuadTile } from './verdantEnvironmentPhysics';
@@ -82,6 +83,12 @@ export interface DynamicSceneInput {
   ambientRgb?: [number, number, number];
   playerRelicAuraRgb?: [number, number, number] | null;
   modelResolutionTier?: 1 | 2 | 3 | 4;
+  hasBridge?: boolean;
+  bridgeDeckY?: number;
+  isVaelmorCitadel?: boolean;
+  hdLanternRgb?: [number, number, number];
+  playerProfile?: PlayerCharacterProfile | null;
+  playerEvolutionRank?: 1 | 2 | 3 | 4;
 }
 
 export interface DynamicBuffers {
@@ -296,6 +303,17 @@ export class VerdantDynamicBatcher {
         matCode,
       );
     }
+  }
+
+  /**
+   * Soft grounded ambient-occlusion contact shadow disc beneath characters & fauna
+   * so actors feel physically planted on cobblestone, turf, and bridge masonry.
+   */
+  private addContactShadow(cx: number, y: number, cz: number, radius: number): void {
+    const segs = 12;
+    const baseY = y + 0.022;
+    // Tight grounded boot-umbra disc directly beneath feet (no oversized grey saucer)
+    this.addRing(cx, baseY, cz, 0.01, radius * 0.62, segs, 0.04, 0.048, 0.062, 0);
   }
 
   /**
@@ -718,26 +736,97 @@ export class VerdantDynamicBatcher {
       this.addSmoothCylinder(vial[0], vial[1], vial[2], 0.021, 0.021, 0.11, 8, 0.36, 0.88, 0.74, 3, yaw);
     }
 
-    // 4. Sculpted Neck, Heroic Oval Head, Defined Jawline, Eyes, Brows & Portrait-Matched Hair/Beard
+    // 4. Sculpted Neck, High-Definition Oval Head, Defined Jawline, Species Morphology, Eyes & Brows
+    const anatomy = app.anatomicalTraits;
+    const [mr, mg, mb] = anatomy?.markingRgb ?? [tr, tg, tb];
     const neck = local(0, 1.48 + bob, 0.01);
-    this.addSmoothCylinder(neck[0], neck[1], neck[2], 0.075 * bw, 0.068 * bw, 0.14 * bh, 10, sr * 0.93, sg * 0.92, sb * 0.91, 4, yaw);
-    // Cranium + tapered sculpted jaw/chin for refined RPG facial structure
+    this.addSmoothCylinder(neck[0], neck[1], neck[2], 0.074 * bw, 0.066 * bw, 0.145 * bh, 12, sr * 0.93, sg * 0.92, sb * 0.91, 4, yaw);
+    // High-Definition Cranium + sculpted cheekbones + tapered jaw/chin
     const head = local(0, 1.70 + bob, 0.015);
-    this.addSmoothSphere(head[0], head[1], head[2], 0.132 * bw, 0.158 * bh, 0.145 * bd, sr, sg, sb, 4, yaw, 14, 7);
+    this.addSmoothSphere(head[0], head[1], head[2], 0.132 * bw, 0.158 * bh, 0.145 * bd, sr, sg, sb, 4, yaw, 16, 9);
     const jaw = local(0, 1.60 + bob, 0.042);
-    this.addSmoothSphere(jaw[0], jaw[1], jaw[2], 0.095 * bw, 0.078 * bh, 0.105 * bd, sr * 0.98, sg * 0.97, sb * 0.96, 4, yaw, 10, 5);
-    // Ears
+    this.addSmoothSphere(jaw[0], jaw[1], jaw[2], 0.094 * bw, 0.078 * bh, 0.106 * bd, sr * 0.98, sg * 0.97, sb * 0.96, 4, yaw, 12, 6);
+    const cheekL = local(-0.078, 1.665 + bob, 0.098);
+    const cheekR = local(0.078, 1.665 + bob, 0.098);
+    this.addSmoothSphere(cheekL[0], cheekL[1], cheekL[2], 0.036 * bw, 0.028 * bh, 0.032 * bd, sr * 1.03, sg * 1.01, sb * 1.0, 4, yaw, 8, 4);
+    this.addSmoothSphere(cheekR[0], cheekR[1], cheekR[2], 0.036 * bw, 0.028 * bh, 0.032 * bd, sr * 1.03, sg * 1.01, sb * 1.0, 4, yaw, 8, 4);
+
+    // Species-Specific 3D Ears
+    const earShape = anatomy?.earShape ?? 'human';
     const earL = local(-0.128, 1.68 + bob, 0.01);
     const earR = local(0.128, 1.68 + bob, 0.01);
-    this.addSmoothSphere(earL[0], earL[1], earL[2], 0.024 * bw, 0.036 * bh, 0.028 * bd, sr * 0.92, sg * 0.9, sb * 0.88, 4, yaw, 6, 4);
-    this.addSmoothSphere(earR[0], earR[1], earR[2], 0.024 * bw, 0.036 * bh, 0.028 * bd, sr * 0.92, sg * 0.9, sb * 0.88, 4, yaw, 6, 4);
-    // Sculpted nose bridge, subtle sclera + iris eyes, contoured eyebrows & lip shadow
+    if (earShape === 'tapered-leaf') {
+      const tipL = local(-0.185, 1.715 + bob, -0.025);
+      const tipR = local(0.185, 1.715 + bob, -0.025);
+      this.addBox(tipL[0], tipL[1], tipL[2], 0.115 * bw, 0.026 * bh, 0.032 * bd, yaw + 0.35, sr * 0.92, sg * 0.94, sb * 0.88, 4, 0, 0.28);
+      this.addBox(tipR[0], tipR[1], tipR[2], 0.115 * bw, 0.026 * bh, 0.032 * bd, yaw - 0.35, sr * 0.92, sg * 0.94, sb * 0.88, 4, 0, -0.28);
+    } else if (earShape === 'fin-crest') {
+      const finL = local(-0.175, 1.70 + bob, -0.035);
+      const finR = local(0.175, 1.70 + bob, -0.035);
+      this.addBox(finL[0], finL[1], finL[2], 0.095 * bw, 0.055 * bh, 0.018 * bd, yaw + 0.48, mr * 0.85, mg * 0.92, mb, 3, 0, 0.22);
+      this.addBox(finR[0], finR[1], finR[2], 0.095 * bw, 0.055 * bh, 0.018 * bd, yaw - 0.48, mr * 0.85, mg * 0.92, mb, 3, 0, -0.22);
+    } else if (earShape === 'faceted-stone') {
+      this.addOctahedron(earL[0], earL[1], earL[2], 0.036 * bw, 0.048 * bh, yaw, mr * 0.78, mg * 0.72, mb * 0.65, 2);
+      this.addOctahedron(earR[0], earR[1], earR[2], 0.036 * bw, 0.048 * bh, yaw, mr * 0.78, mg * 0.72, mb * 0.65, 2);
+    } else {
+      this.addSmoothSphere(earL[0], earL[1], earL[2], 0.024 * bw, 0.036 * bh, 0.028 * bd, sr * 0.92, sg * 0.9, sb * 0.88, 4, yaw, 8, 4);
+      this.addSmoothSphere(earR[0], earR[1], earR[2], 0.024 * bw, 0.036 * bh, 0.028 * bd, sr * 0.92, sg * 0.9, sb * 0.88, 4, yaw, 8, 4);
+    }
+
+    // Species-Specific 3D Brow Crest, Markings & Shoulder Crests
+    const browCrest = anatomy?.browCrest ?? 'none';
+    const shoulderCrest = anatomy?.shoulderCrest ?? 'none';
+    const evoRank = anatomy?.evolutionRank ?? 1;
+    if (browCrest === 'mineral-ridge') {
+      const gem = local(0, 1.76 + bob, 0.145);
+      this.addOctahedron(gem[0], gem[1], gem[2], 0.032 * bw, 0.044 * bh, yaw, mr, mg, mb, 3);
+      const shL = local(-0.31, 1.47 + bob, 0.01);
+      const shR = local(0.31, 1.47 + bob, 0.01);
+      this.addOctahedron(shL[0], shL[1], shL[2], 0.052 * bw, 0.088 * bh, yaw + 0.3, mr, mg, mb, 2);
+      this.addOctahedron(shR[0], shR[1], shR[2], 0.052 * bw, 0.088 * bh, yaw - 0.3, mr, mg, mb, 2);
+    } else if (browCrest === 'vine-circlet') {
+      const crownRing = local(0, 1.775 + bob, 0.018);
+      this.addRing(crownRing[0], crownRing[1], crownRing[2], 0.134 * bw, 0.154 * bw, 14, 0.24, 0.56, 0.32, 4);
+      const bud = local(0, 1.78 + bob, 0.152);
+      this.addOctahedron(bud[0], bud[1], bud[2], 0.024 * bw, 0.032 * bh, yaw, mr, mg, mb, 3);
+    } else if (browCrest === 'tidal-markings') {
+      const dotL = local(-0.082, 1.67 + bob, 0.128);
+      const dotR = local(0.082, 1.67 + bob, 0.128);
+      this.addSmoothSphere(dotL[0], dotL[1], dotL[2], 0.012 * bw, 0.012 * bh, 0.01 * bd, mr, mg, mb, 3, yaw, 6, 3);
+      this.addSmoothSphere(dotR[0], dotR[1], dotR[2], 0.012 * bw, 0.012 * bh, 0.01 * bd, mr, mg, mb, 3, yaw, 6, 3);
+    } else if (browCrest === 'ember-sigil') {
+      const sig = local(0, 1.755 + bob, 0.146);
+      this.addOctahedron(sig[0], sig[1], sig[2], 0.022 * bw, 0.036 * bh, yaw, mr, mg, mb, 3);
+      const gorget = local(0, 1.46 + bob, 0.04);
+      this.addRing(gorget[0], gorget[1], gorget[2], 0.165 * bw, 0.215 * bw, 14, 0.86, 0.56, 0.22, 2);
+    } else if (browCrest === 'frost-diadem') {
+      const dia = local(0, 1.795 + bob, 0.145);
+      this.addOctahedron(dia[0], dia[1], dia[2], 0.026 * bw, 0.056 * bh, yaw, mr, mg, mb, 3);
+      if (shoulderCrest === 'aurora-halo') {
+        const halo = local(0, 1.74 + bob, -0.17);
+        this.addRing(halo[0], halo[1], halo[2], 0.16 * bw, 0.195 * bw, 16, mr, mg, mb, 3);
+      }
+    }
+
+    // Progression Evolution Rank 3-4 Sovereign Shoulder Crest & Back Mantle Medallion
+    if (evoRank >= 3) {
+      const crestL = local(-0.32, 1.45 + bob, 0.02);
+      const crestR = local(0.32, 1.45 + bob, 0.02);
+      this.addSmoothSphere(crestL[0], crestL[1], crestL[2], 0.088 * bw, 0.048 * bh, 0.108 * bd, tr, tg, tb, 2, yaw, 10, 4);
+      this.addSmoothSphere(crestR[0], crestR[1], crestR[2], 0.088 * bw, 0.048 * bh, 0.108 * bd, tr, tg, tb, 2, yaw, 10, 4);
+      if (evoRank >= 4) {
+        const sov = local(0, 1.42 + bob, -0.23);
+        this.addOctahedron(sov[0], sov[1], sov[2], 0.065 * bw, 0.11 * bh, timeSec * 1.4, mr, mg, mb, 3);
+      }
+    }
+
+    // Sculpted nose bridge, sclera + iris + specular catchlight eyes, contoured eyebrows & lip line
     const nose = local(0, 1.67 + bob, 0.155);
     this.addSmoothSphere(nose[0], nose[1], nose[2], 0.019 * bw, 0.034 * bh, 0.026 * bd, sr * 0.94, sg * 0.91, sb * 0.89, 4, yaw, 8, 4);
     const scleraL = local(-0.048, 1.705 + bob, 0.132);
     const scleraR = local(0.048, 1.705 + bob, 0.132);
-    this.addSmoothSphere(scleraL[0], scleraL[1], scleraL[2], 0.019 * bw, 0.012 * bh, 0.012 * bd, 0.92, 0.91, 0.89, 4, yaw, 8, 4);
-    this.addSmoothSphere(scleraR[0], scleraR[1], scleraR[2], 0.019 * bw, 0.012 * bh, 0.012 * bd, 0.92, 0.91, 0.89, 4, yaw, 8, 4);
+    this.addSmoothSphere(scleraL[0], scleraL[1], scleraL[2], 0.019 * bw, 0.012 * bh, 0.012 * bd, 0.93, 0.92, 0.9, 4, yaw, 8, 4);
+    this.addSmoothSphere(scleraR[0], scleraR[1], scleraR[2], 0.019 * bw, 0.012 * bh, 0.012 * bd, 0.93, 0.92, 0.9, 4, yaw, 8, 4);
     const eyeL = local(-0.048, 1.705 + bob, 0.141);
     const eyeR = local(0.048, 1.705 + bob, 0.141);
     this.addSmoothSphere(eyeL[0], eyeL[1], eyeL[2], 0.012 * bw, 0.011 * bh, 0.010 * bd, app.eyeRgb[0], app.eyeRgb[1], app.eyeRgb[2], 4, yaw, 8, 4);
@@ -1135,11 +1224,138 @@ export class VerdantDynamicBatcher {
       }
     }
 
+    // 2b. HD Hanging Iron Bridge Lanterns & Glowing Arched Citadel Windows / Gatehouse Braziers
+    if (!input.isDungeon && input.hasBridge && typeof input.bridgeDeckY === 'number') {
+      const deckY = input.bridgeDeckY;
+      const [lr, lg, lb] = input.hdLanternRgb ?? [1.0, 0.72, 0.30];
+      const bridgeZs = [-3.0, 1.0, 5.0, 9.0, 13.0];
+      for (let bi = 0; bi < bridgeZs.length; bi++) {
+        const bz = bridgeZs[bi];
+        for (const side of [-1, 1]) {
+          const sway = Math.sin(t * 2.1 + bi * 1.3 + side * 0.7) * 0.045;
+          const lx = side * 2.05 + sway;
+          const flicker = 0.88 + Math.sin(t * 7.8 + bi * 2.3 + side) * 0.12;
+          // Wrought-iron suspension chain + lantern hood + base cap
+          this.addSmoothCylinder(lx, deckY + 2.66, bz, 0.025, 0.025, 0.44, 6, 0.12, 0.13, 0.15, 2);
+          this.addSmoothCylinder(lx, deckY + 2.58, bz, 0.16, 0.05, 0.14, 6, 0.14, 0.15, 0.17, 2);
+          this.addSmoothCylinder(lx, deckY + 2.18, bz, 0.11, 0.14, 0.08, 6, 0.14, 0.15, 0.17, 2);
+          // Warm flickering HDR lantern glass & flame core (mat=3 triggers golden bloom)
+          this.addSmoothCylinder(
+            lx,
+            deckY + 2.26,
+            bz,
+            0.12,
+            0.13,
+            0.32,
+            6,
+            Math.min(1, lr * flicker),
+            Math.min(1, lg * flicker),
+            Math.min(1, lb * flicker),
+            3,
+          );
+        }
+      }
+    }
+
+    if (!input.isDungeon && input.isVaelmorCitadel) {
+      const keepY = hAt(0, -20.5);
+      const gateY = hAt(0, -14.0);
+      const [wr, wg, wb] = input.hdLanternRgb ?? [1.0, 0.74, 0.34];
+      const warmPulse = 0.92 + Math.sin(t * 2.4) * 0.08;
+
+      // Glowing Gothic Arched Lancet Windows on the 12-sided Keep (upper clerestory tiers cleanly above Gatehouse!)
+      for (const angOffset of [-0.82, -0.41, 0, 0.41, 0.82]) {
+        const a = Math.PI * 0.5 + angOffset;
+        const wx = Math.cos(a) * 6.24;
+        const wz = -20.5 + Math.sin(a) * 6.24;
+        const wyaw = -a + Math.PI * 0.5;
+        // Skip lower center window behind Gatehouse archway; keep full dramatic upper clerestory arcade
+        const tiers = angOffset === 0 ? [keepY + 11.2] : [keepY + 9.2, keepY + 12.2];
+        for (const tierY of tiers) {
+          // Slender wrought-iron lancet surround + glowing warm amber glass + pointed Gothic crown
+          this.addBox(wx, tierY, wz, 0.72, 1.72, 0.16, wyaw, 0.11, 0.12, 0.15, 2);
+          this.addBox(
+            wx + Math.cos(a) * 0.06,
+            tierY,
+            wz + Math.sin(a) * 0.06,
+            0.48,
+            1.42,
+            0.09,
+            wyaw,
+            Math.min(1, wr * warmPulse),
+            Math.min(1, wg * warmPulse),
+            Math.min(1, wb * warmPulse),
+            3,
+          );
+          // Pointed gothic arch cap & central iron mullion bar
+          this.addOctahedron(
+            wx + Math.cos(a) * 0.06,
+            tierY + 0.76,
+            wz + Math.sin(a) * 0.06,
+            0.26,
+            0.34,
+            wyaw,
+            Math.min(1, wr * warmPulse),
+            Math.min(1, wg * warmPulse),
+            Math.min(1, wb * warmPulse),
+            3,
+          );
+          this.addBox(wx + Math.cos(a) * 0.10, tierY, wz + Math.sin(a) * 0.10, 0.06, 1.48, 0.06, wyaw, 0.11, 0.12, 0.15, 2);
+        }
+      }
+      // Glowing Beacon Crown inside Keep roof lantern cage
+      this.addOctahedron(0, keepY + 22.8, -20.5, 0.36, 0.54, t * 1.1, wr, wg, wb, 3);
+
+      // Flanking Bastion Towers & Outer Turrets glowing arched Gothic lancets
+      for (const side of [-1, 1]) {
+        const bx = side * 9.8;
+        const by = hAt(bx, -17.0);
+        for (const wy of [by + 4.4, by + 8.0]) {
+          this.addBox(bx, wy, -13.78, 0.64, 1.48, 0.16, 0, 0.11, 0.12, 0.15, 2);
+          this.addBox(bx, wy, -13.71, 0.42, 1.22, 0.09, 0, wr * warmPulse, wg * warmPulse, wb * warmPulse, 3);
+          this.addOctahedron(bx, wy + 0.64, -13.71, 0.22, 0.28, 0, wr * warmPulse, wg * warmPulse, wb * warmPulse, 3);
+        }
+        const tx = side * 13.6;
+        const ty = hAt(tx, -20.2);
+        this.addBox(tx, ty + 8.6, -18.18, 0.48, 1.32, 0.16, 0, 0.11, 0.12, 0.15, 2);
+        this.addBox(tx, ty + 8.6, -18.11, 0.32, 1.06, 0.09, 0, wr * warmPulse, wg * warmPulse, wb * warmPulse, 3);
+
+        // Twin Gatehouse Wall Torches flanking the Citadel Archway
+        const torchFlicker = 0.86 + Math.sin(t * 8.4 + side * 2.1) * 0.14;
+        const gx = side * 3.2;
+        const gz = -12.72;
+        this.addSmoothCylinder(gx, gateY + 3.05, gz, 0.07, 0.15, 0.54, 8, 0.16, 0.15, 0.15, 2);
+        this.addOctahedron(
+          gx,
+          gateY + 3.82,
+          gz,
+          0.19,
+          0.38,
+          t * 3.2 + side,
+          Math.min(1, 1.0 * torchFlicker),
+          Math.min(1, 0.62 * torchFlicker),
+          Math.min(1, 0.20 * torchFlicker),
+          3,
+        );
+      }
+      // Sculpted Gothic Rose-Lancet Crest above Gatehouse Lintel
+      this.addRing(0, gateY + 7.65, -12.60, 0.34, 0.48, 12, 0.14, 0.14, 0.16, 2);
+      this.addOctahedron(0, gateY + 7.65, -12.56, 0.28, 0.46, 0, wr * warmPulse, wg * warmPulse, wb * warmPulse, 3);
+    }
+
     // 3. High-Definition Articulated Player Chartered Waywright (with Wading & Swimming Postures!)
     const strideAmp = Math.min(1, input.playerSpeed / 7.5);
     const stridePhase = t * 11.5;
-    const playerApp = compilePlayerCharacterAppearance(input.activeGear, input.dodgeTimer > 0);
+    const playerApp = compilePlayerCharacterAppearance(
+      input.activeGear,
+      input.dodgeTimer > 0,
+      input.playerProfile,
+      input.playerEvolutionRank ?? 1,
+    );
     const waterPosture: WaterPosture = input.playerWaterPosture ?? 'dry';
+    if (waterPosture === 'dry') {
+      this.addContactShadow(input.playerX, hAt(input.playerX, input.playerZ), input.playerZ, 0.54);
+    }
     this.addCompiledCharacter(
       input.playerX,
       input.playerY,
@@ -1193,10 +1409,12 @@ export class VerdantDynamicBatcher {
       const ny = hAt(nx, nz);
       const toPlayer = Math.atan2(input.playerX - nx, input.playerZ - nz);
       const appearance = compileNpcCharacterAppearance(npc);
+      this.addContactShadow(nx, ny, nz, 0.54);
       this.addCompiledCharacter(nx, ny, nz, toPlayer, appearance, t * 1.4, 0.05, 0, t);
-      // Floating golden dialogue beacon diamond overhead
-      const bobY = ny + 2.55 + Math.sin(t * 2.8 + nx) * 0.14;
-      this.addOctahedron(nx, bobY, nz, 0.22, 0.34, t * 1.5, 0.96, 0.78, 0.32, 3);
+      // Refined miniature gilded survey chevron + delicate bronze halo ring overhead
+      const bobY = ny + 2.38 + Math.sin(t * 2.6 + nx) * 0.08;
+      this.addOctahedron(nx, bobY, nz, 0.095, 0.155, t * 1.3, 0.96, 0.80, 0.38, 3);
+      this.addRing(nx, bobY, nz, 0.115, 0.148, 12, 0.84, 0.66, 0.30, 2);
     }
 
     // 5. High-Definition Bespoke Ecosystem Fauna (6 Distinct Morphology Families)
@@ -1228,6 +1446,16 @@ export class VerdantDynamicBatcher {
       const gG = tele ? 0.48 : fp.glow[1];
       const gB = tele ? 0.16 : fp.glow[2];
       const mat = flash ? 3 : fp.mat;
+      const shadowRad =
+        e.archetype === 'charger'
+          ? 1.05
+          : e.archetype === 'stalker' ||
+              e.archetype === 'shardcaster' ||
+              e.archetype === 'hexweaver' ||
+              e.archetype === 'skirmisher'
+            ? 0.72
+            : 1.55;
+      this.addContactShadow(e.x, ey, e.z, shadowRad * koScale);
 
       if (e.archetype === 'stalker') {
         const crouch = tele ? -0.15 : Math.sin(t * 8.5 + e.x) * 0.05;
@@ -1576,6 +1804,9 @@ export class VerdantDynamicBatcher {
       const pulsing = Boolean(rp.actionPulseAt && nowMs - rp.actionPulseAt < 520);
       const strideNorm = isSwim ? 0.55 : Math.min(1, rspeed / 7.5);
       const peerApp = compileRemoteWaywrightAppearance(rp.id, rp.guildId, rp.activeGear || 'hookblade');
+      if (!isSwim) {
+        this.addContactShadow(rx, groundY, rz, 0.54);
+      }
       this.addCompiledCharacter(
         rx,
         ry,
@@ -1657,14 +1888,20 @@ export class VerdantDynamicBatcher {
       }
     }
 
-    // 10. Tracked Objective Golden Sky Beacon Pillar
+    // 10. Tracked Objective Subtle Diegetic Wayfinder Ring & Distant Compass Star
     if (input.trackedCoords) {
       const [tx, tz] = input.trackedCoords;
       const ty = hAt(tx, tz);
       const dist = Math.hypot(tx - input.playerX, tz - input.playerZ);
-      if (dist > 4.5) {
-        this.addBox(tx, ty + 7.5, tz, 0.24, 15.0, 0.24, t, 0.95, 0.78, 0.32, 3);
-        this.addRing(tx, ty + 0.25, tz, 1.3, 1.75, 16, 0.95, 0.78, 0.32, 3);
+      if (dist > 4.0) {
+        const pulse = 0.84 + Math.sin(t * 3.2) * 0.16;
+        this.addRing(tx, ty + 0.09, tz, 1.08, 1.24, 18, 0.92 * pulse, 0.76 * pulse, 0.34 * pulse, 3);
+        if (dist > 18.0) {
+          // Distant landmark floating compass star high overhead (never obscures nearby NPCs!)
+          const starY = ty + 4.8 + Math.sin(t * 2.2) * 0.24;
+          this.addOctahedron(tx, starY, tz, 0.22, 0.38, t * 1.4, 0.95, 0.78, 0.34, 3);
+          this.addRing(tx, starY, tz, 0.30, 0.38, 14, 0.88, 0.70, 0.30, 2);
+        }
       }
     }
 

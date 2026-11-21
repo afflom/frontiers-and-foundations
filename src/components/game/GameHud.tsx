@@ -42,9 +42,18 @@ interface GameHudProps {
     cell: [number, number, number];
   } | null;
   journeySummary?: JourneyProgressSummary | null;
+  playerCharacterSummary?: {
+    name: string;
+    speciesName: string;
+    className: string;
+    level: number;
+    evolutionTitle: string;
+    unspentPoints: number;
+  };
   guideDismissed?: boolean;
   onDismissGuide?: () => void;
   onReplayPrologue?: () => void;
+  onOpenCharacter?: () => void;
   onActivateGear: (gear: GearSlotId) => void;
   onTriggerAction: () => void;
   onTriggerDodge: () => void;
@@ -147,9 +156,11 @@ export const GameHud: React.FC<GameHudProps> = ({
   toastMessage,
   frontierBanner,
   journeySummary,
+  playerCharacterSummary,
   guideDismissed = false,
   onDismissGuide,
   onReplayPrologue,
+  onOpenCharacter,
   onActivateGear,
   onTriggerAction,
   onTriggerDodge,
@@ -272,6 +283,34 @@ export const GameHud: React.FC<GameHudProps> = ({
       {/* TOP-LEFT: Vitality, Stamina, Region & Renown */}
       <div className="fixed top-4 left-4 sm:top-5 sm:left-5 flex flex-col gap-2 w-[264px]">
         <div className="bg-[#11151b]/90 border border-[#d4a253]/30 rounded-sm px-3.5 py-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.48)]">
+          {playerCharacterSummary && (
+            <button
+              type="button"
+              tabIndex={-1}
+              data-testid="hud-character-summary"
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onOpenCharacter?.();
+              }}
+              className="pointer-events-auto mb-2 pb-1.5 w-full border-b border-white/10 flex items-center justify-between gap-2 text-left cursor-pointer group"
+              title="Open Character Sheet & Live Customization Atelier (K)"
+            >
+              <div className="min-w-0">
+                <p className="font-display text-[11px] font-bold text-[#f3efe6] group-hover:text-[#f0c778] truncate">
+                  {playerCharacterSummary.name}
+                </p>
+                <p className="text-[10px] text-[#9eb2c6] truncate tabular-nums">
+                  Lv.{playerCharacterSummary.level} · {playerCharacterSummary.speciesName} ·{' '}
+                  {playerCharacterSummary.className}
+                </p>
+              </div>
+              {playerCharacterSummary.unspentPoints > 0 && (
+                <span className="shrink-0 font-mono text-[10px] font-bold text-[#f0c778] tabular-nums">
+                  +{playerCharacterSummary.unspentPoints} pt
+                </span>
+              )}
+            </button>
+          )}
           <div className="flex items-center justify-between gap-3 mb-1.5">
             <div className="flex items-center gap-2">
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -588,8 +627,30 @@ export const GameHud: React.FC<GameHudProps> = ({
       </div>
 
       {/* TOP-RIGHT: Utility Actions & Active Charter Tracker */}
-      <div className="fixed top-4 right-4 sm:top-5 sm:right-5 flex flex-col items-end gap-2.5 max-w-[295px]">
+      <div className="fixed top-4 right-4 sm:top-5 sm:right-5 flex flex-col items-end gap-2.5 max-w-[310px]">
         <div className="pointer-events-auto flex items-center gap-1.5">
+          {onOpenCharacter && (
+            <button
+              type="button"
+              tabIndex={-1}
+              data-testid="hud-character-btn"
+              title="Character Sheet & Live Customization Atelier (K)"
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onOpenCharacter();
+              }}
+              className="relative h-9 px-2.5 rounded-sm bg-[#11151b]/90 hover:bg-[#1d242e] border border-[#d4a253]/45 text-[#ece8df] text-[11px] font-semibold tracking-[0.08em] uppercase inline-flex items-center gap-1.5 shadow-md cursor-pointer"
+            >
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="8" cy="5.2" r="2.6" stroke="#d4a253" strokeWidth="1.3" />
+                <path d="M3 13.5C3.4 10.6 5.4 9.2 8 9.2C10.6 9.2 12.6 10.6 13 13.5" stroke="#ece8df" strokeWidth="1.3" strokeLinecap="round" />
+              </svg>
+              <span>K</span>
+              {(playerCharacterSummary?.unspentPoints ?? 0) > 0 && (
+                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#f0c778] border border-[#11151b]" />
+              )}
+            </button>
+          )}
           <button
             type="button"
             tabIndex={-1}

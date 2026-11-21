@@ -6,9 +6,20 @@ import type {
   CharacterHairStyle,
   CharacterPropKind,
   CharacterSatchelStyle,
+  PlayerCharacterProfile,
   RgbTuple,
   VerdantCharacterAppearance,
 } from './verdantCharacterTypes';
+import {
+  buildPresetToScale,
+  getClassSpec,
+  getDirectiveSpec,
+  getEthnicitySpec,
+  getSpeciesSpec,
+  hexToLinearRgb,
+  renderHdCharacterPortraitSvg,
+  resolveNpcCharacterProfile,
+} from './verdantCharacterOntology';
 
 export type {
   CharacterBeardStyle,
@@ -17,6 +28,7 @@ export type {
   CharacterHairStyle,
   CharacterPropKind,
   CharacterSatchelStyle,
+  PlayerCharacterProfile,
   RgbTuple,
   VerdantCharacterAppearance,
 };
@@ -37,18 +49,44 @@ function blendRgb(a: RgbTuple, b: RgbTuple, t: number): RgbTuple {
   ];
 }
 
+function hashGenome(seedText: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < seedText.length; i++) {
+    h ^= seedText.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h >>> 0;
+}
+
 /**
  * Deterministic Verdant Character-to-3D Appearance Compiler.
- * For procedurally synthesized NPCs carrying a VerdantCharacterAppearance genome,
- * returns their exact synthesized traits 1:1 (guaranteeing portrait-to-3D parity).
- * For canonical Vaelmor NPCs, maps their portrait artwork faithfully to HD 3D rigs.
+ * Enriches both canonical Vaelmor NPCs and procedurally synthesized outer-realm NPCs
+ * with full Species, Ethnicity, Class, Guiding Directive, and High-Definition 3D
+ * anatomical traits so 3D rigs, portraits, and dialogue dossiers agree 1:1.
  */
 export function compileNpcCharacterAppearance(npc: GameNpc): VerdantCharacterAppearance {
+  const npcProfile = resolveNpcCharacterProfile(npc);
+  const sp = getSpeciesSpec(npcProfile.speciesId);
+  const eth = getEthnicitySpec(npcProfile.speciesId, npcProfile.ethnicityId);
+  const cls = getClassSpec(npcProfile.classId);
+  const evolutionRank: 1 | 2 | 3 | 4 =
+    npcProfile.level >= 12 ? 4 : npcProfile.level >= 8 ? 3 : npcProfile.level >= 4 ? 2 : 1;
+
+  const anatomicalTraits = {
+    ...sp.anatomicalDefaults,
+    evolutionRank,
+  };
+
   if (npc.appearance) {
     return {
       ...npc.appearance,
       rigId: npc.appearance.rigId || `verdant:rig:${npc.id}`,
       portraitUrl: npc.portraitUrl || npc.appearance.portraitUrl,
+      speciesId: npc.appearance.speciesId ?? npcProfile.speciesId,
+      ethnicityId: npc.appearance.ethnicityId ?? npcProfile.ethnicityId,
+      classId: npc.appearance.classId ?? npcProfile.classId,
+      directiveId: npc.appearance.directiveId ?? npcProfile.directiveId,
+      anatomicalTraits: npc.appearance.anatomicalTraits ?? anatomicalTraits,
     };
   }
 
@@ -56,14 +94,20 @@ export function compileNpcCharacterAppearance(npc: GameNpc): VerdantCharacterApp
   const id = (npc.id || '').toLowerCase();
   const cloakOverride = hexToRgb(npc.cloakHex || 0x2f3c48);
   const trimOverride = hexToRgb(npc.trimHex || 0xd4a253);
+  const baseSummary = `${sp.name} · ${eth.name} · ${cls.name}`;
 
-  // 1. Magistrate Orenna Vael portrait archetype (ff_npc_orenna)
+  // 1. Magistrate Orenna Vael (Meridian Human · Vaelmor Basalt-Born)
   if (url.includes('orenna') || id.includes('orenna')) {
     const isCanonicalOrenna = id === 'npc-orenna';
     return {
       rigId: `verdant:rig:${npc.id}`,
       portraitArchetype: 'orenna',
       portraitUrl: npc.portraitUrl,
+      speciesId: npcProfile.speciesId,
+      ethnicityId: npcProfile.ethnicityId,
+      classId: npcProfile.classId,
+      directiveId: npcProfile.directiveId,
+      anatomicalTraits,
       garmentStyle: 'hooded-cloak',
       hairStyle: 'braided-crown',
       beardStyle: 'none',
@@ -82,18 +126,23 @@ export function compileNpcCharacterAppearance(npc: GameNpc): VerdantCharacterApp
       claspRgb: [0.88, 0.71, 0.3],
       claspKind: 'runic-gold',
       eyeRgb: [0.24, 0.2, 0.16],
+      genomeSeed: hashGenome(`${npc.id}:orenna`),
+      traitSummary: baseSummary,
     };
   }
 
-  // 2. Kaelen of the Salt Loom portrait archetype (ff_npc_kaelen)
-  // Windswept silver-grey hair & beard, weathered sea-green oilskin coat with
-  // wide upturned collar & capelet, copper-wrapped bracers, chart satchel, open ledger & golden quill.
+  // 2. Kaelen of the Salt Loom (Pelagis · Glasswater Spire-Diver)
   if (url.includes('kaelen') || id.includes('kaelen')) {
     const isCanonicalKaelen = id === 'npc-kaelen';
     return {
       rigId: `verdant:rig:${npc.id}`,
       portraitArchetype: 'kaelen',
       portraitUrl: npc.portraitUrl,
+      speciesId: npcProfile.speciesId,
+      ethnicityId: npcProfile.ethnicityId,
+      classId: npcProfile.classId,
+      directiveId: npcProfile.directiveId,
+      anatomicalTraits,
       garmentStyle: 'oilskin-coat',
       hairStyle: 'windswept',
       beardStyle: 'trimmed-grey',
@@ -112,19 +161,23 @@ export function compileNpcCharacterAppearance(npc: GameNpc): VerdantCharacterApp
       claspRgb: [0.78, 0.48, 0.25],
       claspKind: 'copper-buckle',
       eyeRgb: [0.22, 0.32, 0.36],
+      genomeSeed: hashGenome(`${npc.id}:kaelen`),
+      traitSummary: baseSummary,
     };
   }
 
-  // 3. Tarsik the Bell-Maker portrait archetype (ff_npc_tarsik)
-  // Broad-shouldered stocky master smith, cropped grey hair + thick grey beard,
-  // charcoal rolled-sleeve tunic, bare muscular forearms + leather cuffs,
-  // burnished chestnut leather blacksmith apron, holding a golden tuning fork.
+  // 3. Tarsik the Bell-Maker (Lithborn · Kiln-Strata Forger)
   if (url.includes('tarsik') || id.includes('tarsik')) {
     const isCanonicalTarsik = id === 'npc-tarsik';
     return {
       rigId: `verdant:rig:${npc.id}`,
       portraitArchetype: 'tarsik',
       portraitUrl: npc.portraitUrl,
+      speciesId: npcProfile.speciesId,
+      ethnicityId: npcProfile.ethnicityId,
+      classId: npcProfile.classId,
+      directiveId: npcProfile.directiveId,
+      anatomicalTraits,
       garmentStyle: 'smith-apron',
       hairStyle: 'cropped-grey',
       beardStyle: 'full-smith',
@@ -143,17 +196,21 @@ export function compileNpcCharacterAppearance(npc: GameNpc): VerdantCharacterApp
       claspRgb: [0.74, 0.58, 0.34],
       claspKind: 'copper-buckle',
       eyeRgb: [0.22, 0.22, 0.24],
+      genomeSeed: hashGenome(`${npc.id}:tarsik`),
+      traitSummary: baseSummary,
     };
   }
 
-  // 4. Seraia of the Rootward portrait archetype (ff_npc_seraia)
-  // Deep warm umber skin, long dark braided locs tied back, sage-moss green embroidered
-  // high-collar herbalist coat, brown-and-gold trimmed cuffs/pauldrons, leaf clasp,
-  // leather vial satchel, holding a glowing cyan-amber bioluminescent specimen jar.
+  // 4. Seraia of the Rootward (Sylvan Rootkin · Oakhaven Canopy-Weaver)
   return {
     rigId: `verdant:rig:${npc.id}`,
     portraitArchetype: 'seraia',
     portraitUrl: npc.portraitUrl,
+    speciesId: npcProfile.speciesId,
+    ethnicityId: npcProfile.ethnicityId,
+    classId: npcProfile.classId,
+    directiveId: npcProfile.directiveId,
+    anatomicalTraits,
     garmentStyle: 'herbalist-coat',
     hairStyle: 'braided-locs',
     beardStyle: 'none',
@@ -172,36 +229,117 @@ export function compileNpcCharacterAppearance(npc: GameNpc): VerdantCharacterApp
     claspRgb: [0.34, 0.64, 0.28],
     claspKind: 'leaf-emerald',
     eyeRgb: [0.36, 0.22, 0.11],
+    genomeSeed: hashGenome(`${npc.id}:seraia`),
+    traitSummary: baseSummary,
   };
 }
 
+/**
+ * Compiles the Player's customized Character Profile (Species, Ethnicity, Class,
+ * Guiding Directive, Attire, Hair/Beard, Palettes, Build & Evolution Rank) into
+ * the live HD WebGL2 3D Rig & 1:1 painterly SVG portrait!
+ */
 export function compilePlayerCharacterAppearance(
   activeGear: GearSlotId,
   dodgeActive: boolean,
+  profile?: PlayerCharacterProfile | null,
+  evolutionRank: 1 | 2 | 3 | 4 = 1,
 ): VerdantCharacterAppearance {
-  return {
-    rigId: 'verdant:rig:player-waywright',
+  if (!profile) {
+    return {
+      rigId: 'verdant:rig:player-waywright',
+      portraitArchetype: 'waywright-hero',
+      portraitUrl: '/src/assets/images/ff_world_panorama_1795129454132.jpg',
+      speciesId: 'meridian-human',
+      ethnicityId: 'vaelmor-basalt',
+      classId: 'meridian-surveyor',
+      directiveId: 'preserve-arch',
+      anatomicalTraits: {
+        earShape: 'human',
+        browCrest: 'none',
+        shoulderCrest: 'none',
+        markingRgb: [0.88, 0.7, 0.33],
+        hasLuminousVeins: false,
+        evolutionRank,
+      },
+      garmentStyle: 'waywright-longcoat',
+      hairStyle: 'waywright-swept',
+      beardStyle: 'none',
+      satchelStyle: 'waywright-bandolier',
+      signatureProp: activeGear,
+      buildScale: [1.04, 1.05, 1.02],
+      bareForearms: false,
+      hasHoodDown: false,
+      hasPauldrons: true,
+      skinRgb: [0.81, 0.61, 0.49],
+      hairRgb: [0.17, 0.14, 0.12],
+      garmentRgb: dodgeActive ? [0.34, 0.58, 0.66] : [0.17, 0.26, 0.36],
+      underTunicRgb: [0.28, 0.22, 0.18],
+      trimRgb: [0.88, 0.7, 0.33],
+      leatherRgb: [0.36, 0.22, 0.13],
+      claspRgb: [0.92, 0.74, 0.34],
+      claspKind: 'bronze-crest',
+      eyeRgb: [0.2, 0.28, 0.34],
+      genomeSeed: hashGenome('default:player-waywright'),
+      traitSummary: 'Meridian Human · Vaelmor Basalt-Born · Meridian Surveyor',
+    };
+  }
+
+  const sp = getSpeciesSpec(profile.speciesId);
+  const eth = getEthnicitySpec(profile.speciesId, profile.ethnicityId);
+  const cls = getClassSpec(profile.classId);
+  const dir = getDirectiveSpec(profile.directiveId);
+  const garmentBase = hexToLinearRgb(profile.garmentPrimaryHex);
+  const garmentRgb: RgbTuple = dodgeActive
+    ? blendRgb(garmentBase, [0.46, 0.86, 0.94], 0.48)
+    : garmentBase;
+  const trimRgb = hexToLinearRgb(profile.trimColorHex);
+  const underTunicRgb = hexToLinearRgb(profile.garmentSecondaryHex);
+  const leatherRgb = blendRgb(underTunicRgb, [0.36, 0.22, 0.13], 0.55);
+
+  const appearance: VerdantCharacterAppearance = {
+    rigId: `verdant:rig:player:${profile.speciesId}:${profile.classId}`,
     portraitArchetype: 'waywright-hero',
-    portraitUrl: '/src/assets/images/ff_world_panorama_1795129454132.jpg',
-    garmentStyle: 'waywright-longcoat',
-    hairStyle: 'waywright-swept',
-    beardStyle: 'none',
-    satchelStyle: 'waywright-bandolier',
+    speciesId: profile.speciesId,
+    ethnicityId: profile.ethnicityId,
+    classId: profile.classId,
+    directiveId: profile.directiveId,
+    anatomicalTraits: {
+      ...sp.anatomicalDefaults,
+      evolutionRank,
+    },
+    garmentStyle: profile.garmentStyle,
+    hairStyle: profile.hairStyle,
+    beardStyle: profile.beardStyle,
+    satchelStyle: profile.satchelStyle,
     signatureProp: activeGear,
-    buildScale: [1.04, 1.05, 1.02],
-    bareForearms: false,
-    hasHoodDown: false,
-    hasPauldrons: true,
-    skinRgb: [0.81, 0.61, 0.49],
-    hairRgb: [0.17, 0.14, 0.12],
-    garmentRgb: dodgeActive ? [0.34, 0.58, 0.66] : [0.17, 0.26, 0.36],
-    underTunicRgb: [0.28, 0.22, 0.18],
-    trimRgb: [0.88, 0.7, 0.33],
-    leatherRgb: [0.36, 0.22, 0.13],
-    claspRgb: [0.92, 0.74, 0.34],
-    claspKind: 'bronze-crest',
-    eyeRgb: [0.2, 0.28, 0.34],
+    buildScale: buildPresetToScale(profile.buildPreset),
+    bareForearms: profile.garmentStyle === 'smith-apron',
+    hasHoodDown: profile.hasHoodDown,
+    hasPauldrons: profile.hasPauldrons || evolutionRank >= 3,
+    skinRgb: hexToLinearRgb(profile.skinColorHex),
+    hairRgb: hexToLinearRgb(profile.hairColorHex),
+    garmentRgb,
+    underTunicRgb,
+    trimRgb,
+    leatherRgb,
+    claspRgb: trimRgb,
+    claspKind: cls.claspKind,
+    eyeRgb: hexToLinearRgb(profile.eyeColorHex),
+    genomeSeed: hashGenome(
+      `${profile.name}:${profile.speciesId}:${profile.ethnicityId}:${profile.classId}:${profile.directiveId}:${profile.garmentStyle}:${profile.hairStyle}`,
+    ),
+    traitSummary: `${sp.name} · ${eth.name} · ${cls.name} · ${dir.name}`,
   };
+
+  appearance.portraitUrl = renderHdCharacterPortraitSvg(appearance, {
+    name: profile.name,
+    speciesId: profile.speciesId,
+    classId: profile.classId,
+    evolutionRank,
+  });
+
+  return appearance;
 }
 
 export function compileRemoteWaywrightAppearance(
@@ -220,6 +358,9 @@ export function compileRemoteWaywrightAppearance(
     rigId: `verdant:rig:remote:${playerId}`,
     portraitArchetype: 'waywright-peer',
     portraitUrl: '/src/assets/images/ff_world_panorama_1795129454132.jpg',
+    speciesId: 'meridian-human',
+    ethnicityId: 'vaelmor-basalt',
+    classId: 'meridian-surveyor',
     garmentStyle: 'guild-waywright',
     hairStyle: 'waywright-swept',
     beardStyle: 'none',
@@ -264,6 +405,9 @@ export function buildCharacterProjectModelPayload(
       'character-rig',
       'hd-smooth-normals',
       `portrait:${appearance.portraitArchetype}`,
+      `species:${appearance.speciesId ?? 'meridian-human'}`,
+      `ethnicity:${appearance.ethnicityId ?? 'vaelmor-basalt'}`,
+      `class:${appearance.classId ?? 'meridian-surveyor'}`,
       `garment:${appearance.garmentStyle}`,
       `prop:${appearance.signatureProp}`,
       `realm:${realmSlug}`,
@@ -271,6 +415,10 @@ export function buildCharacterProjectModelPayload(
     propertiesJson: JSON.stringify({
       portraitArchetype: appearance.portraitArchetype,
       portraitUrl: appearance.portraitUrl,
+      speciesId: appearance.speciesId ?? 'meridian-human',
+      ethnicityId: appearance.ethnicityId ?? 'vaelmor-basalt',
+      classId: appearance.classId ?? 'meridian-surveyor',
+      directiveId: appearance.directiveId ?? 'preserve-arch',
       garmentStyle: appearance.garmentStyle,
       hairStyle: appearance.hairStyle,
       beardStyle: appearance.beardStyle,
@@ -279,6 +427,6 @@ export function buildCharacterProjectModelPayload(
       bareForearms: appearance.bareForearms,
       buildScale: appearance.buildScale,
     }),
-    commitNote: `Compiled HD portrait-matched 3D character rig for ${npc.name} (${appearance.portraitArchetype})`,
+    commitNote: `Compiled HD portrait-matched 3D character rig for ${npc.name} (${appearance.speciesId ?? 'meridian-human'} · ${appearance.classId ?? 'meridian-surveyor'})`,
   };
 }
