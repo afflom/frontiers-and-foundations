@@ -4,12 +4,45 @@ import fs from 'fs';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(() => {
+// Where the holo's page loads the game's textures, models and sounds: the live
+// Pages site. A holo's page is at most 4 MiB and runs in a sandboxed frame
+// with no files beside it, so the assets stay on the site.
+const holoAssetBase = process.env.HOLO_ASSET_BASE ?? 'https://afflom.github.io/frontiers-and-foundations/';
+
+export default defineConfig(({mode}) => {
   const rawBase = process.env.VITE_BASE_PATH || '/';
   const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
+  // `vite build --mode holo` writes the game into prism/view/, the page of the
+  // Prism holo: one self-contained script and stylesheet, no chunks, no public
+  // files, built as the static Pages game.
+  const holo = mode === 'holo';
 
   return {
-    base,
+    base: holo ? './' : base,
+    ...(holo
+      ? {
+          define: {
+            'import.meta.env.BASE_URL': JSON.stringify(holoAssetBase),
+            'import.meta.env.VITE_STATIC_PAGES': JSON.stringify('true'),
+          },
+          build: {
+            outDir: 'prism/view',
+            emptyOutDir: true,
+            copyPublicDir: false,
+            cssCodeSplit: false,
+            modulePreload: false,
+            assetsInlineLimit: 0,
+            chunkSizeWarningLimit: 4096,
+            rollupOptions: {
+              output: {
+                codeSplitting: false,
+                entryFileNames: 'game.js',
+                assetFileNames: 'game[extname]',
+              },
+            },
+          },
+        }
+      : {}),
     plugins: [
       react(),
       tailwindcss(),

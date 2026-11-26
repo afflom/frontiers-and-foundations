@@ -1,0 +1,6 @@
+name = "PrismFrontiersAndFoundations"
+version = "0.1.0"
+defaultTargets = ["PrismFrontiersAndFoundations"]
+
+[[lean_lib]]
+name = "PrismFrontiersAndFoundations"

@@ -42,6 +42,26 @@ import {
 } from './verdantDynamicGeometry';
 import type { PlayerCharacterProfile } from './verdantCharacterTypes';
 import { resolvePublicUrl } from '../utils/publicUrl';
+
+/**
+ * Imports a module by URL. Where a page may not import scripts over the network, as in the Prism holospace, whose
+ * policy runs only inline, data: and blob: scripts, the module is fetched and imported from a blob: URL instead.
+ * Only for a module with no imports of its own, such as scene-hd-renderer.mjs.
+ */
+async function importModuleByUrl(url: string): Promise<unknown> {
+  try {
+    return await import(/* @vite-ignore */ url);
+  } catch (error) {
+    const response = await fetch(url).catch(() => null);
+    if (!response?.ok) throw error;
+    const blobUrl = URL.createObjectURL(new Blob([await response.text()], { type: 'text/javascript' }));
+    try {
+      return await import(/* @vite-ignore */ blobUrl);
+    } finally {
+      URL.revokeObjectURL(blobUrl);
+    }
+  }
+}
 import {
   CANONICAL_REALM_SPECS,
   CELL_BORDER_TRIGGER,
@@ -654,7 +674,7 @@ export class VerdantFrontiersRuntime {
     try {
       // 1. Load real Verdant HD WebGL2 CSM/GGX/ACES Renderer module
       const modUrl = resolvePublicUrl('/verdant/scene-hd-renderer.mjs');
-      const mod = (await import(/* @vite-ignore */ modUrl)) as VerdantRendererModule;
+      const mod = (await importModuleByUrl(modUrl)) as VerdantRendererModule;
       if (this.disposed) return;
       this.rendererMod = mod;
       this.renderer = await mod.createBestRenderer(this.canvas);
