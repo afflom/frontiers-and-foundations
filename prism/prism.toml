@@ -1,0 +1,11 @@
+[application]
+name = "frontiers-and-foundations"
+version = "0.1.0"
+description = "Resolves the Waywright's health after a hit and how enemy speed, damage and attack tokens scale with completed quests in Frontiers and Foundations."
+
+[model]
+source = "src"
+watch = ["src/**/*.lex.tex", "language/**/*.toml", "lexlean.toml", "view/**"]
+
+# Deny by default: an empty set grants the holo nothing.
+[capabilities]

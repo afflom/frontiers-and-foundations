@@ -1,0 +1,226 @@
+\begin{lexlean}{Frontiers}
+\useglossary{lexlean.std.bool@1.2.0}
+\useglossary{lexlean.std.nat@1.2.0}
+\useglossary{prism.arch@1.0.0}
+\importmodule{Foundation.Bytes}
+\importmodule{Foundation.View.Text.V1.Model}
+\title{Text application model}
+\begin{semanticmodule}
+definition{
+  name: maximumTier,
+  parameters: [],
+  result: Nat,
+  body: 5
+}
+
+definition{
+  name: tierOf,
+  parameters: [completedQuests : Nat],
+  result: Nat,
+  body: (if ((maximumTier) <? completedQuests) then (maximumTier) else completedQuests)
+}
+
+definition{
+  name: speedPercent,
+  parameters: [completedQuests : Nat],
+  result: Nat,
+  body: (100 + (prim multiply 5 (tierOf completedQuests) : Nat))
+}
+
+definition{
+  name: damagePercent,
+  parameters: [completedQuests : Nat],
+  result: Nat,
+  body: (100 + (prim multiply 8 (tierOf completedQuests) : Nat))
+}
+
+definition{
+  name: attackTokens,
+  parameters: [completedQuests : Nat],
+  result: Nat,
+  body: (if (3 <=? (tierOf completedQuests)) then 3 else 2)
+}
+
+definition{
+  name: nextHp,
+  parameters: [hp : Nat, incoming : Nat],
+  result: Nat,
+  body: (prim subtract hp incoming : Nat)
+}
+
+definition{
+  name: breaksDamageNeverHeals,
+  parameters: [hp : Nat, incoming : Nat],
+  result: Bool,
+  body: (hp <? (nextHp hp incoming))
+}
+
+theorem{
+  name: damageNeverHeals,
+  parameters: [hp : Nat, incoming : Nat],
+  statement: ((breaksDamageNeverHeals hp incoming) = false),
+  proof: linear_arithmetic{definitions: [breaksDamageNeverHeals, nextHp]},
+  axioms: [Quot.sound, propext]
+}
+
+definition{
+  name: breaksDefeatOnlyWhenOutHit,
+  parameters: [hp : Nat, incoming : Nat],
+  result: Bool,
+  body: (((nextHp hp incoming) =? 0) && (incoming <? hp))
+}
+
+theorem{
+  name: defeatOnlyWhenOutHit,
+  parameters: [hp : Nat, incoming : Nat],
+  statement: ((breaksDefeatOnlyWhenOutHit hp incoming) = false),
+  proof: linear_arithmetic{definitions: [breaksDefeatOnlyWhenOutHit, nextHp]},
+  axioms: [Quot.sound, propext]
+}
+
+definition{
+  name: breaksDifficultyBounds,
+  parameters: [completedQuests : Nat],
+  result: Bool,
+  body: (((140 <? (damagePercent completedQuests)) || (125 <? (speedPercent completedQuests))) || ((3 <? (attackTokens completedQuests)) || ((attackTokens completedQuests) <? 2)))
+}
+
+theorem{
+  name: difficultyStaysBounded,
+  parameters: [completedQuests : Nat],
+  statement: ((breaksDifficultyBounds completedQuests) = false),
+  proof: linear_arithmetic{definitions: [attackTokens, breaksDifficultyBounds, damagePercent, maximumTier, speedPercent, tierOf]},
+  axioms: [Quot.sound, propext]
+}
+
+definition{
+  name: byteAt,
+  parameters: [s : Bytes, i : Nat],
+  result: (Option Nat),
+  body: (match (prim index s i : (Option UInt8))
+    | Option.none => (ctor Option.none [Nat])
+    | Option.some b => (ctor Option.some [Nat] (prim to_nat b : Nat))),
+  axioms: [Quot.sound, propext]
+}
+
+definition{
+  name: digitsValue,
+  parameters: [s : Bytes, i : Nat, acc : Nat, fuel : Nat],
+  result: (Option Nat),
+  body: (match fuel
+    | Nat.zero => (ctor Option.some [Nat] acc)
+    | Nat.succ rest => (match (byteAt s i)
+      | Option.none => (ctor Option.none [Nat])
+      | Option.some d => (if ((d <? 48) || (57 <? d)) then (ctor Option.none [Nat]) else (digitsValue s (i + 1) ((prim multiply acc 10 : Nat) + (prim subtract d 48 : Nat)) rest)))),
+  axioms: [Quot.sound, propext],
+  recursive_argument: fuel
+}
+
+definition{
+  name: parseNumber,
+  parameters: [s : Bytes, maximum : Nat],
+  result: (Option Nat),
+  body: (if ((Foundation.Bytes::byteLength s) =? 0) then (ctor Option.none [Nat]) else (if (3 <? (Foundation.Bytes::byteLength s)) then (ctor Option.none [Nat]) else (match (byteAt s 0)
+    | Option.none => (ctor Option.none [Nat])
+    | Option.some lead => (if ((lead =? 48) && (1 <? (Foundation.Bytes::byteLength s))) then (ctor Option.none [Nat]) else (match (digitsValue s 0 0 (Foundation.Bytes::byteLength s))
+      | Option.none => (ctor Option.none [Nat])
+      | Option.some value => (if (maximum <? value) then (ctor Option.none [Nat]) else (ctor Option.some [Nat] value))))))),
+  axioms: [Quot.sound, propext]
+}
+
+definition{
+  name: sliceOf,
+  parameters: [s : Bytes, start : Nat, count : Nat],
+  result: Bytes,
+  body: (match (prim slice s start count : (Option Bytes))
+    | Option.none => 0x
+    | Option.some part => part)
+}
+
+definition{
+  name: fieldEnd,
+  parameters: [s : Bytes, i : Nat, fuel : Nat],
+  result: Nat,
+  body: (match fuel
+    | Nat.zero => i
+    | Nat.succ rest => (match (byteAt s i)
+      | Option.none => i
+      | Option.some d => (if (d =? 32) then i else (fieldEnd s (i + 1) rest)))),
+  axioms: [Quot.sound, propext],
+  recursive_argument: fuel
+}
+
+definition{
+  name: digitText,
+  parameters: [d : Nat],
+  result: Bytes,
+  body: (if (d =? 0) then 0x30 else (if (d =? 1) then 0x31 else (if (d =? 2) then 0x32 else (if (d =? 3) then 0x33 else (if (d =? 4) then 0x34 else (if (d =? 5) then 0x35 else (if (d =? 6) then 0x36 else (if (d =? 7) then 0x37 else (if (d =? 8) then 0x38 else 0x39)))))))))
+}
+
+definition{
+  name: leadingDigit,
+  parameters: [n : Nat, unit : Nat],
+  result: Nat,
+  body: (if ((prim multiply 9 unit : Nat) <=? n) then 9 else (if ((prim multiply 8 unit : Nat) <=? n) then 8 else (if ((prim multiply 7 unit : Nat) <=? n) then 7 else (if ((prim multiply 6 unit : Nat) <=? n) then 6 else (if ((prim multiply 5 unit : Nat) <=? n) then 5 else (if ((prim multiply 4 unit : Nat) <=? n) then 4 else (if ((prim multiply 3 unit : Nat) <=? n) then 3 else (if ((prim multiply 2 unit : Nat) <=? n) then 2 else (if ((prim multiply 1 unit : Nat) <=? n) then 1 else 0)))))))))
+}
+
+definition{
+  name: numberText,
+  parameters: [n : Nat],
+  result: Bytes,
+  body: (let h : Nat := (leadingDigit n 100); (let rest : Nat := (prim subtract n (prim multiply h 100 : Nat) : Nat); (let t : Nat := (leadingDigit rest 10); (let o : Nat := (prim subtract rest (prim multiply t 10 : Nat) : Nat); (if (n <? 10) then (digitText o) else (if (n <? 100) then (Foundation.Bytes::appendBytes (digitText t) (digitText o)) else (Foundation.Bytes::appendBytes (digitText h) (Foundation.Bytes::appendBytes (digitText t) (digitText o))))))))),
+  axioms: [Quot.sound, propext]
+}
+
+definition{
+  name: damageAnswer,
+  parameters: [hp : Nat, incoming : Nat],
+  result: Bytes,
+  body: (Foundation.Bytes::appendBytes (numberText (nextHp hp incoming)) (if ((nextHp hp incoming) =? 0) then 0x206465666561746564 else 0x207374616e64696e67))
+}
+
+definition{
+  name: difficultyAnswer,
+  parameters: [completedQuests : Nat],
+  result: Bytes,
+  body: (Foundation.Bytes::appendBytes (numberText (speedPercent completedQuests)) (Foundation.Bytes::appendBytes 0x20 (Foundation.Bytes::appendBytes (numberText (damagePercent completedQuests)) (Foundation.Bytes::appendBytes 0x20 (numberText (attackTokens completedQuests))))))
+}
+
+definition{
+  name: damageRequest,
+  parameters: [s : Bytes, start : Nat],
+  result: Bytes,
+  body: (let e : Nat := (fieldEnd s start (Foundation.Bytes::byteLength s)); (match (parseNumber (sliceOf s start (prim subtract e start : Nat)) 999)
+    | Option.none => 0x696e76616c6964
+    | Option.some hp => (if (e <? (Foundation.Bytes::byteLength s)) then (match (parseNumber (sliceOf s (e + 1) (prim subtract (Foundation.Bytes::byteLength s) (e + 1) : Nat)) 999)
+      | Option.none => 0x696e76616c6964
+      | Option.some incoming => (damageAnswer hp incoming)) else 0x696e76616c6964))),
+  axioms: [Quot.sound, propext]
+}
+
+definition{
+  name: difficultyRequest,
+  parameters: [s : Bytes, start : Nat],
+  result: Bytes,
+  body: (match (parseNumber (sliceOf s start (prim subtract (Foundation.Bytes::byteLength s) start : Nat)) 99)
+    | Option.none => 0x696e76616c6964
+    | Option.some completedQuests => (difficultyAnswer completedQuests)),
+  axioms: [Quot.sound, propext]
+}
+
+definition{
+  name: dispatch,
+  parameters: [value : Bytes],
+  result: Bytes,
+  body: (if (64 <? (Foundation.Bytes::byteLength value)) then 0x696e76616c6964 else (let e : Nat := (fieldEnd value 0 (Foundation.Bytes::byteLength value)); (if (e =? (Foundation.Bytes::byteLength value)) then 0x696e76616c6964 else (if (prim equal (sliceOf value 0 e) 0x64616d616765 : Bool) then (damageRequest value (e + 1)) else (if (prim equal (sliceOf value 0 e) 0x646966666963756c7479 : Bool) then (difficultyRequest value (e + 1)) else 0x696e76616c6964))))),
+  axioms: [Quot.sound, propext]
+}
+
+definition{
+  name: application,
+  parameters: [],
+  result: Foundation.View.Text.V1.Model::TextApplication,
+  body: (record Foundation.View.Text.V1.Model::TextApplication {profile := "prismpm/text-application/1", name := "Frontiers and Foundations", cargoName := "frontiers-and-foundations", cargoVersion := "0.1.0", cargoDescription := "Frontiers and Foundations' damage and difficulty rules: the Waywright's health after a hit, and how enemy speed, damage and attack tokens scale with completed quests.", cargoRepository := "https://github.com/afflom/frontiers-and-foundations", cargoHomepage := "https://afflom.github.io/frontiers-and-foundations/", libraryRoots := (cons "PrismFrontiersAndFoundations.Frontiers.dispatch" (nil String)), acceptanceVectors := (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x64616d61676520313030203132, response := 0x3838207374616e64696e67}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x64616d6167652031303020313030, response := 0x30206465666561746564}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x64616d616765203330203435, response := 0x30206465666561746564}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x64616d616765203939392030, response := 0x393939207374616e64696e67}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x64616d61676520302035, response := 0x30206465666561746564}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x64616d616765203537203536, response := 0x31207374616e64696e67}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x646966666963756c74792030, response := 0x313030203130302032}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x646966666963756c74792031, response := 0x313035203130382032}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x646966666963756c74792032, response := 0x313130203131362032}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x646966666963756c74792033, response := 0x313135203132342033}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x646966666963756c74792035, response := 0x313235203134302033}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x646966666963756c74792036, response := 0x313235203134302033}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x646966666963756c7479203939, response := 0x313235203134302033}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x, response := 0x696e76616c6964}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x64616d616765, response := 0x696e76616c6964}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x64616d61676520313030, response := 0x696e76616c6964}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x64616d616765203130302031322031, response := 0x696e76616c6964}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x64616d61676520313030302031, response := 0x696e76616c6964}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x64616d6167652030312031, response := 0x696e76616c6964}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x64616d6167652020312031, response := 0x696e76616c6964}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x646966666963756c7479, response := 0x696e76616c6964}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x646966666963756c747920313030, response := 0x696e76616c6964}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x646966666963756c747920332031, response := 0x696e76616c6964}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x6865616c203130203130, response := 0x696e76616c6964}) (cons (record Foundation.View.Text.V1.Model::AcceptanceVector {request := 0x44616d61676520312031, response := 0x696e76616c6964}) (nil Foundation.View.Text.V1.Model::AcceptanceVector)))))))))))))))))))))))))), entryRoot := "PrismFrontiersAndFoundations.Frontiers.dispatch", coreContract := "hologram:guest/core-wasm@1", requestMaximum := (64 : UInt32), responseMaximum := (32 : UInt32), guestAllocationMaximum := (128 : UInt32), capabilitiesEmpty := true, fatArchive := true, primaryLayer := (0 : UInt8), viewLayer := (1 : UInt8), view := (record Foundation.View.Text.V1.Model::TextView {title := "Frontiers and Foundations", heading := "Damage and difficulty", inputLabel := "damage <hp> <incoming>, or difficulty <completed quests>", submitLabel := "Resolve", outputLabel := "Answer", inputError := "Invalid request", responseError := "Invalid response"})})
+}
+\end{semanticmodule}
+\end{lexlean}
